@@ -11,6 +11,7 @@ import { supabase } from '../../src/lib/supabase';
 import { COLORS, Button, Card } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
 import type { Theme } from '../../src/lib/theme';
+import { WebScanner } from '../../src/components/WebScanner';
 
 interface Pacote {
   codigo: string;
@@ -205,6 +206,19 @@ export default function SVCRecebimentoScreen() {
 
   // Scanner
   if (inputMode === 'scanner') {
+    // Web: use native getUserMedia scanner with BarcodeDetector
+    if (Platform.OS === 'web') {
+      return (
+        <WebScanner
+          onScanned={(code) => addPacote(code, 'scanner')}
+          onClose={() => setInputMode('none')}
+          count={pacotes.length}
+          lastScanned={lastScanned}
+          recentCodes={pacotes.map((p) => p.codigo)}
+        />
+      );
+    }
+
     if (!cameraPermission?.granted) {
       return (
         <View style={styles.permBox}>
@@ -216,7 +230,7 @@ export default function SVCRecebimentoScreen() {
     }
     return (
       <View style={scannerStyles.scannerContainer}>
-        <CameraView style={scannerStyles.camera} facing={facing} enableTorch={flashEnabled}
+        <CameraView key={facing} style={scannerStyles.camera} facing={facing} enableTorch={flashEnabled}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'datamatrix'] }}
           onBarcodeScanned={handleBarcodeScanned}
         />
