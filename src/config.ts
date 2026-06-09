@@ -12,5 +12,8 @@ export const SHEETS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEETS_I
 // Mude para um PIN seguro após o primeiro acesso
 export const ADMIN_PIN = '7852';
 
+// Senha para tela de Consulta
+export const CONSULTA_PASSWORD = '91109394@';
+
 // Raio máximo em km para exibir NODOS próximos
 export const MAX_DISTANCE_KM = 1;
