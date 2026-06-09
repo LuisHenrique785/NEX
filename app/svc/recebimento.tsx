@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
   TextInput, TouchableOpacity, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Platform, Image,
+  KeyboardAvoidingView, Platform, Image, Modal,
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -70,6 +70,7 @@ export default function SVCRecebimentoScreen() {
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
   const [inputMode, setInputMode] = useState<InputMode>('none');
   const [saving, setSaving] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false);
   const [lastScanned, setLastScanned] = useState('');
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -145,60 +146,47 @@ export default function SVCRecebimentoScreen() {
     } catch { return null; }
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (pacotes.length === 0) { Alert.alert('Atenção', 'Adicione pelo menos um pacote.'); return; }
+    setConfirmModal(true);
+  }
 
+  async function doSave() {
+    setConfirmModal(false);
+    setSaving(true);
+
+    const { data: recData, error: recError } = await supabase
+      .from('svc_recebimentos')
+      .insert({
+        nome_motorista: nomeMotorista.trim() || null,
+        cpf_motorista: cpfMotorista.replace(/\D/g, '') || null,
+        placa: placa.trim() || null,
+        transportadora: transportadora.trim() || null,
+        total_pacotes: pacotes.length,
+      })
+      .select()
+      .single();
+
+    if (recError) {
+      setSaving(false);
+      Alert.alert('Erro', recError.message);
+      return;
+    }
+
+    const items: any[] = [];
+    for (const p of pacotes) {
+      let fotoUrl: string | null = null;
+      if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
+      items.push({ recebimento_id: recData.id, codigo: p.codigo, tipo_entrada: p.tipo_entrada, foto_url: fotoUrl });
+    }
+
+    await supabase.from('svc_recebimentos_pacotes').insert(items);
+
+    setSaving(false);
     Alert.alert(
-      'Confirmar Recebimento',
-      `Registrar recebimento de ${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            setSaving(true);
-
-            const { data: recData, error: recError } = await supabase
-              .from('svc_recebimentos')
-              .insert({
-                nome_motorista: nomeMotorista.trim() || null,
-                cpf_motorista: cpfMotorista.replace(/\D/g, '') || null,
-                placa: placa.trim() || null,
-                transportadora: transportadora.trim() || null,
-                total_pacotes: pacotes.length,
-              })
-              .select()
-              .single();
-
-            if (recError) {
-              setSaving(false);
-              Alert.alert('Erro', recError.message);
-              return;
-            }
-
-            const items: any[] = [];
-            for (const p of pacotes) {
-              let fotoUrl: string | null = null;
-              if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
-              items.push({
-                recebimento_id: recData.id,
-                codigo: p.codigo,
-                tipo_entrada: p.tipo_entrada,
-                foto_url: fotoUrl,
-              });
-            }
-
-            await supabase.from('svc_recebimentos_pacotes').insert(items);
-
-            setSaving(false);
-            Alert.alert(
-              '✅ Recebimento Registrado!',
-              `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} com sucesso.`,
-              [{ text: 'OK', onPress: () => router.back() }]
-            );
-          },
-        },
-      ]
+      '✅ Recebimento Registrado!',
+      `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} com sucesso.`,
+      [{ text: 'OK', onPress: () => router.back() }]
     );
   }
 
@@ -365,6 +353,23 @@ export default function SVCRecebimentoScreen() {
           <Button label={`Confirmar Recebimento (${pacotes.length})`} onPress={handleSave} loading={saving} style={{ marginTop: 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={confirmModal} transparent animationType="fade" onRequestClose={() => setConfirmModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 }}>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>
+              Confirmar Recebimento
+            </Text>
+            <Text style={{ fontSize: 15, color: theme.textSec, lineHeight: 22, marginBottom: 20 }}>
+              Registrar recebimento de {pacotes.length} pacote{pacotes.length !== 1 ? 's' : ''}?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancelar" onPress={() => setConfirmModal(false)} variant="outline" style={{ flex: 1 }} />
+              <Button label="Confirmar" onPress={doSave} style={{ flex: 1 }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

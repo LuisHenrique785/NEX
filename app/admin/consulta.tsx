@@ -111,7 +111,16 @@ export default function ConsultaScreen() {
 
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState('');
-  const [tab, setTab] = useState<'expedicoes' | 'busca'>('expedicoes');
+  const [tab, setTab] = useState<'expedicoes' | 'busca' | 'exportar'>('expedicoes');
+
+  // Export tab state
+  const [exportDateFrom, setExportDateFrom] = useState(() =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+  );
+  const [exportDateTo, setExportDateTo] = useState(() =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+  );
+  const [exporting, setExporting] = useState(false);
 
   // Expedições tab state
   const [expedicoes, setExpedicoes] = useState<Expedicao[]>([]);
@@ -254,6 +263,69 @@ export default function ConsultaScreen() {
     }
   }
 
+  // ─── CSV Export ─────────────────────────────────────────────────
+  async function doExport() {
+    setExporting(true);
+    try {
+      const start = new Date(`${exportDateFrom}T03:00:00.000Z`);
+      const end = new Date(`${exportDateTo}T03:00:00.000Z`);
+      end.setUTCDate(end.getUTCDate() + 1); // include full last day
+
+      const { data: inventory } = await supabase
+        .from('pacotes_inventario')
+        .select('codigo, status, inventoried_at, expedited_at, nodo_id, nodos(nome)')
+        .gte('inventoried_at', start.toISOString())
+        .lt('inventoried_at', end.toISOString())
+        .order('inventoried_at', { ascending: true });
+
+      if (!inventory || inventory.length === 0) {
+        Alert.alert('Sem dados', 'Nenhum registro encontrado para o período selecionado.');
+        return;
+      }
+
+      const codes = inventory.map((p: any) => p.codigo);
+      const { data: received } = await supabase
+        .from('svc_recebimentos_pacotes')
+        .select('codigo, created_at')
+        .in('codigo', codes);
+      const receivedMap = new Map((received || []).map((r: any) => [r.codigo, r.created_at]));
+
+      const header = 'Código,Agência,Status,Data Inventário (BRT),Data Expedição (BRT),Data Recebimento SVC (BRT)';
+      const rows = inventory.map((p: any) => {
+        const nomeNodo = (p as any).nodos?.nome || p.nodo_id;
+        const recAt = receivedMap.get(p.codigo);
+        const statusLabel = recAt ? 'Recebido SVC' : p.status === 'expedited' ? 'Expedido' : 'Inventariado';
+        return [
+          p.codigo,
+          `"${nomeNodo}"`,
+          statusLabel,
+          p.inventoried_at ? formatDateTimeBRT(p.inventoried_at) : '',
+          p.expedited_at ? formatDateTimeBRT(p.expedited_at) : '',
+          recAt ? formatDateTimeBRT(recAt) : '',
+        ].join(',');
+      });
+
+      const csv = '﻿' + [header, ...rows].join('\n');
+      const filename = `inventario_${exportDateFrom}${exportDateFrom !== exportDateTo ? `_ate_${exportDateTo}` : ''}.csv`;
+
+      if (Platform.OS === 'web') {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = (document as any).createElement('a');
+        a.href = url;
+        a.download = filename;
+        (document as any).body.appendChild(a);
+        a.click();
+        (document as any).body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        Alert.alert('CSV', `${inventory.length} registros. Use a versão web para fazer o download do arquivo.`);
+      }
+    } finally {
+      setExporting(false);
+    }
+  }
+
   // ─── Render ──────────────────────────────────────────────────────
   if (!unlocked) {
     return (
@@ -307,7 +379,15 @@ export default function ConsultaScreen() {
             onPress={() => setTab('busca')}
           >
             <Text style={[styles.tabLabel, tab === 'busca' && styles.tabLabelActive]}>
-              🔍 Buscar Pacote
+              🔍 Buscar
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, tab === 'exportar' && styles.tabActive]}
+            onPress={() => setTab('exportar')}
+          >
+            <Text style={[styles.tabLabel, tab === 'exportar' && styles.tabLabelActive]}>
+              📥 CSV
             </Text>
           </TouchableOpacity>
         </View>
@@ -461,6 +541,73 @@ export default function ConsultaScreen() {
                 )}
               </Card>
             )}
+          </>
+        )}
+        {/* ── EXPORTAR TAB ── */}
+        {tab === 'exportar' && (
+          <>
+            <Text style={styles.sectionLabel}>EXPORTAR INVENTÁRIO (CSV)</Text>
+            <Card style={{ padding: 16, marginBottom: 14 }}>
+              <Text style={{ fontSize: 14, color: theme.text, fontWeight: '700', marginBottom: 6 }}>
+                Data inicial
+              </Text>
+              {Platform.OS === 'web'
+                ? React.createElement('input', {
+                    type: 'date',
+                    value: exportDateFrom,
+                    onChange: (e: any) => setExportDateFrom(e.target.value),
+                    style: {
+                      width: '100%', padding: 12, fontSize: 15, borderRadius: 10,
+                      border: `1.5px solid ${theme.inputBorder}`,
+                      backgroundColor: theme.input, color: theme.text, marginBottom: 14,
+                    },
+                  })
+                : <TextInput
+                    style={[styles.searchInput, { marginBottom: 14 }]}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={theme.textTer}
+                    value={exportDateFrom}
+                    onChangeText={setExportDateFrom}
+                    keyboardType="numbers-and-punctuation"
+                  />
+              }
+
+              <Text style={{ fontSize: 14, color: theme.text, fontWeight: '700', marginBottom: 6 }}>
+                Data final
+              </Text>
+              {Platform.OS === 'web'
+                ? React.createElement('input', {
+                    type: 'date',
+                    value: exportDateTo,
+                    onChange: (e: any) => setExportDateTo(e.target.value),
+                    style: {
+                      width: '100%', padding: 12, fontSize: 15, borderRadius: 10,
+                      border: `1.5px solid ${theme.inputBorder}`,
+                      backgroundColor: theme.input, color: theme.text, marginBottom: 14,
+                    },
+                  })
+                : <TextInput
+                    style={[styles.searchInput, { marginBottom: 14 }]}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={theme.textTer}
+                    value={exportDateTo}
+                    onChangeText={setExportDateTo}
+                    keyboardType="numbers-and-punctuation"
+                  />
+              }
+
+              <Button
+                label={exporting ? 'Gerando...' : '📥 Baixar CSV'}
+                onPress={doExport}
+                loading={exporting}
+              />
+            </Card>
+
+            <Card style={[styles.emptyCard, { paddingVertical: 20 }]}>
+              <Text style={{ color: theme.textSec, fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
+                O CSV inclui todos os pacotes inventariados no período, com status de expedição e recebimento no SVC (horários em BRT, UTC-3).
+              </Text>
+            </Card>
           </>
         )}
       </ScrollView>
