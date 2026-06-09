@@ -85,18 +85,13 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
 
     return () => {
       active = false;
-      reader.reset();
+      try { reader.reset(); } catch {}
     };
   }, [deviceIdx, devices]);
 
-  function handleClose() {
-    readerRef.current?.reset();
-    onClose();
-  }
-
   function flipCamera() {
     if (devices.length < 2) return;
-    readerRef.current?.reset();
+    try { readerRef.current?.reset(); } catch {}
     setDeviceIdx((i) => (i + 1) % devices.length);
   }
 
@@ -105,7 +100,7 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
       <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center', padding: 32 }}>
         <Text style={{ fontSize: 40, marginBottom: 16 }}>📷</Text>
         <Text style={{ color: '#fff', textAlign: 'center', fontSize: 15, lineHeight: 24, marginBottom: 28 }}>{error}</Text>
-        <TouchableOpacity onPress={handleClose} style={{ backgroundColor: '#FFE600', paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12 }}>
+        <TouchableOpacity onPress={onClose} style={{ backgroundColor: '#FFE600', paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12 }}>
           <Text style={{ fontWeight: '800', fontSize: 15 }}>Voltar</Text>
         </TouchableOpacity>
       </View>
@@ -142,7 +137,7 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
           padding: 16, paddingTop: 52,
           backgroundColor: 'rgba(0,0,0,0.65)',
         }}>
-          <TouchableOpacity onPress={handleClose} style={{ padding: 8 }}>
+          <TouchableOpacity onPress={onClose} style={{ padding: 8 }}>
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
               ✓ Feito ({count})
             </Text>
