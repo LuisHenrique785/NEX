@@ -37,7 +37,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "NEX Inventory",
+      "shortName": "NEX",
+      "lang": "pt-BR",
+      "themeColor": "#FFE600",
+      "backgroundColor": "#FFE600",
+      "description": "Sistema de Inventário - Mercado Livre Logística",
+      "preferRelatedApplications": false
     },
     "plugins": [
       "expo-router",
