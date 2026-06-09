@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  ActivityIndicator, Alert, TouchableOpacity, Platform,
+  ActivityIndicator, Alert, Platform,
 } from 'react-native';
 import { supabase } from '../../src/lib/supabase';
 import { importNodosFromSheets, importNodosFromCSV } from '../../src/lib/sheets';
@@ -24,7 +24,6 @@ export default function NovosNodosScreen() {
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState('');
   const [stats, setStats] = useState<{ added: number; skipped: number } | null>(null);
-  const fileInputRef = useRef<any>(null);
 
   useEffect(() => {
     loadNodos();
@@ -72,37 +71,17 @@ export default function NovosNodosScreen() {
     );
   }
 
-  function handleUploadCSV() {
-    if (Platform.OS === 'web') {
-      // Na web: abrir input de arquivo nativo
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.csv,text/csv';
-      input.onchange = async (e: any) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-          const text = ev.target?.result as string;
-          if (!text) return;
-          Alert.alert(
-            'Importar CSV',
-            `Arquivo: ${file.name}\n\nImportar os NODOS deste arquivo?`,
-            [
-              { text: 'Cancelar', style: 'cancel' },
-              {
-                text: 'Importar',
-                onPress: () => runImport(() => importNodosFromCSV(text, (msg) => setProgress(msg))),
-              },
-            ]
-          );
-        };
-        reader.readAsText(file, 'UTF-8');
-      };
-      input.click();
-    } else {
-      Alert.alert('Não disponível', 'Upload de CSV disponível apenas na versão web.');
-    }
+  function handleCSVFile(e: any) {
+    const file = e.target?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev: any) => {
+      const text = ev.target?.result as string;
+      if (text) runImport(() => importNodosFromCSV(text, (msg) => setProgress(msg)));
+    };
+    reader.readAsText(file, 'UTF-8');
+    // Reset so same file can be re-selected
+    e.target.value = '';
   }
 
   return (
@@ -112,8 +91,8 @@ export default function NovosNodosScreen() {
         <Card style={styles.infoCard}>
           <Text style={styles.infoTitle}>⚙️ Gerenciamento de NODOS</Text>
           <Text style={styles.infoText}>
-            Importe os NODOS da planilha Google Sheets (aba "BASE - Nodos").
-            {'\n\n'}Coluna A = Código · Coluna B = Nome · Coluna D = Cidade · Coluna E = Estado · Coluna F = Endereço
+            Importe os NODOS da planilha "Controle NODOS — BASE - Nodos".
+            {'\n\n'}Coluna C = Código · Coluna E = Nome · Coluna F = Endereço
           </Text>
         </Card>
 
@@ -131,25 +110,36 @@ export default function NovosNodosScreen() {
         {/* Opção 2: Upload CSV */}
         <Text style={[styles.sectionLabel, { marginTop: 20 }]}>OPÇÃO 2 — UPLOAD DE CSV (RECOMENDADO)</Text>
 
-        <TouchableOpacity
-          style={[styles.uploadBtn, importing && styles.uploadBtnDisabled]}
-          onPress={handleUploadCSV}
-          disabled={importing}
-          activeOpacity={0.8}
-        >
+        {/* On web: overlay invisible <input type="file"> directly on the button.
+            This is required for iOS Safari and Chrome mobile — programmatic .click()
+            on a dynamically-created input is blocked by those browsers. */}
+        <View style={[styles.uploadBtn, importing && styles.uploadBtnDisabled]}>
           <Text style={styles.uploadIcon}>📂</Text>
           <View style={styles.uploadText}>
             <Text style={styles.uploadTitle}>Selecionar arquivo CSV</Text>
             <Text style={styles.uploadSubtitle}>Exporte da planilha e faça upload aqui</Text>
           </View>
-        </TouchableOpacity>
+          {Platform.OS === 'web' && !importing && React.createElement('input', {
+            type: 'file',
+            accept: '.csv,text/csv',
+            style: {
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              opacity: 0,
+              cursor: 'pointer',
+              width: '100%',
+              height: '100%',
+            },
+            onChange: handleCSVFile,
+          })}
+        </View>
 
         <Card style={styles.howToCard}>
           <Text style={styles.howToTitle}>Como exportar o CSV da planilha:</Text>
-          <Text style={styles.howToStep}>1. Abra a planilha Google Sheets</Text>
+          <Text style={styles.howToStep}>1. Abra a planilha Google Sheets (aba "BASE - Nodos")</Text>
           <Text style={styles.howToStep}>2. Clique em <Text style={styles.bold}>Arquivo → Fazer download → CSV</Text></Text>
           <Text style={styles.howToStep}>3. Salve o arquivo no celular/computador</Text>
-          <Text style={styles.howToStep}>4. Clique em "Selecionar arquivo CSV" acima</Text>
+          <Text style={styles.howToStep}>4. Toque no botão acima e selecione o arquivo</Text>
         </Card>
 
         {/* Progress */}
@@ -238,6 +228,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
     marginBottom: 12,
+    position: 'relative',
   },
   uploadBtnDisabled: { opacity: 0.5 },
   uploadIcon: { fontSize: 32, marginRight: 16 },
