@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia Completo — NEX Inventory — Time MELI</title>
+<style>
+  :root {
+    --yellow: #FFE600;
+    --black: #0A0A0A;
+    --white: #FFFFFF;
+    --gray: #6B7280;
+    --gray-light: #F3F4F6;
+    --blue: #3B82F6;
+    --blue-light: #EFF6FF;
+    --green: #22C55E;
+    --green-light: #F0FDF4;
+    --orange: #F97316;
+    --orange-light: #FFF7ED;
+    --red: #EF4444;
+    --red-light: #FEF2F2;
+    --purple: #8B5CF6;
+    --purple-light: #F5F3FF;
+    --teal: #14B8A6;
+    --teal-light: #F0FDFA;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F8F9FA;
+    color: var(--black);
+    line-height: 1.6;
+  }
+
+  /* NAV */
+  .nav {
+    position: sticky;
+    top: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid #E5E7EB;
+    padding: 12px 32px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .nav-logo {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--black);
+    letter-spacing: -1px;
+  }
+
+  .nav-logo span { color: var(--yellow); background: var(--black); padding: 2px 8px; border-radius: 6px; }
+
+  .nav-links {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .nav-links a {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.15s;
+  }
+
+  .nav-links a:hover { background: var(--gray-light); color: var(--black); }
+
+  /* COVER */
+  .cover {
+    background: var(--black);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,230,0,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,230,0,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .cover-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(255,230,0,0.12) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .cover-badge {
+    background: var(--yellow);
+    color: var(--black);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border-radius: 100px;
+    margin-bottom: 32px;
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-logo {
+    font-size: 100px;
+    font-weight: 900;
+    color: var(--yellow);
+    letter-spacing: -4px;
+    line-height: 1;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 0 80px rgba(255,230,0,0.3);
+  }
+
+  .cover-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 500;
+    margin-bottom: 40px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-title {
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1.1;
+    max-width: 640px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-title span { color: var(--yellow); }
+
+  .cover-desc {
+    font-size: 17px;
+    color: rgba(255,255,255,0.5);
+    max-width: 500px;
+    line-height: 1.8;
+    margin-bottom: 64px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-pills {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-pill {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 100px;
+    padding: 8px 20px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 500;
+  }
+
+  /* CONTENT */
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 72px 32px;
+  }
+
+  /* TOC */
+  .toc {
+    background: var(--white);
+    border: 1.5px solid #E5E7EB;
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 64px;
+  }
+
+  .toc h2 {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 20px;
+  }
+
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  @media (max-width: 600px) { .toc-grid { grid-template-columns: 1fr; } }
+
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--black);
+    transition: background 0.15s;
+  }
+
+  .toc-item:hover { background: var(--gray-light); }
+
+  .toc-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--black);
+    color: var(--yellow);
+    font-size: 12px;
+    font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .toc-text { font-size: 14px; font-weight: 600; }
+
+  /* SECTION */
+  .section {
+    margin-bottom: 80px;
+    scroll-margin-top: 80px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #E5E7EB;
+  }
+
+  .section-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .section-meta { flex: 1; }
+
+  .section-num {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.4;
+    margin-bottom: 4px;
+  }
+
+  .section-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--black);
+    line-height: 1.2;
+  }
+
+  /* CARDS */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1.5px solid #E5E7EB;
+    border-radius: 16px;
+    padding: 24px;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.1); transform: translateY(-2px); }
+
+  .card-icon { font-size: 32px; margin-bottom: 14px; display: block; }
+  .card-title { font-size: 16px; font-weight: 800; color: var(--black); margin-bottom: 8px; }
+  .card-desc { font-size: 13px; color: var(--gray); line-height: 1.65; }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 0; margin: 24px 0; }
+
+  .step {
+    display: flex;
+    gap: 0;
+    position: relative;
+  }
+
+  .step-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 52px;
+    flex-shrink: 0;
+  }
+
+  .step-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .step-line {
+    width: 2px;
+    flex: 1;
+    min-height: 24px;
+    background: #E5E7EB;
+  }
+
+  .step:last-child .step-line { display: none; }
+
+  .step-num.black { background: var(--black); color: var(--yellow); }
+  .step-num.blue { background: var(--blue); color: white; }
+  .step-num.green { background: var(--green); color: white; }
+  .step-num.orange { background: var(--orange); color: white; }
+  .step-num.yellow { background: var(--yellow); color: var(--black); }
+  .step-num.purple { background: var(--purple); color: white; }
+  .step-num.teal { background: var(--teal); color: white; }
+
+  .step-body {
+    padding: 8px 0 28px 20px;
+    flex: 1;
+  }
+
+  .step-body h3 { font-size: 16px; font-weight: 800; color: var(--black); margin-bottom: 6px; }
+  .step-body p { font-size: 14px; color: var(--gray); line-height: 1.65; }
+  .step-body strong { color: var(--black); font-weight: 700; }
+  .step-body code {
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 12px;
+    font-family: 'SF Mono', Consolas, monospace;
+    color: var(--black);
+  }
+
+  /* ALERT */
+  .alert {
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 20px 0;
+    border-width: 1.5px;
+    border-style: solid;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .alert-content h4 { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+  .alert-content p { font-size: 13px; line-height: 1.65; }
+  .alert-content strong { font-weight: 700; }
+  .alert-content ul { margin-top: 8px; padding-left: 16px; }
+  .alert-content li { font-size: 13px; line-height: 1.8; }
+
+  .alert.yellow { background: #FFFDE7; border-color: var(--yellow); }
+  .alert.yellow .alert-content h4 { color: #7B6B00; }
+  .alert.yellow .alert-content p, .alert.yellow .alert-content li { color: #5C5000; }
+
+  .alert.green { background: var(--green-light); border-color: var(--green); }
+  .alert.green .alert-content h4 { color: #15803D; }
+  .alert.green .alert-content p, .alert.green .alert-content li { color: #14532D; }
+
+  .alert.blue { background: var(--blue-light); border-color: var(--blue); }
+  .alert.blue .alert-content h4 { color: #1D4ED8; }
+  .alert.blue .alert-content p, .alert.blue .alert-content li { color: #1E3A8A; }
+
+  .alert.orange { background: var(--orange-light); border-color: var(--orange); }
+  .alert.orange .alert-content h4 { color: #C2410C; }
+  .alert.orange .alert-content p, .alert.orange .alert-content li { color: #9A3412; }
+
+  .alert.red { background: var(--red-light); border-color: var(--red); }
+  .alert.red .alert-content h4 { color: #B91C1C; }
+  .alert.red .alert-content p, .alert.red .alert-content li { color: #7F1D1D; }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1.5px solid #E5E7EB;
+  }
+
+  thead { background: var(--black); color: var(--white); }
+  thead th { padding: 14px 18px; font-weight: 700; text-align: left; font-size: 12px; letter-spacing: 0.5px; }
+  tbody tr:nth-child(even) { background: var(--gray-light); }
+  tbody tr:nth-child(odd) { background: var(--white); }
+  tbody td { padding: 12px 18px; color: #374151; border-bottom: 1px solid #E5E7EB; vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* ARCHITECTURE DIAGRAM */
+  .arch {
+    background: var(--white);
+    border: 1.5px solid #E5E7EB;
+    border-radius: 20px;
+    padding: 32px;
+    margin: 24px 0;
+    text-align: center;
+  }
+
+  .arch-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 8px 0;
+    flex-wrap: wrap;
+  }
+
+  .arch-box {
+    background: var(--gray-light);
+    border: 1.5px solid #D1D5DB;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--black);
+    text-align: center;
+    min-width: 120px;
+  }
+
+  .arch-box.yellow { background: #FFFDE7; border-color: var(--yellow); }
+  .arch-box.blue { background: var(--blue-light); border-color: var(--blue); }
+  .arch-box.green { background: var(--green-light); border-color: var(--green); }
+  .arch-box.black { background: var(--black); color: var(--yellow); border-color: var(--black); }
+  .arch-box.purple { background: var(--purple-light); border-color: var(--purple); }
+
+  .arch-arrow { font-size: 20px; color: var(--gray); }
+  .arch-label { font-size: 11px; color: var(--gray); font-weight: 500; margin-top: 4px; }
+
+  /* HIGHLIGHT */
+  .highlight-box {
+    background: var(--black);
+    border-radius: 20px;
+    padding: 32px;
+    margin: 24px 0;
+    color: var(--white);
+  }
+
+  .highlight-box h3 {
+    color: var(--yellow);
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .highlight-box p {
+    color: rgba(255,255,255,0.65);
+    font-size: 14px;
+    line-height: 1.75;
+    margin-bottom: 12px;
+  }
+
+  .highlight-box p:last-child { margin-bottom: 0; }
+  .highlight-box strong { color: var(--yellow); font-weight: 700; }
+
+  /* TECH STACK */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .tech-item {
+    background: var(--white);
+    border: 1.5px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tech-icon { font-size: 24px; flex-shrink: 0; }
+  .tech-name { font-size: 14px; font-weight: 700; color: var(--black); }
+  .tech-desc { font-size: 12px; color: var(--gray); margin-top: 2px; }
+
+  /* DIVIDER */
+  .divider {
+    height: 2px;
+    background: linear-gradient(to right, var(--yellow), transparent);
+    margin: 56px 0;
+    border-radius: 1px;
+  }
+
+  /* TAG */
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .tag.green { background: var(--green-light); color: #15803D; }
+  .tag.blue { background: var(--blue-light); color: #1D4ED8; }
+  .tag.orange { background: var(--orange-light); color: #C2410C; }
+  .tag.red { background: var(--red-light); color: #B91C1C; }
+  .tag.yellow { background: #FFFDE7; color: #7B6B00; }
+  .tag.purple { background: var(--purple-light); color: #7C3AED; }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: #1A1A2E;
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #A8B2D8;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+
+  .code-block .kw { color: #C792EA; }
+  .code-block .str { color: #C3E88D; }
+  .code-block .cm { color: #546E7A; }
+  .code-block .fn { color: #82AAFF; }
+
+  /* FOOTER */
+  footer {
+    background: var(--black);
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    padding: 48px;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    margin-top: 0;
+  }
+
+  footer strong { color: var(--yellow); }
+  footer .footer-links { display: flex; gap: 24px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  footer a { color: rgba(255,255,255,0.35); text-decoration: none; font-size: 12px; }
+  footer a:hover { color: rgba(255,255,255,0.7); }
+
+  /* METRIC CARDS */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .metric {
+    background: var(--white);
+    border: 1.5px solid #E5E7EB;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .metric-value {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--black);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .metric-label {
+    font-size: 12px;
+    color: var(--gray);
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo"><span>NEX</span> Inventory</div>
+  <div class="nav-links">
+    <a href="#visao-geral">Visão Geral</a>
+    <a href="#arquitetura">Arquitetura</a>
+    <a href="#fluxo">Fluxo</a>
+    <a href="#agencia">Agência</a>
+    <a href="#svc">SVC</a>
+    <a href="#nodos">NODOs</a>
+    <a href="#dados">Dados</a>
+    <a href="#deploy">Deploy</a>
+    <a href="#suporte">Suporte</a>
+  </div>
+</nav>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-grid"></div>
+  <div class="cover-glow"></div>
+  <div class="cover-badge">📚 Documentação Técnica Completa</div>
+  <div class="cover-logo">NEX</div>
+  <div class="cover-subtitle">Mercado Livre Logística</div>
+  <div class="cover-title">Sistema de <span>Inventário</span><br>— Guia do Time MELI</div>
+  <div class="cover-desc">
+    Documentação completa da plataforma NEX Inventory: arquitetura, fluxos operacionais, gestão de dados, deploy e suporte.
+  </div>
+  <div class="cover-pills">
+    <div class="cover-pill">🌐 React Native Web</div>
+    <div class="cover-pill">🗄️ Supabase</div>
+    <div class="cover-pill">🚀 GitHub Pages</div>
+    <div class="cover-pill">📱 PWA Ready</div>
+    <div class="cover-pill">🗺️ Geocodificação</div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- TOC -->
+  <div class="toc">
+    <h2>📋 Índice</h2>
+    <div class="toc-grid">
+      <a href="#visao-geral" class="toc-item"><div class="toc-num">1</div><div class="toc-text">Visão Geral do Sistema</div></a>
+      <a href="#arquitetura" class="toc-item"><div class="toc-num">2</div><div class="toc-text">Arquitetura Técnica</div></a>
+      <a href="#fluxo" class="toc-item"><div class="toc-num">3</div><div class="toc-text">Fluxo Operacional Completo</div></a>
+      <a href="#agencia" class="toc-item"><div class="toc-num">4</div><div class="toc-text">Módulo Agência</div></a>
+      <a href="#svc" class="toc-item"><div class="toc-num">5</div><div class="toc-text">Módulo SVC</div></a>
+      <a href="#nodos" class="toc-item"><div class="toc-num">6</div><div class="toc-text">Gestão de NODOs</div></a>
+      <a href="#dados" class="toc-item"><div class="toc-num">7</div><div class="toc-text">Banco de Dados e Estrutura</div></a>
+      <a href="#deploy" class="toc-item"><div class="toc-num">8</div><div class="toc-text">Deploy e Infraestrutura</div></a>
+      <a href="#csv" class="toc-item"><div class="toc-num">9</div><div class="toc-text">Importação de NODOs (CSV)</div></a>
+      <a href="#suporte" class="toc-item"><div class="toc-num">10</div><div class="toc-text">Suporte e Manutenção</div></a>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-value">🌐</div>
+      <div class="metric-label">100% Web</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">0</div>
+      <div class="metric-label">Instalações necessárias</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">3</div>
+      <div class="metric-label">Métodos de leitura</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">24/7</div>
+      <div class="metric-label">Disponibilidade</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1 — VISÃO GERAL -->
+  <div class="section" id="visao-geral">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FFFDE7;">🎯</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 01</div>
+        <div class="section-title">Visão Geral do Sistema</div>
+      </div>
+    </div>
+
+    <p style="font-size:16px;color:var(--gray);line-height:1.8;margin-bottom:24px;">
+      O <strong style="color:var(--black);">NEX Inventory</strong> é um sistema web de gestão de inventário para a operação logística de NODOs (agências parceiras) da Mercado Livre. Roda diretamente no navegador — sem instalação, sem app store — e funciona em celular, tablet e computador.
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <span class="card-icon">🏪</span>
+        <div class="card-title">Agências (NODOs)</div>
+        <div class="card-desc">Pontos de coleta parceiros. Fazem inventário físico de pacotes e sacas, e expedem para o SVC.</div>
+      </div>
+      <div class="card">
+        <span class="card-icon">🏭</span>
+        <div class="card-title">Hub SVC</div>
+        <div class="card-desc">Centro de distribuição. Recebe de todas as agências, valida volumes e registra saídas.</div>
+      </div>
+      <div class="card">
+        <span class="card-icon">👔</span>
+        <div class="card-title">Time MELI</div>
+        <div class="card-desc">Administração central: cadastra NODOs, monitora operação e resolve divergências.</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <h3>🎯 Problema que o NEX resolve</h3>
+      <p>Antes do NEX, o controle de inventário era feito em planilhas e WhatsApp, sem rastreabilidade em tempo real e com alto risco de divergência de volumes entre agências e SVC.</p>
+      <p>Com o NEX, <strong>cada pacote é registrado digitalmente</strong> no momento da chegada ou expedição, com timestamp, operador e geolocalização — criando um trail auditável de toda a operação.</p>
+    </div>
+
+    <div class="alert blue">
+      <div class="alert-icon">🌍</div>
+      <div class="alert-content">
+        <h4>URL de acesso</h4>
+        <p><strong>luishenrique785.github.io/NEX</strong> — Salve nos favoritos do celular. Funciona como PWA (pode ser "instalado" na tela inicial do smartphone).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 2 — ARQUITETURA -->
+  <div class="section" id="arquitetura">
+    <div class="section-header">
+      <div class="section-icon" style="background:#F5F3FF;">🏗️</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 02</div>
+        <div class="section-title">Arquitetura Técnica</div>
+      </div>
+    </div>
+
+    <div class="arch">
+      <div class="arch-row">
+        <div class="arch-box black">Usuário (Browser)</div>
+      </div>
+      <div class="arch-row"><div class="arch-arrow">⬇️</div></div>
+      <div class="arch-row">
+        <div class="arch-box yellow">GitHub Pages<br><span style="font-size:11px;font-weight:500;color:#7B6B00;">luishenrique785.github.io/NEX</span></div>
+      </div>
+      <div class="arch-row">
+        <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div class="arch-arrow">⬇️</div>
+            <div class="arch-box blue">Supabase<br><span style="font-size:11px;font-weight:500;color:#1D4ED8;">PostgreSQL + Storage</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div class="arch-arrow">⬅️</div>
+            <div class="arch-box green">Nominatim<br><span style="font-size:11px;font-weight:500;color:#15803D;">Geocodificação</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="arch-row"><div class="arch-arrow">⬆️</div></div>
+      <div class="arch-row">
+        <div class="arch-box purple">GitHub Actions<br><span style="font-size:11px;font-weight:500;color:#7C3AED;">Build automático no push</span></div>
+      </div>
+      <div style="margin-top:16px;font-size:12px;color:var(--gray);">Arquitetura 100% serverless — nenhum servidor próprio necessário</div>
+    </div>
+
+    <div class="tech-grid">
+      <div class="tech-item">
+        <div class="tech-icon">⚛️</div>
+        <div>
+          <div class="tech-name">React Native Web</div>
+          <div class="tech-desc">Expo SDK 51 + expo-router v3</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">🗄️</div>
+        <div>
+          <div class="tech-name">Supabase</div>
+          <div class="tech-desc">PostgreSQL + Auth + Storage</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">📦</div>
+        <div>
+          <div class="tech-name">GitHub Actions</div>
+          <div class="tech-desc">CI/CD automático a cada push</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">🗺️</div>
+        <div>
+          <div class="tech-name">Nominatim OSM</div>
+          <div class="tech-desc">Geocodificação de endereços</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">📷</div>
+        <div>
+          <div class="tech-name">expo-camera</div>
+          <div class="tech-desc">Scanner QR + código de barras</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">📍</div>
+        <div>
+          <div class="tech-name">expo-location</div>
+          <div class="tech-desc">Geolocalização para NODOs próximos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert yellow">
+      <div class="alert-icon">⚙️</div>
+      <div class="alert-content">
+        <h4>Configuração central</h4>
+        <p>Todas as credenciais e parâmetros estão em <strong>src/config.ts</strong>: URL do Supabase, chave anônima, ID da planilha e PIN de admin.</p>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Arquivo</th><th>Função</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>src/config.ts</code></td><td>Credenciais Supabase, PIN admin, URL da planilha</td></tr>
+        <tr><td><code>src/lib/supabase.ts</code></td><td>Cliente Supabase inicializado</td></tr>
+        <tr><td><code>src/lib/sheets.ts</code></td><td>Parser CSV e importador de NODOs</td></tr>
+        <tr><td><code>src/lib/geocoding.ts</code></td><td>Geocodificação Nominatim + distância Haversine</td></tr>
+        <tr><td><code>src/lib/database.sql</code></td><td>Schema completo do banco de dados</td></tr>
+        <tr><td><code>app.json</code></td><td>Configuração Expo (bundle, output, baseUrl)</td></tr>
+        <tr><td><code>metro.config.js</code></td><td>Resolver de dependências opcionais do Supabase</td></tr>
+        <tr><td><code>.github/workflows/deploy-pages.yml</code></td><td>Pipeline CI/CD automático</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 3 — FLUXO -->
+  <div class="section" id="fluxo">
+    <div class="section-header">
+      <div class="section-icon" style="background:#F0FDF4;">🔄</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 03</div>
+        <div class="section-title">Fluxo Operacional Completo</div>
+      </div>
+    </div>
+
+    <p style="font-size:15px;color:var(--gray);margin-bottom:24px;line-height:1.7;">
+      A operação NEX segue um ciclo diário com três atores principais: <strong style="color:var(--black);">Agência</strong> → <strong style="color:var(--black);">SVC</strong> → <strong style="color:var(--black);">MELI</strong>.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-left"><div class="step-num black">1</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Agência recebe pacotes (Inventário Físico)</h3>
+          <p>A agência escaneia cada pacote que chega. O sistema bloqueia duplicatas e mostra pendências do dia anterior.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num blue">2</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Agência faz o Inventário de Sacas</h3>
+          <p>Registra a chegada ou expedição de sacas com quantidade. Expedição exige placa + transportadora.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num orange">3</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Agência expede para o SVC</h3>
+          <p>Registra a expedição: escaneia cada pacote + informa motorista (CPF, nome, placa, transportadora). Pacotes saem do inventário ativo.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num green">4</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>SVC recebe os pacotes</h3>
+          <p>O operador SVC escaneia os pacotes que chegam. Confere totais com o manifesto físico antes de liberar o veículo.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num teal">5</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>SVC registra expedições</h3>
+          <p>Ao enviar pacotes para o destino final, registra com placa e transportadora. Ciclo completo do pacote fica no banco.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num purple">6</div></div>
+        <div class="step-body">
+          <h3>MELI monitora e audita</h3>
+          <p>Acessa o Supabase Dashboard para ver todos os registros, histórico completo e identificar divergências entre agências e SVC.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert green">
+      <div class="alert-icon">✅</div>
+      <div class="alert-content">
+        <h4>Rastreabilidade em tempo real</h4>
+        <p>Cada operação salva: <strong>timestamp, operador, NODO de origem, código do pacote</strong>. O Supabase mantém histórico completo com Row Level Security habilitado.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 4 — AGÊNCIA -->
+  <div class="section" id="agencia">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FFFDE7;">🏪</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 04</div>
+        <div class="section-title">Módulo Agência (NODO)</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Funcionalidade</th><th>Descrição</th><th>Dados capturados</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Seleção de NODO</strong></td>
+          <td>Filtra NODOs próximos (raio 1 km via GPS) ou permite busca manual</td>
+          <td>Geolocalização do dispositivo</td>
+        </tr>
+        <tr>
+          <td><strong>Inventário de Sacas — Chegada</strong></td>
+          <td>Registro de recebimento de sacas</td>
+          <td>Quantidade + timestamp</td>
+        </tr>
+        <tr>
+          <td><strong>Inventário de Sacas — Expedição</strong></td>
+          <td>Registro de envio de sacas</td>
+          <td>Quantidade + Placa + Transportadora</td>
+        </tr>
+        <tr>
+          <td><strong>Inventário de Pacotes — Físico</strong></td>
+          <td>Escaneamento de pacotes presentes na agência</td>
+          <td>Código do pacote + foto opcional</td>
+        </tr>
+        <tr>
+          <td><strong>Inventário de Pacotes — Expedição</strong></td>
+          <td>Registro de pacotes enviados ao SVC</td>
+          <td>Código + CPF/nome motorista + placa + transportadora</td>
+        </tr>
+        <tr>
+          <td><strong>Pendências</strong></td>
+          <td>Lista de pacotes do dia anterior não expedidos</td>
+          <td>Automático — sem ação do operador</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="alert orange">
+      <div class="alert-icon">📍</div>
+      <div class="alert-content">
+        <h4>Seleção de NODO por geolocalização</h4>
+        <p>Ao entrar como "Agência", o app solicita permissão de localização. NODOs com coordenadas cadastradas dentro de <strong>1 km</strong> aparecem automaticamente. Se nenhum for encontrado no raio, o operador pode buscar manualmente.</p>
+      </div>
+    </div>
+
+    <div class="alert blue">
+      <div class="alert-icon">🚫</div>
+      <div class="alert-content">
+        <h4>Anti-duplicata automático</h4>
+        <p>O sistema impede que o mesmo código de pacote seja registrado duas vezes no inventário físico. Exibe alerta visual e sonoro ao detectar tentativa de duplicata.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 5 — SVC -->
+  <div class="section" id="svc">
+    <div class="section-header">
+      <div class="section-icon" style="background:#F0FDF4;">🏭</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 05</div>
+        <div class="section-title">Módulo SVC</div>
+      </div>
+    </div>
+
+    <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
+      O SVC é o hub central que recebe de todas as agências. Não seleciona NODO — opera globalmente sobre toda a rede.
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Operação</th><th>Dados obrigatórios</th><th>Resultado no banco</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Receber pacotes</strong></td>
+          <td>Código do pacote (scan/manual/foto)</td>
+          <td>Registro em <code>package_inventory</code> com status "recebido_svc"</td>
+        </tr>
+        <tr>
+          <td><strong>Expedir pacotes</strong></td>
+          <td>Código + Placa + Transportadora</td>
+          <td>Atualização para status "expedido_svc" com metadados</td>
+        </tr>
+        <tr>
+          <td><strong>Sacas — Chegada</strong></td>
+          <td>Quantidade</td>
+          <td>Registro em <code>bag_inventory</code> tipo "chegada"</td>
+        </tr>
+        <tr>
+          <td><strong>Sacas — Expedição</strong></td>
+          <td>Quantidade + Placa + Transportadora</td>
+          <td>Registro em <code>bag_inventory</code> tipo "expedicao"</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 6 — NODOs -->
+  <div class="section" id="nodos">
+    <div class="section-header">
+      <div class="section-icon" style="background:#EFF6FF;">🗺️</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 06</div>
+        <div class="section-title">Gestão de NODOs</div>
+      </div>
+    </div>
+
+    <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
+      NODOs são as agências parceiras. Cada NODO tem um código único (ex: <code>BRNMG838</code>), nome, endereço e coordenadas geográficas para o filtro de proximidade.
+    </p>
+
+    <div class="alert yellow">
+      <div class="alert-icon">🔒</div>
+      <div class="alert-content">
+        <h4>Acesso restrito por PIN</h4>
+        <p>A tela de gerenciamento de NODOs é protegida por PIN de administrador (<strong>configurado em src/config.ts</strong>). Apenas o time MELI deve ter acesso.</p>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-left"><div class="step-num black">1</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Exportar CSV da planilha</h3>
+          <p>Na planilha Google Sheets (aba "BASE - Nodos"): <strong>Arquivo → Fazer download → CSV</strong>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num blue">2</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Acessar painel admin</h3>
+          <p>Na tela inicial, toque em <strong>"NOVOS NODOS"</strong> e insira o PIN de administrador.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num green">3</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Upload do CSV</h3>
+          <p>Selecione o CSV exportado. O sistema parseia automaticamente as colunas corretas da planilha.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num orange">4</div></div>
+        <div class="step-body">
+          <h3>Geocodificação automática</h3>
+          <p>Para cada NODO com endereço, o sistema consulta o Nominatim (OpenStreetMap) para obter lat/lng. Rate limit: 1 req/segundo. Um lote de 50 NODOs leva ~1 minuto.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert blue">
+      <div class="alert-icon">📊</div>
+      <div class="alert-content">
+        <h4>Formato do CSV da planilha</h4>
+        <p>A planilha "Controle NODOS - BASE - Nodos" tem este formato de colunas:</p>
+        <ul>
+          <li><strong>Coluna A:</strong> ETA (horário de chegada — ignorado)</li>
+          <li><strong>Coluna B:</strong> Nó origem (sempre "NEX" — ignorado)</li>
+          <li><strong>Coluna C:</strong> Facility NEx = <strong>Código do NODO</strong> (ex: BRNMG838)</li>
+          <li><strong>Coluna D:</strong> Modal Veículo — ignorado</li>
+          <li><strong>Coluna E:</strong> Nome Place = <strong>Nome do NODO</strong></li>
+          <li><strong>Coluna F:</strong> Endereço = <strong>Endereço completo</strong> para geocodificação</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 7 — DADOS -->
+  <div class="section" id="dados">
+    <div class="section-header">
+      <div class="section-icon" style="background:#F5F3FF;">🗄️</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 07</div>
+        <div class="section-title">Banco de Dados — Estrutura</div>
+      </div>
+    </div>
+
+    <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
+      O banco está no Supabase (PostgreSQL). Todas as tabelas têm Row Level Security (RLS) habilitado com políticas de leitura/escrita via chave anônima.
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Tabela</th><th>Descrição</th><th>Colunas principais</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>nodos</strong></td>
+          <td>Cadastro de agências parceiras</td>
+          <td>id, codigo, nome, endereco, cidade, estado, lat, lng</td>
+        </tr>
+        <tr>
+          <td><strong>bag_inventory</strong></td>
+          <td>Movimentação de sacas</td>
+          <td>id, nodo_id, tipo (chegada/expedicao), quantidade, placa, transportadora, created_at</td>
+        </tr>
+        <tr>
+          <td><strong>package_inventory</strong></td>
+          <td>Inventário físico de pacotes por agência</td>
+          <td>id, nodo_id, codigo_pacote, foto_url, status, created_at</td>
+        </tr>
+        <tr>
+          <td><strong>package_expeditions</strong></td>
+          <td>Expedições de pacotes da agência para SVC</td>
+          <td>id, nodo_id, codigo_pacote, motorista_nome, motorista_cpf, placa, transportadora, created_at</td>
+        </tr>
+        <tr>
+          <td><strong>svc_receipts</strong></td>
+          <td>Recebimentos no SVC</td>
+          <td>id, codigo_pacote, operador, created_at</td>
+        </tr>
+        <tr>
+          <td><strong>svc_expeditions</strong></td>
+          <td>Expedições do SVC para destino final</td>
+          <td>id, codigo_pacote, placa, transportadora, created_at</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="alert green">
+      <div class="alert-icon">📸</div>
+      <div class="alert-content">
+        <h4>Storage de fotos</h4>
+        <p>Fotos de pacotes ficam no Supabase Storage no bucket <strong>"package-photos"</strong>. URLs públicas são salvas na coluna <code>foto_url</code> da tabela <code>package_inventory</code>.</p>
+      </div>
+    </div>
+
+    <div class="alert blue">
+      <div class="alert-icon">🔧</div>
+      <div class="alert-content">
+        <h4>Como acessar o banco</h4>
+        <p>Acesse <strong>supabase.com → Project: gjjwcpdkdqvfgephwulk → Table Editor</strong> para ver e filtrar todos os registros. Use o <strong>SQL Editor</strong> para queries avançadas e relatórios.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 8 — DEPLOY -->
+  <div class="section" id="deploy">
+    <div class="section-header">
+      <div class="section-icon" style="background:#F0FDF4;">🚀</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 08</div>
+        <div class="section-title">Deploy e Infraestrutura</div>
+      </div>
+    </div>
+
+    <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
+      O sistema é implantado automaticamente via <strong>GitHub Actions</strong> a cada push na branch <code>main</code>. Zero configuração de servidor necessária.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-left"><div class="step-num black">1</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Push na branch <code>main</code></h3>
+          <p>Qualquer commit na branch main dispara o workflow automaticamente.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num blue">2</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>GitHub Actions executa o build</h3>
+          <p>Instala dependências e roda <code>npx expo export --platform web</code>. Gera a pasta <code>dist/</code> com HTML/JS/CSS estático.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num green">3</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Deploy automático para gh-pages</h3>
+          <p><code>peaceiris/actions-gh-pages@v4</code> publica o conteúdo de <code>dist/</code> na branch <code>gh-pages</code>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num orange">4</div></div>
+        <div class="step-body">
+          <h3>Site disponível em ~2 minutos</h3>
+          <p>GitHub Pages serve a branch <code>gh-pages</code> em <strong>luishenrique785.github.io/NEX</strong>. Usuários veem a nova versão ao atualizar a página.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert orange">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-content">
+        <h4>Configurações críticas do app.json</h4>
+        <ul>
+          <li><strong>web.output: "single"</strong> — SPA mode, evita SSR que quebra no browser</li>
+          <li><strong>experiments.baseUrl: "/NEX"</strong> — Necessário para assets corretos no GitHub Pages</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <h3>🔑 Como fazer uma atualização</h3>
+      <p>Para publicar qualquer mudança no sistema:</p>
+      <p>1. Edite o código no GitHub (UI web ou clone local)<br>
+      2. Commit na branch <code>main</code><br>
+      3. Aguarde ~2 minutos<br>
+      4. Verifique em <strong>luishenrique785.github.io/NEX</strong></p>
+      <p><strong>Não é necessário PC, npm ou qualquer ferramenta local</strong> — tudo roda via GitHub Actions na nuvem.</p>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Branch</th><th>Conteúdo</th><th>Função</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>main</code></td>
+          <td>Código-fonte completo</td>
+          <td>Desenvolvimento — edite aqui</td>
+        </tr>
+        <tr>
+          <td><code>gh-pages</code></td>
+          <td>Build compilado (dist/)</td>
+          <td>Produção — gerado automaticamente, NÃO edite</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 9 — CSV -->
+  <div class="section" id="csv">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FFF7ED;">📊</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 09</div>
+        <div class="section-title">Importação de NODOs via CSV</div>
+      </div>
+    </div>
+
+    <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
+      A importação via Google Sheets direto pode falhar por restrições de CORS no browser. O método recomendado é fazer download do CSV e fazer upload no app.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-left"><div class="step-num black">1</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Abra a planilha Google Sheets</h3>
+          <p>Planilha: <strong>Controle NODOS</strong> → Aba: <strong>BASE - Nodos</strong></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num blue">2</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Exporte como CSV</h3>
+          <p><strong>Arquivo → Fazer download → Valores separados por vírgula (.csv)</strong>. Salve no celular ou computador.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num green">3</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Abra o painel admin no NEX</h3>
+          <p>Na tela inicial → <strong>NOVOS NODOS</strong> → Digite o PIN de administrador.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num orange">4</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h3>Upload do CSV</h3>
+          <p>Clique em <strong>"Selecionar arquivo CSV"</strong> → Selecione o arquivo baixado. O sistema parseia e inicia a importação automaticamente.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num teal">5</div></div>
+        <div class="step-body">
+          <h3>Aguarde geocodificação</h3>
+          <p>Para cada NODO com endereço, o sistema consulta o Nominatim com throttle de 1s entre requests. Acompanhe o progresso na tela.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert green">
+      <div class="alert-icon">♻️</div>
+      <div class="alert-content">
+        <h4>Idempotente — seguro para re-importar</h4>
+        <p>O sistema verifica se o código do NODO já existe antes de inserir. Re-importar o mesmo CSV só adiciona os NODOs <strong>novos</strong>, sem duplicar os existentes.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 10 — SUPORTE -->
+  <div class="section" id="suporte">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FEF2F2;">🛠️</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 10</div>
+        <div class="section-title">Suporte e Manutenção</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Problema</th><th>Diagnóstico</th><th>Solução</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Site fora do ar</td>
+          <td>Verificar aba Actions no GitHub</td>
+          <td>Se build falhou: ver logs de erro → corrigir código → novo push</td>
+        </tr>
+        <tr>
+          <td>Câmera não funciona</td>
+          <td>Permissão negada no browser</td>
+          <td>Configurações do browser → Permissões → Câmera → Permitir</td>
+        </tr>
+        <tr>
+          <td>NODO não aparece na lista</td>
+          <td>Coordenadas não cadastradas ou fora do raio</td>
+          <td>Re-importar CSV com endereço correto; verificar geocodificação no Supabase</td>
+        </tr>
+        <tr>
+          <td>CSV não importa nada</td>
+          <td>Formato de colunas diferente do esperado</td>
+          <td>Confirmar que é a aba "BASE - Nodos" da planilha correta</td>
+        </tr>
+        <tr>
+          <td>Dados não aparecem</td>
+          <td>Problema de RLS no Supabase</td>
+          <td>Verificar políticas RLS no Supabase → Authentication → Policies</td>
+        </tr>
+        <tr>
+          <td>Mudar PIN de admin</td>
+          <td>—</td>
+          <td>Editar <code>ADMIN_PIN</code> em <code>src/config.ts</code> → push → aguardar build</td>
+        </tr>
+        <tr>
+          <td>Atualizar credenciais Supabase</td>
+          <td>—</td>
+          <td>Editar <code>src/config.ts</code> → novas keys do Supabase Dashboard</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-box">
+      <h3>📊 Monitoramento</h3>
+      <p>Use o <strong>Supabase Dashboard</strong> para monitoramento operacional:</p>
+      <p>• <strong>Table Editor:</strong> Veja todos os registros de inventário em tempo real<br>
+      • <strong>SQL Editor:</strong> Escreva queries para relatórios personalizados<br>
+      • <strong>Storage:</strong> Veja as fotos de pacotes armazenadas<br>
+      • <strong>Logs:</strong> Veja erros e queries lentas</p>
+      <p>URL: <strong style="color:var(--yellow);">app.supabase.com → Projeto gjjwcpdkdqvfgephwulk</strong></p>
+    </div>
+
+    <div class="alert blue">
+      <div class="alert-icon">📱</div>
+      <div class="alert-content">
+        <h4>Repositório do projeto</h4>
+        <p>Todo o código-fonte está em: <strong>github.com/luishenrique785/NEX</strong><br>
+        Branch de desenvolvimento: <code>main</code> — Branch de produção: <code>gh-pages</code></p>
+      </div>
+    </div>
+
+    <div class="alert orange">
+      <div class="alert-icon">🔐</div>
+      <div class="alert-content">
+        <h4>Segurança</h4>
+        <ul>
+          <li>A <strong>chave anônima do Supabase</strong> (anon key) é pública por design — exposta no frontend. Isso é normal e seguro.</li>
+          <li>As políticas de <strong>Row Level Security (RLS)</strong> garantem que dados só são acessíveis com a chave correta.</li>
+          <li>O <strong>PIN de admin</strong> é verificado client-side — não é uma medida de segurança crítica, apenas um bloqueio operacional.</li>
+          <li>Para segurança real, considere adicionar autenticação Supabase Auth em versões futuras.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <strong>NEX Inventory</strong> — Mercado Livre Logística<br>
+  Documentação Técnica Completa · Time MELI · v1.0
+  <div class="footer-links">
+    <a href="https://luishenrique785.github.io/NEX">🌐 Sistema ao vivo</a>
+    <a href="https://github.com/luishenrique785/NEX">📦 Repositório GitHub</a>
+    <a href="https://app.supabase.com">🗄️ Supabase Dashboard</a>
+  </div>
+</footer>
+
+</body>
+</html>

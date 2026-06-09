@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia SVC Log — NEX Inventory</title>
+<style>
+  :root {
+    --yellow: #FFE600;
+    --black: #0A0A0A;
+    --white: #FFFFFF;
+    --gray: #6B7280;
+    --gray-light: #F3F4F6;
+    --blue: #3B82F6;
+    --blue-light: #EFF6FF;
+    --green: #22C55E;
+    --green-light: #F0FDF4;
+    --orange: #F97316;
+    --orange-light: #FFF7ED;
+    --red: #EF4444;
+    --red-light: #FEF2F2;
+    --purple: #8B5CF6;
+    --purple-light: #F5F3FF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F8F9FA;
+    color: var(--black);
+    line-height: 1.6;
+  }
+
+  /* COVER */
+  .cover {
+    background: var(--black);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 400px; height: 400px;
+    background: var(--yellow);
+    border-radius: 50%;
+    opacity: 0.06;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -150px; left: -100px;
+    width: 500px; height: 500px;
+    background: var(--blue);
+    border-radius: 50%;
+    opacity: 0.08;
+  }
+
+  .cover-badge {
+    background: var(--yellow);
+    color: var(--black);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border-radius: 100px;
+    margin-bottom: 32px;
+    display: inline-block;
+  }
+
+  .cover-logo {
+    font-size: 80px;
+    font-weight: 900;
+    color: var(--yellow);
+    letter-spacing: -3px;
+    line-height: 1;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-subtitle {
+    font-size: 18px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 400;
+    margin-bottom: 48px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .cover-title {
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1.15;
+    max-width: 560px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-title span { color: var(--yellow); }
+
+  .cover-desc {
+    font-size: 16px;
+    color: rgba(255,255,255,0.55);
+    max-width: 440px;
+    line-height: 1.7;
+    margin-bottom: 56px;
+  }
+
+  .cover-meta {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .cover-meta-item {
+    text-align: center;
+  }
+
+  .cover-meta-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .cover-meta-value {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 600;
+  }
+
+  /* CONTENT */
+  .content {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 60px 32px;
+  }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 60px 0 28px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #E5E7EB;
+  }
+
+  .section-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .section-number {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    opacity: 0.5;
+  }
+
+  .section-title {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--black);
+    line-height: 1.2;
+  }
+
+  /* STEP CARDS */
+  .steps { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+
+  .step {
+    display: flex;
+    gap: 20px;
+    background: var(--white);
+    border-radius: 16px;
+    padding: 20px 24px;
+    border: 1.5px solid #E5E7EB;
+    align-items: flex-start;
+    transition: box-shadow 0.2s;
+  }
+
+  .step:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+
+  .step-num {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-num.blue { background: var(--blue); color: white; }
+  .step-num.green { background: var(--green); color: white; }
+  .step-num.orange { background: var(--orange); color: white; }
+  .step-num.yellow { background: var(--yellow); color: var(--black); }
+  .step-num.purple { background: var(--purple); color: white; }
+  .step-num.black { background: var(--black); color: white; }
+
+  .step-content h3 {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--black);
+    margin-bottom: 6px;
+  }
+
+  .step-content p {
+    font-size: 14px;
+    color: var(--gray);
+    line-height: 1.65;
+  }
+
+  .step-content strong { color: var(--black); font-weight: 700; }
+
+  /* METHOD CARDS */
+  .method-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  @media (max-width: 600px) {
+    .method-grid { grid-template-columns: 1fr; }
+  }
+
+  .method-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 24px 20px;
+    border: 1.5px solid #E5E7EB;
+    text-align: center;
+  }
+
+  .method-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+  .method-title { font-size: 15px; font-weight: 800; color: var(--black); margin-bottom: 6px; }
+  .method-desc { font-size: 13px; color: var(--gray); line-height: 1.6; }
+
+  /* ALERT BOXES */
+  .alert {
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 20px 0;
+    border-width: 1.5px;
+    border-style: solid;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .alert-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+  .alert-content h4 { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+  .alert-content p { font-size: 13px; line-height: 1.65; }
+  .alert-content strong { font-weight: 700; }
+
+  .alert.yellow { background: #FFFDE7; border-color: var(--yellow); }
+  .alert.yellow .alert-content h4 { color: #7B6B00; }
+  .alert.yellow .alert-content p { color: #5C5000; }
+
+  .alert.green { background: var(--green-light); border-color: var(--green); }
+  .alert.green .alert-content h4 { color: #15803D; }
+  .alert.green .alert-content p { color: #14532D; }
+
+  .alert.blue { background: var(--blue-light); border-color: var(--blue); }
+  .alert.blue .alert-content h4 { color: #1D4ED8; }
+  .alert.blue .alert-content p { color: #1E3A8A; }
+
+  .alert.orange { background: var(--orange-light); border-color: var(--orange); }
+  .alert.orange .alert-content h4 { color: #C2410C; }
+  .alert.orange .alert-content p { color: #9A3412; }
+
+  .alert.red { background: var(--red-light); border-color: var(--red); }
+  .alert.red .alert-content h4 { color: #B91C1C; }
+  .alert.red .alert-content p { color: #7F1D1D; }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1.5px solid #E5E7EB;
+  }
+
+  thead { background: var(--black); color: var(--white); }
+  thead th { padding: 14px 18px; font-weight: 700; text-align: left; font-size: 12px; letter-spacing: 0.5px; }
+  tbody tr:nth-child(even) { background: var(--gray-light); }
+  tbody tr:nth-child(odd) { background: var(--white); }
+  tbody td { padding: 13px 18px; color: #374151; border-bottom: 1px solid #E5E7EB; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* PHONE MOCKUP */
+  .phone-mockup {
+    width: 200px;
+    background: var(--black);
+    border-radius: 36px;
+    padding: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .phone-screen {
+    background: #F8F9FA;
+    border-radius: 26px;
+    padding: 24px 16px;
+    min-height: 340px;
+    overflow: hidden;
+  }
+
+  .phone-mockup::before {
+    content: '';
+    position: absolute;
+    top: 17px; left: 50%;
+    transform: translateX(-50%);
+    width: 60px; height: 4px;
+    background: #333;
+    border-radius: 2px;
+    z-index: 2;
+  }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 24px 0;
+  }
+
+  .flow-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .flow-node {
+    background: var(--white);
+    border: 2px solid var(--blue);
+    border-radius: 12px;
+    padding: 14px 20px;
+    flex: 1;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--black);
+    text-align: center;
+  }
+
+  .flow-arrow {
+    text-align: center;
+    font-size: 20px;
+    color: var(--gray);
+    padding: 4px 0;
+    margin-left: 20px;
+    width: 1px;
+  }
+
+  .flow-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 36px;
+  }
+
+  .flow-line {
+    width: 2px;
+    height: 24px;
+    background: #D1D5DB;
+  }
+
+  .flow-arrow-down {
+    font-size: 18px;
+    color: var(--blue);
+    margin-top: -4px;
+  }
+
+  /* HIGHLIGHT BOX */
+  .highlight-box {
+    background: var(--black);
+    border-radius: 16px;
+    padding: 28px;
+    margin: 24px 0;
+    color: var(--white);
+  }
+
+  .highlight-box h3 {
+    color: var(--yellow);
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 16px;
+  }
+
+  .highlight-box p {
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+
+  .highlight-box p:last-child { margin-bottom: 0; }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; margin: 16px 0; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #F3F4F6;
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.6;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before {
+    content: '□';
+    font-size: 18px;
+    color: var(--blue);
+    flex-shrink: 0;
+    margin-top: -2px;
+  }
+  .checklist strong { color: var(--black); font-weight: 700; }
+
+  /* TAG */
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .tag.green { background: var(--green-light); color: #15803D; }
+  .tag.blue { background: var(--blue-light); color: #1D4ED8; }
+  .tag.orange { background: var(--orange-light); color: #C2410C; }
+  .tag.red { background: var(--red-light); color: #B91C1C; }
+  .tag.yellow { background: #FFFDE7; color: #7B6B00; }
+
+  /* FOOTER */
+  footer {
+    background: var(--black);
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    padding: 40px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    margin-top: 80px;
+  }
+
+  footer strong { color: var(--yellow); }
+
+  /* DIVIDER */
+  .divider {
+    height: 2px;
+    background: linear-gradient(to right, var(--yellow), transparent);
+    margin: 48px 0;
+    border-radius: 1px;
+  }
+
+  /* ROLE BADGE */
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--blue-light);
+    border: 1.5px solid var(--blue);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--blue);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-badge">📦 NEX Inventory — Guia Operacional</div>
+  <div class="cover-logo">NEX</div>
+  <div class="cover-subtitle">Mercado Livre Logística</div>
+  <div class="cover-title">Guia do <span>Log SVC</span></div>
+  <div class="cover-desc">
+    Tudo o que você precisa saber para receber pacotes das agências, registrar saídas e manter o inventário atualizado no sistema.
+  </div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Perfil</div>
+      <div class="cover-meta-value">Logístico SVC</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Versão</div>
+      <div class="cover-meta-value">1.0</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Sistema</div>
+      <div class="cover-meta-value">NEX Inventory Web</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- INTRO -->
+  <div class="role-badge">🏭 Papel: Log SVC</div>
+  <p style="font-size: 16px; color: var(--gray); line-height: 1.8; margin-bottom: 32px;">
+    O <strong style="color: var(--black);">Logístico SVC</strong> é o ponto central de recebimento na operação NEX.
+    Você recebe os pacotes que as agências expedem, registra tudo no sistema e garante a rastreabilidade completa da operação.
+  </p>
+
+  <div class="alert blue">
+    <div class="alert-icon">💡</div>
+    <div class="alert-content">
+      <h4>Acesso ao sistema</h4>
+      <p>Acesse pelo navegador: <strong>luishenrique785.github.io/NEX</strong><br>
+      Salve nos Favoritos. Funciona em celular e computador.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #EFF6FF;">🚪</div>
+    <div>
+      <div class="section-number">Seção 01</div>
+      <div class="section-title">Entrando no Sistema como SVC</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num black">1</div>
+      <div class="step-content">
+        <h3>Abra o NEX Inventory</h3>
+        <p>Acesse <strong>luishenrique785.github.io/NEX</strong> no navegador. Você verá a tela inicial com duas opções de perfil.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num blue">2</div>
+      <div class="step-content">
+        <h3>Selecione "SVC"</h3>
+        <p>Na tela inicial, toque no botão <strong>SVC</strong>. Você entrará diretamente no painel de recebimento de pacotes.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h3>Pronto para operar</h3>
+        <p>O painel SVC carrega automaticamente. Não é necessário selecionar NODO — o SVC recebe de todas as agências.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <h3>Diferença entre Agência e SVC</h3>
+    <p>A <strong style="color:var(--yellow);">Agência</strong> é um ponto de coleta: faz inventário local e expede os pacotes para o SVC.</p>
+    <p>O <strong style="color:var(--yellow);">SVC</strong> é o hub central: recebe os pacotes expedidos pelas agências e garante que chegaram corretamente.</p>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #F0FDF4;">📦</div>
+    <div>
+      <div class="section-number">Seção 02</div>
+      <div class="section-title">Recebendo Pacotes das Agências</div>
+    </div>
+  </div>
+
+  <p style="font-size: 15px; color: var(--gray); margin-bottom: 24px; line-height: 1.7;">
+    Quando um caminhão chega com pacotes de uma agência, você precisa registrar todos os pacotes no sistema SVC. Existem 3 formas de fazer isso — use a que for mais prática para o momento.
+  </p>
+
+  <div class="method-grid">
+    <div class="method-card">
+      <span class="method-icon">📷</span>
+      <div class="method-title">Câmera / Scanner</div>
+      <div class="method-desc">Aponte para o QR Code ou código de barras do pacote. Registro imediato.</div>
+    </div>
+    <div class="method-card">
+      <span class="method-icon">⌨️</span>
+      <div class="method-title">Digitação Manual</div>
+      <div class="method-desc">Digite o código do pacote no campo e confirme. Ideal quando o código não escaneia.</div>
+    </div>
+    <div class="method-card">
+      <span class="method-icon">🖼️</span>
+      <div class="method-title">Foto do Código</div>
+      <div class="method-desc">Fotografe o código de barras ou QR Code e o sistema lê automaticamente.</div>
+    </div>
+  </div>
+
+  <div class="alert yellow">
+    <div class="alert-icon">⚡</div>
+    <div class="alert-content">
+      <h4>Dica de velocidade</h4>
+      <p>Para lotes grandes, o modo <strong>câmera</strong> é o mais rápido. Posicione bem o celular e escaneie um por um em sequência — o sistema adiciona automaticamente sem precisar confirmar cada vez.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 3 — PASSO A PASSO RECEBIMENTO -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #EFF6FF;">📋</div>
+    <div>
+      <div class="section-number">Seção 03</div>
+      <div class="section-title">Passo a Passo: Receber um Lote</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num black">1</div>
+      <div class="step-content">
+        <h3>Confirme a chegada do veículo</h3>
+        <p>Antes de escanear, confirme com o motorista: <strong>qual agência</strong> enviou os pacotes e <strong>quantos volumes</strong> estão no manifesto.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num blue">2</div>
+      <div class="step-content">
+        <h3>Abra o painel SVC no sistema</h3>
+        <p>Toque em <strong>SVC</strong> na tela inicial. O painel de recebimento será exibido.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num blue">3</div>
+      <div class="step-content">
+        <h3>Selecione o método de entrada</h3>
+        <p>Escolha entre <strong>Câmera</strong>, <strong>Manual</strong> ou <strong>Foto</strong>. A câmera é recomendada para velocidade.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">4</div>
+      <div class="step-content">
+        <h3>Escaneie cada pacote</h3>
+        <p>Passe a câmera sobre o código de barras ou QR de cada pacote. Cada leitura bem-sucedida emite um <strong>vibração/som</strong> de confirmação.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num orange">5</div>
+      <div class="step-content">
+        <h3>Atenção a duplicatas</h3>
+        <p>Se um pacote já foi registrado, o sistema alertará automaticamente. <strong>Não registre o mesmo código duas vezes</strong> — pode indicar erro no manifesto.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">6</div>
+      <div class="step-content">
+        <h3>Confirme o total ao final</h3>
+        <p>Compare o número de pacotes registrados com o manifesto físico. Se houver diferença, investigue antes de liberar o veículo.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert red">
+    <div class="alert-icon">🚨</div>
+    <div class="alert-content">
+      <h4>Não libere o veículo com divergência</h4>
+      <p>Se o número de pacotes escaneados for diferente do manifesto, <strong>não libere o veículo</strong>. Confira fisicamente os volumes e registre qualquer divergência antes de assinar o recebimento.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 4 — INVENTÁRIO DE SACAS -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #FFF7ED;">🛍️</div>
+    <div>
+      <div class="section-number">Seção 04</div>
+      <div class="section-title">Inventário de Sacas</div>
+    </div>
+  </div>
+
+  <p style="font-size: 15px; color: var(--gray); margin-bottom: 20px; line-height: 1.7;">
+    O SVC também registra o movimentação de <strong>sacas</strong> — as bolsas usadas para transportar pacotes entre pontos. Existem dois tipos de registro:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Operação</th>
+        <th>Quando usar</th>
+        <th>Dados necessários</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>✅ Chegada</strong></td>
+        <td>Quando sacas chegam ao SVC</td>
+        <td>Quantidade</td>
+      </tr>
+      <tr>
+        <td><strong>🚚 Expedição</strong></td>
+        <td>Quando sacas saem do SVC</td>
+        <td>Quantidade + Placa + Transportadora</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num black">1</div>
+      <div class="step-content">
+        <h3>Acesse "Inventário de Sacas"</h3>
+        <p>No painel SVC, selecione a opção de sacas.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num blue">2</div>
+      <div class="step-content">
+        <h3>Selecione: Chegada ou Expedição</h3>
+        <p>Escolha a operação correta para o momento atual.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h3>Para Chegada: informe a quantidade</h3>
+        <p>Digite quantas sacas chegaram e confirme. O registro é salvo automaticamente com data e hora.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num orange">4</div>
+      <div class="step-content">
+        <h3>Para Expedição: preencha todos os campos</h3>
+        <p>Informe: <strong>Quantidade</strong>, <strong>Placa do veículo</strong> e <strong>Transportadora</strong>. Todos são obrigatórios para rastreabilidade.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert green">
+    <div class="alert-icon">✅</div>
+    <div class="alert-content">
+      <h4>Rastreabilidade completa</h4>
+      <p>Todos os registros ficam salvos com <strong>data, hora e operador</strong>. Em qualquer auditoria, é possível consultar o histórico completo de movimentação de sacas.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 5 — VERIFICAÇÃO -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #F5F3FF;">🔍</div>
+    <div>
+      <div class="section-number">Seção 05</div>
+      <div class="section-title">Verificando o Status dos Pacotes</div>
+    </div>
+  </div>
+
+  <p style="font-size: 15px; color: var(--gray); margin-bottom: 20px; line-height: 1.7;">
+    O sistema permite verificar rapidamente o status de qualquer pacote registrado.
+  </p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num black">1</div>
+      <div class="step-content">
+        <h3>Escaneie o código do pacote</h3>
+        <p>Use a câmera, digitação ou foto para consultar um pacote específico.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num blue">2</div>
+      <div class="step-content">
+        <h3>Veja o histórico do pacote</h3>
+        <p>O sistema mostrará: <strong>quando chegou</strong>, <strong>de qual agência</strong>, e <strong>se foi expedido</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h3>Consulte o painel geral</h3>
+        <p>A lista de pacotes recebidos hoje e pendentes de dias anteriores fica disponível na tela principal do SVC.</p>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Significado</th>
+        <th>Ação necessária</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag green">Recebido</span></td>
+        <td>Pacote chegou ao SVC</td>
+        <td>Nenhuma</td>
+      </tr>
+      <tr>
+        <td><span class="tag orange">Pendente</span></td>
+        <td>Chegou mas não expedido</td>
+        <td>Verificar destino</td>
+      </tr>
+      <tr>
+        <td><span class="tag blue">Expedido</span></td>
+        <td>Saiu do SVC para destino</td>
+        <td>Nenhuma</td>
+      </tr>
+      <tr>
+        <td><span class="tag red">Duplicado</span></td>
+        <td>Código já registrado</td>
+        <td>Investigar</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 6 — PENDÊNCIAS -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #FEF2F2;">⚠️</div>
+    <div>
+      <div class="section-number">Seção 06</div>
+      <div class="section-title">Gerenciando Pendências</div>
+    </div>
+  </div>
+
+  <p style="font-size: 15px; color: var(--gray); margin-bottom: 20px; line-height: 1.7;">
+    Pacotes do dia anterior que não foram expedidos aparecem automaticamente como <strong>pendências</strong> no início de cada novo dia.
+  </p>
+
+  <div class="alert orange">
+    <div class="alert-icon">⏰</div>
+    <div class="alert-content">
+      <h4>Pendências do dia anterior</h4>
+      <p>Ao abrir o sistema pela manhã, verifique os pacotes pendentes. São itens que chegaram mas <strong>ainda não foram expedidos</strong>. Cada um precisa ser investigado ou expedido.</p>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num black">1</div>
+      <div class="step-content">
+        <h3>Veja as pendências do dia anterior</h3>
+        <p>A seção "Pendências" lista todos os pacotes recebidos que ainda estão no SVC sem expedição registrada.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num orange">2</div>
+      <div class="step-content">
+        <h3>Investigue cada pendência</h3>
+        <p>Para cada pacote pendente: está fisicamente no SVC? Foi expedido sem registro? Houve extravio?</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">3</div>
+      <div class="step-content">
+        <h3>Regularize no sistema</h3>
+        <p>Se o pacote foi expedido: registre a saída normalmente. Se está no SVC: deixe como pendente até expedir.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7 — RESUMO DIÁRIO -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #F0FDF4;">📊</div>
+    <div>
+      <div class="section-number">Seção 07</div>
+      <div class="section-title">Fluxo Diário do SVC</div>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <h3>Rotina recomendada</h3>
+    <p><strong style="color:var(--yellow);">Início do turno:</strong> Verifique as pendências do dia anterior. Resolva ou registre cada uma antes de iniciar as operações do dia.</p>
+    <p><strong style="color:var(--yellow);">Durante o turno:</strong> A cada chegada de veículo, registre todos os pacotes antes de liberar. Nunca acumule para registrar depois — o risco de erro aumenta muito.</p>
+    <p><strong style="color:var(--yellow);">A cada expedição:</strong> Registre a saída com placa e transportadora. Isso fecha o ciclo do pacote no SVC.</p>
+    <p><strong style="color:var(--yellow);">Final do turno:</strong> Confirme que não há pendências não resolvidas. O que não foi registrado hoje vira pendência amanhã.</p>
+  </div>
+
+  <ul class="checklist">
+    <li><strong>Verificar pendências do dia anterior</strong> antes de iniciar</li>
+    <li><strong>Registrar cada chegada</strong> antes de liberar o veículo</li>
+    <li><strong>Conferir totais</strong> com o manifesto físico</li>
+    <li><strong>Registrar todas as expedições</strong> com placa e transportadora</li>
+    <li><strong>Revisar pendências</strong> ao final do turno</li>
+    <li><strong>Acionar o gestor</strong> em caso de divergência não resolvida</li>
+  </ul>
+
+  <div class="alert green">
+    <div class="alert-icon">🏆</div>
+    <div class="alert-content">
+      <h4>Operação zero pendências</h4>
+      <p>O objetivo é terminar cada dia com <strong>zero pendências não justificadas</strong>. Todo pacote que chega ao SVC deve ter uma saída registrada — ou uma justificativa documentada.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- TROUBLESHOOTING -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #FEF2F2;">🛠️</div>
+    <div>
+      <div class="section-number">Seção 08</div>
+      <div class="section-title">Problemas Comuns e Soluções</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Problema</th>
+        <th>Causa provável</th>
+        <th>Solução</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Câmera não abre</td>
+        <td>Permissão negada no browser</td>
+        <td>Vá em Configurações do browser → Permitir câmera para o site</td>
+      </tr>
+      <tr>
+        <td>Código não escaneia</td>
+        <td>Código danificado ou sujo</td>
+        <td>Limpe o código, tente a foto ou digitação manual</td>
+      </tr>
+      <tr>
+        <td>"Já registrado"</td>
+        <td>Pacote já está no sistema</td>
+        <td>Não registre novamente; verifique se não é duplicata física</td>
+      </tr>
+      <tr>
+        <td>Dados não salvam</td>
+        <td>Sem conexão de internet</td>
+        <td>Verifique o Wi-Fi ou dados móveis; tente novamente</td>
+      </tr>
+      <tr>
+        <td>Divergência de quantidade</td>
+        <td>Erro no manifesto ou extravios</td>
+        <td>NÃO libere o veículo; acione o gestor imediatamente</td>
+      </tr>
+      <tr>
+        <td>Site não carrega</td>
+        <td>Instabilidade de rede</td>
+        <td>Atualize a página (F5). Se persistir, use dados móveis</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="alert blue">
+    <div class="alert-icon">📞</div>
+    <div class="alert-content">
+      <h4>Suporte técnico</h4>
+      <p>Em caso de problemas que impeçam a operação, contate o <strong>time MELI responsável pelo NEX</strong>. Registre o problema com prints da tela e horário da ocorrência para agilizar o atendimento.</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <strong>NEX Inventory</strong> — Mercado Livre Logística<br>
+  Sistema de Gestão de Inventário · Guia do Log SVC · v1.0
+</footer>
+
+</body>
+</html>

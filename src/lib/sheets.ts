@@ -23,14 +23,32 @@ export function parseCSV(csv: string): string[][] {
   });
 }
 
+// Extracts city and state from full address strings like:
+// "RUA FULANO 123, Bairro - Cidade, MG" or "RUA FULANO 123 CIDADE MG"
+function extractCidadeEstado(endereco: string): { cidade: string; estado: string } {
+  const m = endereco.match(/[,\s]+([A-Z]{2})\s*$/);
+  if (!m) return { cidade: '', estado: '' };
+
+  const estado = m[1];
+  const withoutState = endereco.slice(0, endereco.lastIndexOf(m[0])).trim();
+
+  const parts = withoutState.split(',');
+  const lastPart = parts[parts.length - 1].trim().replace(/^[-\s]+/, '');
+
+  const dashIdx = lastPart.lastIndexOf(' - ');
+  const cidade = dashIdx >= 0 ? lastPart.substring(dashIdx + 3).trim() : lastPart.trim();
+
+  return { cidade, estado };
+}
+
 async function processRows(
   rows: string[][],
   onProgress?: (msg: string) => void
 ): Promise<{ added: number; skipped: number; errors: string[] }> {
   const stats = { added: 0, skipped: 0, errors: [] as string[] };
 
-  // Skip header row
-  const dataRows = rows.slice(1).filter((r) => r.length >= 2 && r[0]);
+  // CSV columns: A=ETA, B=Nó origem, C=Facility NEx (código), D=Modal, E=Nome Place, F=Endereço
+  const dataRows = rows.slice(1).filter((r) => r.length >= 3 && r[2]);
 
   onProgress?.(`${dataRows.length} nodos encontrados...`);
 
@@ -39,12 +57,10 @@ async function processRows(
 
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i];
-    // Colunas: A=0(código), B=1(nome), C=2, D=3(cidade), E=4(estado), F=5(endereço)
-    const codigo = row[0] || '';
-    const nome = row[1] || row[0] || `NODO ${i + 1}`;
-    const endereco = row[5] || row[2] || '';
-    const cidade = row[3] || '';
-    const estado = row[4] || '';
+    const codigo = row[2] || '';
+    const nome = row[4] || row[2] || `NODO ${i + 1}`;
+    const endereco = row[5] || '';
+    const { cidade, estado } = extractCidadeEstado(endereco);
 
     if (!codigo) { stats.skipped++; continue; }
     if (existingCodes.has(codigo)) { stats.skipped++; continue; }
@@ -55,7 +71,7 @@ async function processRows(
     let lng: number | null = null;
 
     if (endereco) {
-      const coords = await geocodeAddress(`${endereco}, ${cidade}, ${estado}`);
+      const coords = await geocodeAddress(endereco);
       if (coords) { lat = coords.lat; lng = coords.lng; }
     }
 

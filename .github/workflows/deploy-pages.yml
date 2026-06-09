@@ -32,6 +32,9 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: Copiar docs para dist
+        run: cp -r docs dist/docs
+
       - name: Deploy para gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
