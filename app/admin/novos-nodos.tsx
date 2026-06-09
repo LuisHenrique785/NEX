@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  ActivityIndicator, Alert, FlatList,
+  ActivityIndicator, Alert, TouchableOpacity, Platform,
 } from 'react-native';
 import { supabase } from '../../src/lib/supabase';
-import { importNodosFromSheets } from '../../src/lib/sheets';
+import { importNodosFromSheets, importNodosFromCSV } from '../../src/lib/sheets';
 import { COLORS, Button, Card, Badge } from '../../src/components/ui';
 
 interface Nodo {
@@ -24,6 +24,7 @@ export default function NovosNodosScreen() {
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState('');
   const [stats, setStats] = useState<{ added: number; skipped: number } | null>(null);
+  const fileInputRef = useRef<any>(null);
 
   useEffect(() => {
     loadNodos();
@@ -40,68 +41,116 @@ export default function NovosNodosScreen() {
     setLoading(false);
   }
 
-  async function handleImport() {
+  async function runImport(fn: () => Promise<{ added: number; skipped: number; errors: string[] }>) {
+    setImporting(true);
+    setStats(null);
+    try {
+      const result = await fn();
+      setStats({ added: result.added, skipped: result.skipped });
+      const msg =
+        result.errors.length > 0
+          ? `${result.added} adicionados, ${result.skipped} já existentes.\n\nErros:\n${result.errors.slice(0, 5).join('\n')}`
+          : `${result.added} novo${result.added !== 1 ? 's' : ''} NODO${result.added !== 1 ? 's' : ''} importado${result.added !== 1 ? 's' : ''}.\n${result.skipped} já existiam.`;
+      Alert.alert(result.errors.length > 0 ? 'Concluído com erros' : '✅ Concluído!', msg);
+      await loadNodos();
+    } catch (e: any) {
+      Alert.alert('Erro', e.message || 'Falha na importação.');
+    } finally {
+      setImporting(false);
+      setProgress('');
+    }
+  }
+
+  function handleSyncSheets() {
     Alert.alert(
-      'Sincronizar NODOS',
-      'Isso vai buscar os NODOS da planilha Google Sheets e importar os novos. Continuar?',
+      'Sincronizar com Google Sheets',
+      'Vai buscar os NODOS da planilha online. Continuar?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sincronizar',
-          onPress: async () => {
-            setImporting(true);
-            setStats(null);
-            try {
-              const result = await importNodosFromSheets((msg) => setProgress(msg));
-              setStats({ added: result.added, skipped: result.skipped });
-              if (result.errors.length > 0) {
-                Alert.alert(
-                  'Importação concluída com erros',
-                  `${result.added} adicionados, ${result.skipped} já existentes.\n\nErros:\n${result.errors.slice(0, 5).join('\n')}`
-                );
-              } else {
-                Alert.alert(
-                  '✅ Sincronização Concluída!',
-                  `${result.added} novo${result.added !== 1 ? 's' : ''} NODO${result.added !== 1 ? 's' : ''} importado${result.added !== 1 ? 's' : ''}.\n${result.skipped} já existiam.`
-                );
-              }
-              await loadNodos();
-            } catch (e: any) {
-              Alert.alert('Erro', e.message || 'Não foi possível acessar a planilha.');
-            } finally {
-              setImporting(false);
-              setProgress('');
-            }
-          },
-        },
+        { text: 'Sincronizar', onPress: () => runImport(() => importNodosFromSheets((msg) => setProgress(msg))) },
       ]
     );
   }
 
-  async function handleToggleActive(id: string, currentActive: boolean) {
-    await supabase.from('nodos').update({ ativo: !currentActive }).eq('id', id);
-    await loadNodos();
+  function handleUploadCSV() {
+    if (Platform.OS === 'web') {
+      // Na web: abrir input de arquivo nativo
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv,text/csv';
+      input.onchange = async (e: any) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          const text = ev.target?.result as string;
+          if (!text) return;
+          Alert.alert(
+            'Importar CSV',
+            `Arquivo: ${file.name}\n\nImportar os NODOS deste arquivo?`,
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              {
+                text: 'Importar',
+                onPress: () => runImport(() => importNodosFromCSV(text, (msg) => setProgress(msg))),
+              },
+            ]
+          );
+        };
+        reader.readAsText(file, 'UTF-8');
+      };
+      input.click();
+    } else {
+      Alert.alert('Não disponível', 'Upload de CSV disponível apenas na versão web.');
+    }
   }
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Info card */}
+        {/* Info */}
         <Card style={styles.infoCard}>
           <Text style={styles.infoTitle}>⚙️ Gerenciamento de NODOS</Text>
           <Text style={styles.infoText}>
-            Sincronize os NODOS da planilha Google Sheets (aba "BASE - Nodos").
-            Novos NODOS serão geocodificados automaticamente pelo endereço.
+            Importe os NODOS da planilha Google Sheets (aba "BASE - Nodos").
+            {'\n\n'}Coluna A = Código · Coluna B = Nome · Coluna D = Cidade · Coluna E = Estado · Coluna F = Endereço
           </Text>
         </Card>
 
-        {/* Import button */}
+        {/* Opção 1: Sincronizar online */}
+        <Text style={styles.sectionLabel}>OPÇÃO 1 — PLANILHA ONLINE</Text>
         <Button
-          label={importing ? 'Importando...' : '🔄  Sincronizar com Planilha'}
-          onPress={handleImport}
+          label={importing ? 'Importando...' : '🔄  Sincronizar com Google Sheets'}
+          onPress={handleSyncSheets}
           loading={importing}
-          style={styles.importBtn}
         />
+        <Text style={styles.hint}>
+          Tenta buscar diretamente da planilha. Pode falhar por restrição de acesso.
+        </Text>
+
+        {/* Opção 2: Upload CSV */}
+        <Text style={[styles.sectionLabel, { marginTop: 20 }]}>OPÇÃO 2 — UPLOAD DE CSV (RECOMENDADO)</Text>
+
+        <TouchableOpacity
+          style={[styles.uploadBtn, importing && styles.uploadBtnDisabled]}
+          onPress={handleUploadCSV}
+          disabled={importing}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.uploadIcon}>📂</Text>
+          <View style={styles.uploadText}>
+            <Text style={styles.uploadTitle}>Selecionar arquivo CSV</Text>
+            <Text style={styles.uploadSubtitle}>Exporte da planilha e faça upload aqui</Text>
+          </View>
+        </TouchableOpacity>
+
+        <Card style={styles.howToCard}>
+          <Text style={styles.howToTitle}>Como exportar o CSV da planilha:</Text>
+          <Text style={styles.howToStep}>1. Abra a planilha Google Sheets</Text>
+          <Text style={styles.howToStep}>2. Clique em <Text style={styles.bold}>Arquivo → Fazer download → CSV</Text></Text>
+          <Text style={styles.howToStep}>3. Salve o arquivo no celular/computador</Text>
+          <Text style={styles.howToStep}>4. Clique em "Selecionar arquivo CSV" acima</Text>
+        </Card>
 
         {/* Progress */}
         {(importing || progress) && (
@@ -126,7 +175,7 @@ export default function NovosNodosScreen() {
         )}
 
         {/* NODOS list */}
-        <Text style={styles.sectionLabel}>
+        <Text style={[styles.sectionLabel, { marginTop: 20 }]}>
           NODOS CADASTRADOS ({loading ? '...' : nodos.length})
         </Text>
 
@@ -135,28 +184,24 @@ export default function NovosNodosScreen() {
         ) : nodos.length === 0 ? (
           <Card style={styles.emptyCard}>
             <Text style={styles.emptyText}>
-              Nenhum NODO cadastrado ainda.{'\n'}Use o botão acima para importar da planilha.
+              Nenhum NODO cadastrado ainda.{'\n'}Use uma das opções acima para importar.
             </Text>
           </Card>
         ) : (
           nodos.map((nodo) => (
             <Card key={nodo.id} style={styles.nodoCard}>
-              <View style={styles.nodoRow}>
-                <View style={styles.nodoInfo}>
-                  <Text style={styles.nodoNome}>{nodo.nome}</Text>
-                  {nodo.codigo && <Text style={styles.nodoCodigo}>{nodo.codigo}</Text>}
-                  {nodo.cidade && (
-                    <Text style={styles.nodoCidade}>
-                      📍 {nodo.cidade}{nodo.estado ? `, ${nodo.estado}` : ''}
-                    </Text>
-                  )}
-                  {nodo.lat ? (
-                    <Badge label="Geocodificado ✓" color={COLORS.green} />
-                  ) : (
-                    <Badge label="Sem coordenadas" color={COLORS.orange} />
-                  )}
-                </View>
-              </View>
+              <Text style={styles.nodoNome}>{nodo.nome}</Text>
+              {nodo.codigo && <Text style={styles.nodoCodigo}>{nodo.codigo}</Text>}
+              {nodo.cidade && (
+                <Text style={styles.nodoCidade}>
+                  📍 {nodo.cidade}{nodo.estado ? `, ${nodo.estado}` : ''}
+                </Text>
+              )}
+              {nodo.lat ? (
+                <Badge label="Geocodificado ✓" color={COLORS.green} />
+              ) : (
+                <Badge label="Sem coordenadas" color={COLORS.orange} />
+              )}
             </Card>
           ))
         )}
@@ -172,33 +217,51 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFEF0',
     borderWidth: 1.5,
     borderColor: COLORS.yellow,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   infoTitle: { fontSize: 16, fontWeight: '800', color: COLORS.black, marginBottom: 8 },
-  infoText: { fontSize: 13, color: COLORS.gray, lineHeight: 19 },
-  importBtn: { marginBottom: 8 },
-  progressCard: {
-    backgroundColor: '#1A1A1A',
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  progressText: { color: COLORS.yellow, fontSize: 13, textAlign: 'center' },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  statBox: {
-    flex: 1, borderWidth: 1.5, borderRadius: 14,
-    padding: 16, alignItems: 'center',
-  },
-  statVal: { fontSize: 28, fontWeight: '900' },
-  statLbl: { fontSize: 12, color: COLORS.gray, marginTop: 2 },
+  infoText: { fontSize: 13, color: COLORS.gray, lineHeight: 20 },
   sectionLabel: {
     fontSize: 12, fontWeight: '700', color: COLORS.gray,
-    textTransform: 'uppercase', letterSpacing: 1, marginTop: 8, marginBottom: 10,
+    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10,
   },
+  hint: { fontSize: 12, color: COLORS.gray, marginTop: 6, marginBottom: 4, lineHeight: 18 },
+  uploadBtn: {
+    backgroundColor: COLORS.black,
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 12,
+  },
+  uploadBtnDisabled: { opacity: 0.5 },
+  uploadIcon: { fontSize: 32, marginRight: 16 },
+  uploadText: { flex: 1 },
+  uploadTitle: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
+  uploadSubtitle: { color: '#AAA', fontSize: 13, marginTop: 3 },
+  howToCard: {
+    backgroundColor: '#F0F8FF',
+    borderWidth: 1,
+    borderColor: COLORS.blue + '44',
+    marginBottom: 8,
+  },
+  howToTitle: { fontSize: 13, fontWeight: '800', color: COLORS.black, marginBottom: 10 },
+  howToStep: { fontSize: 13, color: COLORS.gray, lineHeight: 22 },
+  bold: { fontWeight: '700', color: COLORS.black },
+  progressCard: { backgroundColor: '#1A1A1A', marginBottom: 12, alignItems: 'center' },
+  progressText: { color: COLORS.yellow, fontSize: 13, textAlign: 'center' },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  statBox: { flex: 1, borderWidth: 1.5, borderRadius: 14, padding: 16, alignItems: 'center' },
+  statVal: { fontSize: 28, fontWeight: '900' },
+  statLbl: { fontSize: 12, color: COLORS.gray, marginTop: 2 },
   emptyCard: { alignItems: 'center', paddingVertical: 28 },
   emptyText: { color: COLORS.gray, fontSize: 14, textAlign: 'center', lineHeight: 22 },
-  nodoCard: { padding: 14 },
-  nodoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  nodoInfo: { flex: 1 },
+  nodoCard: { padding: 14, marginBottom: 8 },
   nodoNome: { fontSize: 15, fontWeight: '700', color: COLORS.black, marginBottom: 2 },
   nodoCodigo: { fontSize: 12, color: COLORS.gray, marginBottom: 4 },
   nodoCidade: { fontSize: 13, color: COLORS.gray, marginBottom: 6 },
