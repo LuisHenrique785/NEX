@@ -45,7 +45,6 @@
       "backgroundColor": "#FFE600",
       "description": "Sistema de Inventário - Mercado Livre Logística",
       "preferRelatedApplications": false,
-      "baseUrl": "/NEX"
     },
     "plugins": [
       "expo-router",
@@ -69,7 +68,8 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "baseUrl": "/NEX"
     }
   }
 }
