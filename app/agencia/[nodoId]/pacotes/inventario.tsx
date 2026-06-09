@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Alert,
-  TextInput, Modal, SafeAreaView, ScrollView, ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity, Alert,
+  TextInput, SafeAreaView, ScrollView, ActivityIndicator,
   KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../../../src/lib/supabase';
 import { COLORS, Button, Card, Badge } from '../../../../src/components/ui';
+import { useTheme } from '../../../../src/lib/theme';
+import { WebScanner } from '../../../../src/components/WebScanner';
 
 interface Pacote {
   id: string;
@@ -20,9 +22,207 @@ interface Pacote {
 
 type Mode = 'menu' | 'scanner' | 'manual' | 'photo';
 
+function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.bg },
+    flex: { flex: 1 },
+    container: { padding: 20, paddingBottom: 40 },
+    pendingCard: {
+      backgroundColor: theme.isDark ? '#3D2800' : '#FFF3CD',
+      borderWidth: 1.5,
+      borderColor: COLORS.orange + '66',
+      marginBottom: 12,
+    },
+    pendingHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    pendingTitle: { fontSize: 16, fontWeight: '800', color: theme.isDark ? '#FFC107' : '#856404' },
+    pendingSubtitle: { fontSize: 13, color: theme.isDark ? '#FFC107' : '#856404', lineHeight: 18, marginBottom: 8 },
+    pendingCode: { fontSize: 13, color: theme.isDark ? '#FFC107' : '#856404', fontFamily: 'monospace', marginBottom: 3 },
+    pendingMore: { fontSize: 12, color: theme.isDark ? '#FFC107' : '#856404', fontStyle: 'italic', marginTop: 4 },
+    counterCard: {
+      alignItems: 'center',
+      paddingVertical: 24,
+      backgroundColor: COLORS.yellow,
+      marginBottom: 8,
+    },
+    counterValue: { fontSize: 48, fontWeight: '900', color: COLORS.black },
+    counterLabel: { fontSize: 14, color: '#555', fontWeight: '500' },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.textSec,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginTop: 16,
+      marginBottom: 10,
+    },
+    optionBtn: {
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    optionIcon: { fontSize: 30, marginRight: 16 },
+    optionText: { flex: 1 },
+    optionTitle: { fontSize: 17, fontWeight: '800' },
+    optionSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 },
+    scannedRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.surface,
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 6,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    scannedIcon: { fontSize: 18, marginRight: 10, width: 28 },
+    scannedCode: { flex: 1, fontSize: 13, color: theme.text, fontFamily: 'monospace', fontWeight: '600' },
+    scannedTime: { fontSize: 12, color: theme.textSec, marginLeft: 8 },
+    manualCard: { alignItems: 'center', marginBottom: 20 },
+    manualIcon: { fontSize: 48, marginBottom: 12 },
+    manualTitle: { fontSize: 18, fontWeight: '800', color: theme.text, marginBottom: 16 },
+    manualInput: {
+      width: '100%',
+      borderWidth: 2,
+      borderColor: COLORS.yellow,
+      borderRadius: 12,
+      padding: 14,
+      fontSize: 18,
+      textAlign: 'center',
+      color: theme.text,
+      fontWeight: '700',
+      fontFamily: 'monospace',
+      backgroundColor: theme.input,
+    },
+    photoCard: { marginBottom: 16 },
+    photoIcon: { fontSize: 48, marginBottom: 10, textAlign: 'center' },
+    photoTitle: { fontSize: 18, fontWeight: '800', color: theme.text, marginBottom: 6, textAlign: 'center' },
+    photoSubtitle: { fontSize: 13, color: theme.textSec, textAlign: 'center', lineHeight: 18, marginBottom: 16 },
+    photoButtons: { flexDirection: 'row', marginBottom: 16 },
+    photoPreviewBox: { alignItems: 'center', marginBottom: 16 },
+    photoPreview: { width: '100%', height: 200, borderRadius: 12 },
+    photoRemove: { marginTop: 8 },
+    photoRemoveText: { color: COLORS.red, fontWeight: '700' },
+    label: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: theme.text,
+      marginBottom: 8,
+      textTransform: 'uppercase',
+    },
+    input: {
+      backgroundColor: theme.input,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: theme.inputBorder,
+      padding: 14,
+      fontSize: 16,
+      color: theme.text,
+      fontFamily: 'monospace',
+    },
+    permBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, backgroundColor: theme.bg },
+    permText: { fontSize: 16, textAlign: 'center', marginBottom: 24, color: theme.text },
+  });
+}
+
+const scannerStyles = StyleSheet.create({
+  scannerContainer: { flex: 1, backgroundColor: '#000' },
+  camera: { flex: 1 },
+  scanOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
+  scanHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    paddingTop: 52,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+  },
+  scanBackText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  scanActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  flipBtn: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  flipBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  flashBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  flashBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  scanCenter: { alignItems: 'center' },
+  scanCounter: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  scanCounterText: { color: COLORS.yellow, fontWeight: '800', fontSize: 15 },
+  scanFrame: { width: 280, height: 170, position: 'relative' },
+  scanCorner: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderColor: COLORS.yellow,
+    borderWidth: 3,
+  },
+  scanCornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
+  scanCornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
+  scanCornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
+  scanCornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
+  scanBottom: { paddingBottom: 24 },
+  scanFeedback: { alignItems: 'center', marginBottom: 8, paddingHorizontal: 16 },
+  scanResult: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 16 },
+  scanResultText: { color: '#fff', fontWeight: '700', fontSize: 14, textAlign: 'center' },
+  scanHint: {
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  scanHintText: { color: '#ddd', fontSize: 13 },
+  scanSaving: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 8,
+  },
+  scanSavingText: { color: '#fff', fontSize: 13 },
+  recentList: { backgroundColor: 'rgba(0,0,0,0.75)', padding: 12 },
+  recentLabel: { color: '#aaa', fontSize: 11, marginBottom: 6 },
+  recentChip: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: 8,
+  },
+  recentChipText: { color: '#fff', fontSize: 12, fontFamily: 'monospace' },
+});
+
 export default function InventarioFisicoScreen() {
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
   const navigation = useNavigation();
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const [mode, setMode] = useState<Mode>('menu');
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
@@ -30,16 +230,13 @@ export default function InventarioFisicoScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Scanner
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [lastScanned, setLastScanned] = useState('');
   const [flashEnabled, setFlashEnabled] = useState(false);
   const scanCooldown = useRef(false);
 
-  // Manual
   const [manualCode, setManualCode] = useState('');
-
-  // Photo
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoCode, setPhotoCode] = useState('');
 
@@ -47,12 +244,12 @@ export default function InventarioFisicoScreen() {
     navigation.setOptions({
       headerShown: mode !== 'scanner',
       title: 'Inventário Físico',
-      headerStyle: { backgroundColor: COLORS.yellow },
-      headerTintColor: COLORS.black,
+      headerStyle: { backgroundColor: theme.header },
+      headerTintColor: theme.headerText,
       headerTitleStyle: { fontWeight: '800' },
       headerShadowVisible: false,
     });
-  }, [mode]);
+  }, [mode, theme]);
 
   useEffect(() => {
     loadPacotes();
@@ -62,11 +259,9 @@ export default function InventarioFisicoScreen() {
     setLoading(true);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    // Today's inventory
     const { data: todayData } = await supabase
       .from('pacotes_inventario')
       .select('id, codigo, tipo_entrada, inventoried_at, foto_url')
@@ -75,7 +270,6 @@ export default function InventarioFisicoScreen() {
       .gte('inventoried_at', today.toISOString())
       .order('inventoried_at', { ascending: false });
 
-    // Yesterday's that weren't inventoried today
     const { data: yestData } = await supabase
       .from('pacotes_inventario')
       .select('id, codigo, tipo_entrada, inventoried_at, foto_url')
@@ -100,7 +294,6 @@ export default function InventarioFisicoScreen() {
     const trimmed = codigo.trim();
     if (!trimmed) return;
 
-    // Check duplicate for today
     const alreadyScanned = pacotes.some((p) => p.codigo === trimmed);
     if (alreadyScanned) {
       if (tipo === 'scanner') {
@@ -114,20 +307,11 @@ export default function InventarioFisicoScreen() {
 
     setSaving(true);
     let fotoUrl: string | null = null;
-
-    if (fotoUri) {
-      fotoUrl = await uploadPhoto(fotoUri, trimmed);
-    }
+    if (fotoUri) fotoUrl = await uploadPhoto(fotoUri, trimmed);
 
     const { data, error } = await supabase
       .from('pacotes_inventario')
-      .insert({
-        nodo_id: nodoId,
-        codigo: trimmed,
-        tipo_entrada: tipo,
-        foto_url: fotoUrl,
-        status: 'inventoried',
-      })
+      .insert({ nodo_id: nodoId, codigo: trimmed, tipo_entrada: tipo, foto_url: fotoUrl, status: 'inventoried' })
       .select()
       .single();
 
@@ -143,7 +327,6 @@ export default function InventarioFisicoScreen() {
     }
 
     setPacotes((prev) => [data, ...prev]);
-    // Remove from pending if it was there
     setPendencias((prev) => prev.filter((p) => p.codigo !== trimmed));
 
     if (tipo === 'scanner') {
@@ -165,10 +348,7 @@ export default function InventarioFisicoScreen() {
 
       if (error || !data) return null;
 
-      const { data: urlData } = supabase.storage
-        .from('pacotes-fotos')
-        .getPublicUrl(data.path);
-
+      const { data: urlData } = supabase.storage.from('pacotes-fotos').getPublicUrl(data.path);
       return urlData?.publicUrl || null;
     } catch {
       return null;
@@ -179,49 +359,26 @@ export default function InventarioFisicoScreen() {
     if (scanCooldown.current) return;
     scanCooldown.current = true;
     setTimeout(() => { scanCooldown.current = false; }, 1500);
-
-    const code = result.data;
-    addPacote(code, 'scanner');
+    addPacote(result.data, 'scanner');
   }
 
   async function handlePickPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissão negada', 'Precisamos de acesso à galeria.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri);
-    }
+    if (status !== 'granted') { Alert.alert('Permissão negada', 'Precisamos de acesso à galeria.'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
   }
 
   async function handleTakePhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissão negada', 'Precisamos de acesso à câmera.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri);
-    }
+    if (status !== 'granted') { Alert.alert('Permissão negada', 'Precisamos de acesso à câmera.'); return; }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
   }
 
   async function handlePhotoSubmit() {
-    if (!photoUri) {
-      Alert.alert('Atenção', 'Selecione ou tire uma foto do pacote.');
-      return;
-    }
-    if (!photoCode.trim()) {
-      Alert.alert('Atenção', 'Digite o código do pacote visível na foto.');
-      return;
-    }
+    if (!photoUri) { Alert.alert('Atenção', 'Selecione ou tire uma foto do pacote.'); return; }
+    if (!photoCode.trim()) { Alert.alert('Atenção', 'Digite o código do pacote visível na foto.'); return; }
     await addPacote(photoCode.trim(), 'foto', photoUri);
     setPhotoUri(null);
     setPhotoCode('');
@@ -237,6 +394,18 @@ export default function InventarioFisicoScreen() {
 
   // ─── SCANNER MODE ─────────────────────────────────────────────
   if (mode === 'scanner') {
+    if (Platform.OS === 'web') {
+      return (
+        <WebScanner
+          onScanned={(code) => addPacote(code, 'scanner')}
+          onClose={() => setMode('menu')}
+          count={pacotes.length}
+          lastScanned={lastScanned}
+          recentCodes={pacotes.map((p) => p.codigo)}
+        />
+      );
+    }
+
     if (!cameraPermission?.granted) {
       return (
         <View style={styles.permBox}>
@@ -248,78 +417,90 @@ export default function InventarioFisicoScreen() {
     }
 
     return (
-      <View style={styles.scannerContainer}>
+      <View style={scannerStyles.scannerContainer}>
         <CameraView
-          style={styles.camera}
-          facing="back"
+          key={facing}
+          style={scannerStyles.camera}
+          facing={facing}
           enableTorch={flashEnabled}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'datamatrix'] }}
           onBarcodeScanned={handleBarcodeScanned}
         />
 
-        {/* Overlay */}
-        <View style={styles.scanOverlay}>
-          {/* Top bar */}
+        <View style={scannerStyles.scanOverlay}>
           <SafeAreaView>
-            <View style={styles.scanHeader}>
-              <TouchableOpacity onPress={() => setMode('menu')} style={styles.scanBackBtn}>
-                <Text style={styles.scanBackText}>✕ Fechar</Text>
+            <View style={scannerStyles.scanHeader}>
+              <TouchableOpacity onPress={() => setMode('menu')} style={{ padding: 8 }}>
+                <Text style={scannerStyles.scanBackText}>✓ Feito ({pacotes.length})</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setFlashEnabled((f) => !f)} style={styles.flashBtn}>
-                <Text style={styles.flashBtnText}>{flashEnabled ? '🔦 ON' : '🔦 OFF'}</Text>
-              </TouchableOpacity>
+              <View style={scannerStyles.scanActions}>
+                <TouchableOpacity
+                  onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
+                  style={scannerStyles.flipBtn}
+                >
+                  <Text style={{ fontSize: 16 }}>🔄</Text>
+                  <Text style={scannerStyles.flipBtnText}>
+                    {facing === 'front' ? 'Frontal' : 'Traseira'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setFlashEnabled((f) => !f)} style={scannerStyles.flashBtn}>
+                  <Text style={scannerStyles.flashBtnText}>{flashEnabled ? '🔦 ON' : '🔦 OFF'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </SafeAreaView>
 
-          {/* Counter */}
-          <View style={styles.scanCounter}>
-            <Text style={styles.scanCounterText}>
-              {pacotes.length} pacote{pacotes.length !== 1 ? 's' : ''} bipado{pacotes.length !== 1 ? 's' : ''}
-            </Text>
+          <View style={scannerStyles.scanCenter}>
+            <View style={scannerStyles.scanCounter}>
+              <Text style={scannerStyles.scanCounterText}>
+                {pacotes.length} pacote{pacotes.length !== 1 ? 's' : ''} bipado{pacotes.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+            <View style={scannerStyles.scanFrame}>
+              {[
+                { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
+                { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
+                { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
+                { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
+              ].map((s, i) => (
+                <View key={i} style={[scannerStyles.scanCorner, s as any]} />
+              ))}
+            </View>
           </View>
 
-          {/* Target frame */}
-          <View style={styles.scanFrame}>
-            <View style={[styles.scanCorner, styles.scanCornerTL]} />
-            <View style={[styles.scanCorner, styles.scanCornerTR]} />
-            <View style={[styles.scanCorner, styles.scanCornerBL]} />
-            <View style={[styles.scanCorner, styles.scanCornerBR]} />
+          <View style={scannerStyles.scanBottom}>
+            <View style={scannerStyles.scanFeedback}>
+              {lastScanned ? (
+                <View style={[scannerStyles.scanResult, { backgroundColor: lastScanned.startsWith('⚠️') ? COLORS.orange : COLORS.green }]}>
+                  <Text style={scannerStyles.scanResultText}>{lastScanned}</Text>
+                </View>
+              ) : (
+                <View style={scannerStyles.scanHint}>
+                  <Text style={scannerStyles.scanHintText}>Aponte para o QR Code ou código de barras</Text>
+                </View>
+              )}
+            </View>
+
+            {saving && (
+              <View style={scannerStyles.scanSaving}>
+                <ActivityIndicator color="#fff" size="small" />
+                <Text style={scannerStyles.scanSavingText}>Salvando...</Text>
+              </View>
+            )}
+
+            {pacotes.length > 0 && (
+              <View style={scannerStyles.recentList}>
+                <Text style={scannerStyles.recentLabel}>Últimos bipados ({pacotes.length}):</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {pacotes.slice(0, 8).map((p) => (
+                    <View key={p.id} style={scannerStyles.recentChip}>
+                      <Text style={scannerStyles.recentChipText}>{p.codigo.slice(-8)}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </View>
-
-          {/* Last scanned */}
-          {lastScanned ? (
-            <View style={[
-              styles.scanResult,
-              { backgroundColor: lastScanned.startsWith('⚠️') ? COLORS.orange : COLORS.green },
-            ]}>
-              <Text style={styles.scanResultText}>{lastScanned}</Text>
-            </View>
-          ) : (
-            <View style={styles.scanHint}>
-              <Text style={styles.scanHintText}>Aponte para o QR Code ou código de barras</Text>
-            </View>
-          )}
-
-          {saving && (
-            <View style={styles.scanSaving}>
-              <ActivityIndicator color={COLORS.white} size="small" />
-              <Text style={styles.scanSavingText}>Salvando...</Text>
-            </View>
-          )}
-
-          {/* Recent list at bottom */}
-          {pacotes.length > 0 && (
-            <View style={styles.recentList}>
-              <Text style={styles.recentLabel}>Últimos bipados:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {pacotes.slice(0, 8).map((p) => (
-                  <View key={p.id} style={styles.recentChip}>
-                    <Text style={styles.recentChipText}>{p.codigo.slice(-8)}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
         </View>
       </View>
     );
@@ -337,35 +518,27 @@ export default function InventarioFisicoScreen() {
               <TextInput
                 style={styles.manualInput}
                 placeholder="Digite o ID do pacote..."
+                placeholderTextColor={theme.textTer}
                 value={manualCode}
                 onChangeText={setManualCode}
                 autoCapitalize="characters"
                 autoFocus
                 returnKeyType="done"
                 onSubmitEditing={() => {
-                  if (manualCode.trim()) {
-                    addPacote(manualCode.trim(), 'manual');
-                    setManualCode('');
-                  }
+                  if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); }
                 }}
               />
               <Button
                 label="Adicionar"
                 onPress={() => {
-                  if (manualCode.trim()) {
-                    addPacote(manualCode.trim(), 'manual');
-                    setManualCode('');
-                  }
+                  if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); }
                 }}
                 loading={saving}
                 style={{ marginTop: 12 }}
               />
             </Card>
 
-            {/* List of scanned so far */}
-            <Text style={styles.sectionLabel}>
-              ADICIONADOS HOJE ({pacotes.length})
-            </Text>
+            <Text style={styles.sectionLabel}>ADICIONADOS HOJE ({pacotes.length})</Text>
             {pacotes.slice(0, 20).map((p) => (
               <View key={p.id} style={styles.scannedRow}>
                 <Text style={styles.scannedIcon}>{typeIcon(p.tipo_entrada)}</Text>
@@ -374,12 +547,7 @@ export default function InventarioFisicoScreen() {
               </View>
             ))}
 
-            <Button
-              label="← Voltar"
-              onPress={() => setMode('menu')}
-              variant="outline"
-              style={{ marginTop: 20 }}
-            />
+            <Button label="← Voltar" onPress={() => setMode('menu')} variant="outline" style={{ marginTop: 20 }} />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -408,17 +576,8 @@ export default function InventarioFisicoScreen() {
                 </View>
               ) : (
                 <View style={styles.photoButtons}>
-                  <Button
-                    label="📷  Tirar Foto"
-                    onPress={handleTakePhoto}
-                    style={{ flex: 1, marginRight: 8 }}
-                  />
-                  <Button
-                    label="🖼  Galeria"
-                    onPress={handlePickPhoto}
-                    variant="outline"
-                    style={{ flex: 1 }}
-                  />
+                  <Button label="📷  Tirar Foto" onPress={handleTakePhoto} style={{ flex: 1, marginRight: 8 }} />
+                  <Button label="🖼  Galeria" onPress={handlePickPhoto} variant="outline" style={{ flex: 1 }} />
                 </View>
               )}
 
@@ -426,24 +585,16 @@ export default function InventarioFisicoScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Ex: MLM123456789"
+                placeholderTextColor={theme.textTer}
                 value={photoCode}
                 onChangeText={setPhotoCode}
                 autoCapitalize="characters"
               />
 
-              <Button
-                label="Salvar Pacote"
-                onPress={handlePhotoSubmit}
-                loading={saving}
-                style={{ marginTop: 16 }}
-              />
+              <Button label="Salvar Pacote" onPress={handlePhotoSubmit} loading={saving} style={{ marginTop: 16 }} />
             </Card>
 
-            <Button
-              label="← Voltar"
-              onPress={() => setMode('menu')}
-              variant="outline"
-            />
+            <Button label="← Voltar" onPress={() => setMode('menu')} variant="outline" />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -454,7 +605,6 @@ export default function InventarioFisicoScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Pending from yesterday */}
         {pendencias.length > 0 && (
           <Card style={styles.pendingCard}>
             <View style={styles.pendingHeader}>
@@ -473,7 +623,6 @@ export default function InventarioFisicoScreen() {
           </Card>
         )}
 
-        {/* Counter */}
         <Card style={styles.counterCard}>
           <Text style={styles.counterValue}>{loading ? '...' : pacotes.length}</Text>
           <Text style={styles.counterLabel}>
@@ -481,13 +630,12 @@ export default function InventarioFisicoScreen() {
           </Text>
         </Card>
 
-        {/* Scan options */}
         <Text style={styles.sectionLabel}>ADICIONAR PACOTES</Text>
 
         <TouchableOpacity
           style={[styles.optionBtn, { backgroundColor: COLORS.black }]}
           onPress={async () => {
-            if (!cameraPermission?.granted) await requestCameraPermission();
+            if (Platform.OS !== 'web' && !cameraPermission?.granted) await requestCameraPermission();
             setMode('scanner');
           }}
           activeOpacity={0.85}
@@ -523,12 +671,9 @@ export default function InventarioFisicoScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Scanned list */}
         {!loading && pacotes.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>
-              INVENTARIADOS HOJE ({pacotes.length})
-            </Text>
+            <Text style={styles.sectionLabel}>INVENTARIADOS HOJE ({pacotes.length})</Text>
             {pacotes.map((p) => (
               <View key={p.id} style={styles.scannedRow}>
                 <Text style={styles.scannedIcon}>{typeIcon(p.tipo_entrada)}</Text>
@@ -544,205 +689,3 @@ export default function InventarioFisicoScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F8F8' },
-  flex: { flex: 1 },
-  container: { padding: 20, paddingBottom: 40 },
-
-  // Scanner
-  scannerContainer: { flex: 1, backgroundColor: '#000' },
-  camera: { flex: 1 },
-  scanOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
-  scanHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  scanBackBtn: { padding: 8 },
-  scanBackText: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
-  flashBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  flashBtnText: { color: COLORS.white, fontWeight: '700' },
-  scanCounter: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  scanCounterText: { color: COLORS.yellow, fontWeight: '800', fontSize: 15 },
-  scanFrame: {
-    width: 260,
-    height: 160,
-    alignSelf: 'center',
-    position: 'relative',
-  },
-  scanCorner: {
-    position: 'absolute',
-    width: 30,
-    height: 30,
-    borderColor: COLORS.yellow,
-    borderWidth: 3,
-  },
-  scanCornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
-  scanCornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
-  scanCornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
-  scanCornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
-  scanResult: {
-    alignSelf: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 16,
-    maxWidth: 320,
-  },
-  scanResultText: { color: COLORS.white, fontWeight: '700', fontSize: 15, textAlign: 'center' },
-  scanHint: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  scanHintText: { color: '#DDD', fontSize: 13 },
-  scanSaving: {
-    flexDirection: 'row',
-    alignSelf: 'center',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  scanSavingText: { color: COLORS.white, fontSize: 13 },
-  recentList: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    padding: 12,
-    paddingBottom: 32,
-  },
-  recentLabel: { color: '#AAA', fontSize: 12, marginBottom: 8 },
-  recentChip: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginRight: 8,
-  },
-  recentChipText: { color: COLORS.white, fontSize: 12, fontFamily: 'monospace' },
-
-  // Main menu
-  pendingCard: {
-    backgroundColor: '#FFF3CD',
-    borderWidth: 1.5,
-    borderColor: COLORS.orange + '66',
-    marginBottom: 12,
-  },
-  pendingHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  pendingTitle: { fontSize: 16, fontWeight: '800', color: '#856404' },
-  pendingSubtitle: { fontSize: 13, color: '#856404', lineHeight: 18, marginBottom: 8 },
-  pendingCode: { fontSize: 13, color: '#856404', fontFamily: 'monospace', marginBottom: 3 },
-  pendingMore: { fontSize: 12, color: '#856404', fontStyle: 'italic', marginTop: 4 },
-  counterCard: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    backgroundColor: COLORS.yellow,
-    marginBottom: 8,
-  },
-  counterValue: { fontSize: 48, fontWeight: '900', color: COLORS.black },
-  counterLabel: { fontSize: 14, color: '#555', fontWeight: '500' },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.gray,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: 16,
-    marginBottom: 10,
-  },
-  optionBtn: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  optionIcon: { fontSize: 30, marginRight: 16 },
-  optionText: { flex: 1 },
-  optionTitle: { fontSize: 17, fontWeight: '800' },
-  optionSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 },
-  scannedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: COLORS.grayBorder,
-  },
-  scannedIcon: { fontSize: 18, marginRight: 10, width: 28 },
-  scannedCode: { flex: 1, fontSize: 13, color: COLORS.black, fontFamily: 'monospace', fontWeight: '600' },
-  scannedTime: { fontSize: 12, color: COLORS.gray, marginLeft: 8 },
-
-  // Manual
-  manualCard: { alignItems: 'center', marginBottom: 20 },
-  manualIcon: { fontSize: 48, marginBottom: 12 },
-  manualTitle: { fontSize: 18, fontWeight: '800', color: COLORS.black, marginBottom: 16 },
-  manualInput: {
-    width: '100%',
-    borderWidth: 2,
-    borderColor: COLORS.yellow,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 18,
-    textAlign: 'center',
-    color: COLORS.black,
-    fontWeight: '700',
-    fontFamily: 'monospace',
-    backgroundColor: '#FFFEF0',
-  },
-
-  // Photo
-  photoCard: { marginBottom: 16 },
-  photoIcon: { fontSize: 48, marginBottom: 10, textAlign: 'center' },
-  photoTitle: { fontSize: 18, fontWeight: '800', color: COLORS.black, marginBottom: 6, textAlign: 'center' },
-  photoSubtitle: { fontSize: 13, color: COLORS.gray, textAlign: 'center', lineHeight: 18, marginBottom: 16 },
-  photoButtons: { flexDirection: 'row', marginBottom: 16 },
-  photoPreviewBox: { alignItems: 'center', marginBottom: 16 },
-  photoPreview: { width: '100%', height: 200, borderRadius: 12 },
-  photoRemove: { marginTop: 8 },
-  photoRemoveText: { color: COLORS.red, fontWeight: '700' },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.black,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  input: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.grayBorder,
-    padding: 14,
-    fontSize: 16,
-    color: COLORS.black,
-    fontFamily: 'monospace',
-  },
-
-  // Permission
-  permBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  permText: { fontSize: 16, textAlign: 'center', marginBottom: 24, color: COLORS.black },
-});
