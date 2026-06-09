@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  ActivityIndicator, Alert, Platform,
+  ActivityIndicator, Alert, Platform, TextInput, Modal, TouchableOpacity,
 } from 'react-native';
 import { supabase } from '../../src/lib/supabase';
 import { importNodosFromSheets, importNodosFromCSV, importNodosFromExcel } from '../../src/lib/sheets';
@@ -80,6 +80,19 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     nodoNome: { fontSize: 15, fontWeight: '700', color: theme.text, marginBottom: 2 },
     nodoCodigo: { fontSize: 12, color: theme.textSec, marginBottom: 4 },
     nodoCidade: { fontSize: 13, color: theme.textSec, marginBottom: 6 },
+    nodoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+    editBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      backgroundColor: COLORS.orange + '22', borderRadius: 8,
+      paddingHorizontal: 12, paddingVertical: 6,
+    },
+    editBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.orange },
+    coordInput: {
+      borderWidth: 1.5, borderColor: theme.inputBorder, borderRadius: 10,
+      padding: 12, fontSize: 15, color: theme.text, backgroundColor: theme.input,
+      marginBottom: 12, fontFamily: 'monospace',
+    },
+    coordHint: { fontSize: 12, color: theme.textSec, marginBottom: 8, lineHeight: 18 },
   });
 }
 
@@ -92,6 +105,13 @@ export default function NovosNodosScreen() {
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState('');
   const [stats, setStats] = useState<{ added: number; updated: number; skipped: number } | null>(null);
+  const [syncModal, setSyncModal] = useState(false);
+
+  // Coordinate editing
+  const [editingNodo, setEditingNodo] = useState<Nodo | null>(null);
+  const [editLat, setEditLat] = useState('');
+  const [editLng, setEditLng] = useState('');
+  const [savingCoords, setSavingCoords] = useState(false);
 
   useEffect(() => {
     loadNodos();
@@ -133,15 +153,35 @@ export default function NovosNodosScreen() {
     }
   }
 
-  function handleSyncSheets() {
-    Alert.alert(
-      'Sincronizar com Google Sheets',
-      'Vai buscar os NODOS da planilha online. Continuar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sincronizar', onPress: () => runImport(() => importNodosFromSheets((msg) => setProgress(msg))) },
-      ]
-    );
+  function handleSyncSheets() { setSyncModal(true); }
+
+  function openEditCoords(nodo: Nodo) {
+    setEditingNodo(nodo);
+    setEditLat(nodo.lat != null ? String(nodo.lat) : '');
+    setEditLng(nodo.lng != null ? String(nodo.lng) : '');
+  }
+
+  async function saveCoords() {
+    if (!editingNodo) return;
+    const lat = parseFloat(editLat.replace(',', '.'));
+    const lng = parseFloat(editLng.replace(',', '.'));
+    if (isNaN(lat) || lat < -90 || lat > 90) {
+      Alert.alert('Latitude inválida', 'Use formato decimal, ex: -23.5505');
+      return;
+    }
+    if (isNaN(lng) || lng < -180 || lng > 180) {
+      Alert.alert('Longitude inválida', 'Use formato decimal, ex: -46.6333');
+      return;
+    }
+    setSavingCoords(true);
+    const { error } = await supabase
+      .from('nodos')
+      .update({ lat, lng })
+      .eq('id', editingNodo.id);
+    setSavingCoords(false);
+    if (error) { Alert.alert('Erro', error.message); return; }
+    setEditingNodo(null);
+    loadNodos();
   }
 
   function handleFile(e: any) {
@@ -271,15 +311,88 @@ export default function NovosNodosScreen() {
                   📍 {nodo.cidade}{nodo.estado ? `, ${nodo.estado}` : ''}
                 </Text>
               )}
-              {nodo.lat ? (
-                <Badge label="Geocodificado ✓" color={COLORS.green} />
-              ) : (
-                <Badge label="Sem coordenadas" color={COLORS.orange} />
-              )}
+              <View style={styles.nodoRow}>
+                {nodo.lat ? (
+                  <Badge label={`✓ ${nodo.lat.toFixed(4)}, ${nodo.lng?.toFixed(4)}`} color={COLORS.green} />
+                ) : (
+                  <Badge label="Sem coordenadas" color={COLORS.orange} />
+                )}
+                <TouchableOpacity style={styles.editBtn} onPress={() => openEditCoords(nodo)}>
+                  <Text style={{ fontSize: 14 }}>📍</Text>
+                  <Text style={styles.editBtnText}>{nodo.lat ? 'Editar coords' : 'Inserir coords'}</Text>
+                </TouchableOpacity>
+              </View>
             </Card>
           ))
         )}
       </ScrollView>
+
+      {/* Sync confirmation modal */}
+      <Modal visible={syncModal} transparent animationType="fade" onRequestClose={() => setSyncModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginBottom: 8 }}>
+              🔄 Sincronizar com Google Sheets
+            </Text>
+            <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 22, marginBottom: 20 }}>
+              Vai buscar os NODOS da planilha online. Pode falhar por restrição de acesso (CORS). Continuar?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancelar" onPress={() => setSyncModal(false)} variant="outline" style={{ flex: 1 }} />
+              <Button label="Sincronizar" onPress={() => { setSyncModal(false); runImport(() => importNodosFromSheets((msg) => setProgress(msg))); }} style={{ flex: 1 }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit coordinates modal */}
+      <Modal visible={!!editingNodo} transparent animationType="fade" onRequestClose={() => setEditingNodo(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 400 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginBottom: 4 }}>
+              📍 Coordenadas
+            </Text>
+            <Text style={{ fontSize: 13, color: theme.textSec, marginBottom: 16 }}>
+              {editingNodo?.nome}
+            </Text>
+
+            <Text style={styles.coordHint}>
+              Use coordenadas decimais. Exemplo para São Paulo:{'\n'}
+              Latitude: <Text style={{ fontWeight: '700', color: theme.text }}>-23.5505</Text>
+              {'   '}Longitude: <Text style={{ fontWeight: '700', color: theme.text }}>-46.6333</Text>
+              {'\n'}Dica: abra o Google Maps, segure o ponto desejado e copie as coordenadas.
+            </Text>
+
+            <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 6 }}>Latitude</Text>
+            <TextInput
+              style={styles.coordInput}
+              placeholder="-23.5505"
+              placeholderTextColor={theme.textTer}
+              value={editLat}
+              onChangeText={setEditLat}
+              keyboardType="numbers-and-punctuation"
+              returnKeyType="next"
+            />
+
+            <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 6 }}>Longitude</Text>
+            <TextInput
+              style={styles.coordInput}
+              placeholder="-46.6333"
+              placeholderTextColor={theme.textTer}
+              value={editLng}
+              onChangeText={setEditLng}
+              keyboardType="numbers-and-punctuation"
+              returnKeyType="done"
+              onSubmitEditing={saveCoords}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+              <Button label="Cancelar" onPress={() => setEditingNodo(null)} variant="outline" style={{ flex: 1 }} />
+              <Button label="Salvar" onPress={saveCoords} loading={savingCoords} style={{ flex: 1 }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
