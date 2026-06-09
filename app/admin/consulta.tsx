@@ -13,6 +13,21 @@ import { CONSULTA_PASSWORD } from '../../src/config';
 import { formatDateTimeBRT, formatTimeBRT } from '../../src/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────
+interface AgenciaPacote {
+  codigo: string;
+  expedited_at: string | null;
+  recebido_at: string | null;
+}
+
+interface AgenciaData {
+  nodo_id: string;
+  nodo_nome: string;
+  total_enviados: number;
+  total_recebidos: number;
+  total_pendentes: number;
+  pacotes: AgenciaPacote[];
+}
+
 interface Expedicao {
   id: string;
   created_at: string;
@@ -55,11 +70,29 @@ function makeStyles(t: Theme) {
     },
 
     // Tabs
-    tabRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-    tab: { flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: t.border, alignItems: 'center' },
+    tabRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+    tab: { flex: 1, minWidth: '45%', paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: t.border, alignItems: 'center' },
     tabActive: { backgroundColor: COLORS.yellow, borderColor: COLORS.yellow },
-    tabLabel: { fontSize: 13, fontWeight: '700', color: t.textSec },
+    tabLabel: { fontSize: 12, fontWeight: '700', color: t.textSec },
     tabLabelActive: { color: COLORS.black },
+
+    // Agency cards
+    agCard: { padding: 14, marginBottom: 10 },
+    agHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    agName: { fontSize: 15, fontWeight: '800', color: t.text, flex: 1 },
+    agActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+    agExpandBtn: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, borderColor: t.border },
+    agExpandText: { fontSize: 12, fontWeight: '700', color: t.textSec },
+    agDownloadBtn: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, paddingVertical: 8, borderRadius: 10, backgroundColor: COLORS.blue + '22' },
+    agDownloadText: { fontSize: 12, fontWeight: '700', color: COLORS.blue },
+    codeRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: t.border },
+    codeText: { flex: 1, fontSize: 12, color: t.text, fontFamily: 'monospace' },
+    codeStatus: { fontSize: 11, fontWeight: '700' },
+    periodRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    periodBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, borderWidth: 1.5, borderColor: t.border, backgroundColor: t.surface },
+    periodBtnActive: { backgroundColor: COLORS.black, borderColor: COLORS.black },
+    periodBtnText: { fontSize: 12, fontWeight: '700', color: t.textSec },
+    periodBtnTextActive: { color: COLORS.yellow },
 
     // Search
     searchRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
@@ -111,7 +144,7 @@ export default function ConsultaScreen() {
 
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState('');
-  const [tab, setTab] = useState<'expedicoes' | 'busca' | 'exportar'>('expedicoes');
+  const [tab, setTab] = useState<'expedicoes' | 'agencias' | 'busca' | 'exportar'>('expedicoes');
 
   // Export tab state
   const [exportDateFrom, setExportDateFrom] = useState(() =>
@@ -126,6 +159,12 @@ export default function ConsultaScreen() {
   const [expedicoes, setExpedicoes] = useState<Expedicao[]>([]);
   const [loadingExp, setLoadingExp] = useState(false);
   const [expLoaded, setExpLoaded] = useState(false);
+
+  // Agências tab state
+  const [agencias, setAgencias] = useState<AgenciaData[]>([]);
+  const [loadingAgencias, setLoadingAgencias] = useState(false);
+  const [expandedAgencias, setExpandedAgencias] = useState<Set<string>>(new Set());
+  const [agenciasPeriod, setAgenciasPeriod] = useState(7);
 
   // Busca tab state
   const [searchCode, setSearchCode] = useState('');
@@ -263,6 +302,84 @@ export default function ConsultaScreen() {
     }
   }
 
+  // ─── Agências ────────────────────────────────────────────────────
+  async function loadAgencias(days = agenciasPeriod) {
+    setLoadingAgencias(true);
+    setExpandedAgencias(new Set());
+    try {
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const { data: pkgs } = await supabase
+        .from('pacotes_inventario')
+        .select('codigo, nodo_id, expedited_at, nodos(nome)')
+        .eq('status', 'expedited')
+        .gte('expedited_at', since)
+        .order('expedited_at', { ascending: false });
+
+      if (!pkgs || pkgs.length === 0) {
+        setAgencias([]);
+        return;
+      }
+
+      const codes = pkgs.map((p: any) => p.codigo);
+      const { data: received } = await supabase
+        .from('svc_recebimentos_pacotes')
+        .select('codigo, created_at')
+        .in('codigo', codes);
+      const receivedMap = new Map((received || []).map((r: any) => [r.codigo, r.created_at as string]));
+
+      const agMap = new Map<string, AgenciaData>();
+      for (const p of pkgs as any[]) {
+        if (!agMap.has(p.nodo_id)) {
+          agMap.set(p.nodo_id, {
+            nodo_id: p.nodo_id,
+            nodo_nome: p.nodos?.nome || p.nodo_id,
+            total_enviados: 0, total_recebidos: 0, total_pendentes: 0,
+            pacotes: [],
+          });
+        }
+        const ag = agMap.get(p.nodo_id)!;
+        const recAt = receivedMap.get(p.codigo) || null;
+        ag.total_enviados++;
+        if (recAt) ag.total_recebidos++; else ag.total_pendentes++;
+        ag.pacotes.push({ codigo: p.codigo, expedited_at: p.expedited_at, recebido_at: recAt });
+      }
+
+      setAgencias(Array.from(agMap.values()).sort((a, b) => b.total_pendentes - a.total_pendentes));
+    } finally {
+      setLoadingAgencias(false);
+    }
+  }
+
+  function toggleAgencia(nodoId: string) {
+    setExpandedAgencias((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodoId)) next.delete(nodoId); else next.add(nodoId);
+      return next;
+    });
+  }
+
+  function downloadAgenciaCSV(ag: AgenciaData) {
+    const header = 'Código,Status,Data Expedição (BRT),Data Recebimento SVC (BRT)';
+    const rows = ag.pacotes.map((p) => [
+      p.codigo,
+      p.recebido_at ? 'Recebido SVC' : 'Pendente',
+      p.expedited_at ? formatDateTimeBRT(p.expedited_at) : '',
+      p.recebido_at ? formatDateTimeBRT(p.recebido_at) : '',
+    ].join(','));
+    const csv = '﻿' + [header, ...rows].join('\n');
+    const filename = `agencia_${ag.nodo_nome.replace(/\s+/g, '_')}_${agenciasPeriod}d.csv`;
+    if (Platform.OS === 'web') {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = (document as any).createElement('a');
+      a.href = url; a.download = filename;
+      (document as any).body.appendChild(a);
+      a.click();
+      (document as any).body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  }
+
   // ─── CSV Export ─────────────────────────────────────────────────
   async function doExport() {
     setExporting(true);
@@ -364,32 +481,25 @@ export default function ConsultaScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {/* Tabs */}
+        {/* Tabs — 2×2 grid */}
         <View style={styles.tabRow}>
-          <TouchableOpacity
-            style={[styles.tab, tab === 'expedicoes' && styles.tabActive]}
-            onPress={() => setTab('expedicoes')}
-          >
-            <Text style={[styles.tabLabel, tab === 'expedicoes' && styles.tabLabelActive]}>
-              📦 Expedições
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, tab === 'busca' && styles.tabActive]}
-            onPress={() => setTab('busca')}
-          >
-            <Text style={[styles.tabLabel, tab === 'busca' && styles.tabLabelActive]}>
-              🔍 Buscar
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, tab === 'exportar' && styles.tabActive]}
-            onPress={() => setTab('exportar')}
-          >
-            <Text style={[styles.tabLabel, tab === 'exportar' && styles.tabLabelActive]}>
-              📥 CSV
-            </Text>
-          </TouchableOpacity>
+          {([
+            ['expedicoes', '📦 Expedições'],
+            ['agencias',   '🏪 Por Agência'],
+            ['busca',      '🔍 Buscar Pacote'],
+            ['exportar',   '📥 Exportar CSV'],
+          ] as const).map(([key, label]) => (
+            <TouchableOpacity
+              key={key}
+              style={[styles.tab, tab === key && styles.tabActive]}
+              onPress={() => {
+                setTab(key);
+                if (key === 'agencias' && agencias.length === 0 && !loadingAgencias) loadAgencias();
+              }}
+            >
+              <Text style={[styles.tabLabel, tab === key && styles.tabLabelActive]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* ── EXPEDIÇÕES TAB ── */}
@@ -452,6 +562,104 @@ export default function ConsultaScreen() {
                 </View>
               </Card>
             ))}
+          </>
+        )}
+
+        {/* ── AGÊNCIAS TAB ── */}
+        {tab === 'agencias' && (
+          <>
+            {/* Period selector */}
+            <View style={styles.periodRow}>
+              {([7, 15, 30] as const).map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  style={[styles.periodBtn, agenciasPeriod === d && styles.periodBtnActive]}
+                  onPress={() => { setAgenciasPeriod(d); loadAgencias(d); }}
+                >
+                  <Text style={[styles.periodBtnText, agenciasPeriod === d && styles.periodBtnTextActive]}>
+                    {d} dias
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={[styles.periodBtn, { marginLeft: 'auto' as any }]}
+                onPress={() => loadAgencias()}
+              >
+                <Text style={styles.periodBtnText}>↺ Atualizar</Text>
+              </TouchableOpacity>
+            </View>
+
+            {loadingAgencias && <ActivityIndicator color={COLORS.yellow} style={{ marginTop: 20 }} />}
+
+            {!loadingAgencias && agencias.length === 0 && (
+              <Card style={styles.emptyCard}>
+                <Text style={styles.emptyText}>Nenhuma expedição encontrada no período.</Text>
+              </Card>
+            )}
+
+            {agencias.map((ag) => {
+              const expanded = expandedAgencias.has(ag.nodo_id);
+              return (
+                <Card key={ag.nodo_id} style={styles.agCard}>
+                  {/* Header */}
+                  <View style={styles.agHeader}>
+                    <Text style={styles.agName}>{ag.nodo_nome}</Text>
+                    {ag.total_pendentes > 0
+                      ? <Badge label={`${ag.total_pendentes} pendente${ag.total_pendentes !== 1 ? 's' : ''}`} color={COLORS.red} />
+                      : <Badge label="✓ Completo" color={COLORS.green} />
+                    }
+                  </View>
+
+                  {/* Stats */}
+                  <View style={styles.statsRow}>
+                    <View style={[styles.statBox, { backgroundColor: COLORS.blue + '22' }]}>
+                      <Text style={[styles.statVal, { color: COLORS.blue }]}>{ag.total_enviados}</Text>
+                      <Text style={[styles.statLbl, { color: COLORS.blue }]}>Enviados</Text>
+                    </View>
+                    <View style={[styles.statBox, { backgroundColor: COLORS.green + '22' }]}>
+                      <Text style={[styles.statVal, { color: COLORS.green }]}>{ag.total_recebidos}</Text>
+                      <Text style={[styles.statLbl, { color: COLORS.green }]}>Recebidos</Text>
+                    </View>
+                    <View style={[styles.statBox, { backgroundColor: ag.total_pendentes > 0 ? COLORS.red + '22' : COLORS.green + '11' }]}>
+                      <Text style={[styles.statVal, { color: ag.total_pendentes > 0 ? COLORS.red : COLORS.green }]}>{ag.total_pendentes}</Text>
+                      <Text style={[styles.statLbl, { color: ag.total_pendentes > 0 ? COLORS.red : COLORS.green }]}>Pendentes</Text>
+                    </View>
+                  </View>
+
+                  {/* Action buttons */}
+                  <View style={styles.agActions}>
+                    <TouchableOpacity style={styles.agExpandBtn} onPress={() => toggleAgencia(ag.nodo_id)}>
+                      <Text style={{ fontSize: 14 }}>{expanded ? '▲' : '▼'}</Text>
+                      <Text style={styles.agExpandText}>
+                        {expanded ? 'Fechar' : `Ver ${ag.pacotes.length} IDs`}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.agDownloadBtn} onPress={() => downloadAgenciaCSV(ag)}>
+                      <Text style={{ fontSize: 14 }}>📥</Text>
+                      <Text style={styles.agDownloadText}>Baixar CSV</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Expanded package list */}
+                  {expanded && (
+                    <View style={{ marginTop: 12 }}>
+                      <Text style={[styles.sectionLabel, { marginTop: 0 }]}>
+                        TODOS OS IDs ({ag.pacotes.length})
+                      </Text>
+                      {ag.pacotes.map((p, i) => (
+                        <View key={i} style={styles.codeRow}>
+                          <Text style={styles.codeText}>{p.codigo}</Text>
+                          {p.recebido_at
+                            ? <Text style={[styles.codeStatus, { color: COLORS.green }]}>✅ Recebido</Text>
+                            : <Text style={[styles.codeStatus, { color: COLORS.red }]}>⏳ Pendente</Text>
+                          }
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </Card>
+              );
+            })}
           </>
         )}
 
