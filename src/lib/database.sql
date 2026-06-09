@@ -130,8 +130,15 @@ ALTER TABLE pacotes_inventario ENABLE ROW LEVEL SECURITY;
 ALTER TABLE svc_recebimentos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE svc_recebimentos_pacotes ENABLE ROW LEVEL SECURITY;
 
--- Policies permissivas para uso com anon key
--- (ajuste em produção conforme necessidade de autenticação)
+-- Policies permissivas (DROP antes para evitar conflito em re-execuções)
+DROP POLICY IF EXISTS "Allow all" ON nodos;
+DROP POLICY IF EXISTS "Allow all" ON sacas_movimentos;
+DROP POLICY IF EXISTS "Allow all" ON pacotes_expedicoes;
+DROP POLICY IF EXISTS "Allow all" ON pacotes_inventario;
+DROP POLICY IF EXISTS "Allow all" ON svc_recebimentos;
+DROP POLICY IF EXISTS "Allow all" ON svc_recebimentos_pacotes;
+DROP POLICY IF EXISTS "Allow all storage" ON storage.objects;
+
 CREATE POLICY "Allow all" ON nodos FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON sacas_movimentos FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON pacotes_expedicoes FOR ALL USING (true) WITH CHECK (true);
@@ -139,6 +146,5 @@ CREATE POLICY "Allow all" ON pacotes_inventario FOR ALL USING (true) WITH CHECK 
 CREATE POLICY "Allow all" ON svc_recebimentos FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON svc_recebimentos_pacotes FOR ALL USING (true) WITH CHECK (true);
 
--- Storage policy
 CREATE POLICY "Allow all storage" ON storage.objects
   FOR ALL USING (bucket_id = 'pacotes-fotos') WITH CHECK (bucket_id = 'pacotes-fotos');
