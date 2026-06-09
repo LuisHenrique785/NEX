@@ -6,6 +6,7 @@ import {
 import { supabase } from '../../src/lib/supabase';
 import { importNodosFromSheets, importNodosFromCSV } from '../../src/lib/sheets';
 import { COLORS, Button, Card, Badge } from '../../src/components/ui';
+import { useTheme } from '../../src/lib/theme';
 
 interface Nodo {
   id: string;
@@ -18,7 +19,74 @@ interface Nodo {
   created_at: string;
 }
 
+function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.bg },
+    container: { padding: 20, paddingBottom: 40 },
+    infoCard: {
+      backgroundColor: '#FFFEF0',
+      borderWidth: 1.5,
+      borderColor: COLORS.yellow,
+      marginBottom: 16,
+    },
+    infoTitle: { fontSize: 16, fontWeight: '800', color: theme.text, marginBottom: 8 },
+    infoText: { fontSize: 13, color: theme.textSec, lineHeight: 20 },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.textSec,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: 10,
+    },
+    hint: { fontSize: 12, color: theme.textSec, marginTop: 6, marginBottom: 4, lineHeight: 18 },
+    uploadBtn: {
+      backgroundColor: COLORS.black,
+      borderRadius: 16,
+      padding: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+      marginBottom: 12,
+      position: 'relative',
+    },
+    uploadBtnDisabled: { opacity: 0.5 },
+    uploadIcon: { fontSize: 32, marginRight: 16 },
+    uploadText: { flex: 1 },
+    uploadTitle: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
+    uploadSubtitle: { color: theme.textTer, fontSize: 13, marginTop: 3 },
+    howToCard: {
+      backgroundColor: '#F0F8FF',
+      borderWidth: 1,
+      borderColor: COLORS.blue + '44',
+      marginBottom: 8,
+    },
+    howToTitle: { fontSize: 13, fontWeight: '800', color: theme.text, marginBottom: 10 },
+    howToStep: { fontSize: 13, color: theme.textSec, lineHeight: 22 },
+    bold: { fontWeight: '700', color: theme.text },
+    progressCard: { backgroundColor: '#1A1A1A', marginBottom: 12, alignItems: 'center' },
+    progressText: { color: COLORS.yellow, fontSize: 13, textAlign: 'center' },
+    statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+    statBox: { flex: 1, borderWidth: 1.5, borderRadius: 14, padding: 16, alignItems: 'center' },
+    statVal: { fontSize: 28, fontWeight: '900' },
+    statLbl: { fontSize: 12, color: theme.textSec, marginTop: 2 },
+    emptyCard: { alignItems: 'center', paddingVertical: 28 },
+    emptyText: { color: theme.textSec, fontSize: 14, textAlign: 'center', lineHeight: 22 },
+    nodoCard: { padding: 14, marginBottom: 8 },
+    nodoNome: { fontSize: 15, fontWeight: '700', color: theme.text, marginBottom: 2 },
+    nodoCodigo: { fontSize: 12, color: theme.textSec, marginBottom: 4 },
+    nodoCidade: { fontSize: 13, color: theme.textSec, marginBottom: 6 },
+  });
+}
+
 export default function NovosNodosScreen() {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
+
   const [nodos, setNodos] = useState<Nodo[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
@@ -208,61 +276,3 @@ export default function NovosNodosScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F8F8' },
-  container: { padding: 20, paddingBottom: 40 },
-  infoCard: {
-    backgroundColor: '#FFFEF0',
-    borderWidth: 1.5,
-    borderColor: COLORS.yellow,
-    marginBottom: 16,
-  },
-  infoTitle: { fontSize: 16, fontWeight: '800', color: COLORS.black, marginBottom: 8 },
-  infoText: { fontSize: 13, color: COLORS.gray, lineHeight: 20 },
-  sectionLabel: {
-    fontSize: 12, fontWeight: '700', color: COLORS.gray,
-    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10,
-  },
-  hint: { fontSize: 12, color: COLORS.gray, marginTop: 6, marginBottom: 4, lineHeight: 18 },
-  uploadBtn: {
-    backgroundColor: COLORS.black,
-    borderRadius: 16,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: 12,
-    position: 'relative',
-  },
-  uploadBtnDisabled: { opacity: 0.5 },
-  uploadIcon: { fontSize: 32, marginRight: 16 },
-  uploadText: { flex: 1 },
-  uploadTitle: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
-  uploadSubtitle: { color: '#AAA', fontSize: 13, marginTop: 3 },
-  howToCard: {
-    backgroundColor: '#F0F8FF',
-    borderWidth: 1,
-    borderColor: COLORS.blue + '44',
-    marginBottom: 8,
-  },
-  howToTitle: { fontSize: 13, fontWeight: '800', color: COLORS.black, marginBottom: 10 },
-  howToStep: { fontSize: 13, color: COLORS.gray, lineHeight: 22 },
-  bold: { fontWeight: '700', color: COLORS.black },
-  progressCard: { backgroundColor: '#1A1A1A', marginBottom: 12, alignItems: 'center' },
-  progressText: { color: COLORS.yellow, fontSize: 13, textAlign: 'center' },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  statBox: { flex: 1, borderWidth: 1.5, borderRadius: 14, padding: 16, alignItems: 'center' },
-  statVal: { fontSize: 28, fontWeight: '900' },
-  statLbl: { fontSize: 12, color: COLORS.gray, marginTop: 2 },
-  emptyCard: { alignItems: 'center', paddingVertical: 28 },
-  emptyText: { color: COLORS.gray, fontSize: 14, textAlign: 'center', lineHeight: 22 },
-  nodoCard: { padding: 14, marginBottom: 8 },
-  nodoNome: { fontSize: 15, fontWeight: '700', color: COLORS.black, marginBottom: 2 },
-  nodoCodigo: { fontSize: 12, color: COLORS.gray, marginBottom: 4 },
-  nodoCidade: { fontSize: 13, color: COLORS.gray, marginBottom: 6 },
-});

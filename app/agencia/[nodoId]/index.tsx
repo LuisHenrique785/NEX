@@ -5,6 +5,7 @@ import {
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../../src/lib/supabase';
 import { COLORS, MenuCard, Card } from '../../../src/components/ui';
+import { useTheme } from '../../../src/lib/theme';
 
 interface Nodo {
   id: string;
@@ -15,7 +16,43 @@ interface Nodo {
   estado: string;
 }
 
+function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.bg },
+    loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    container: { padding: 20, paddingBottom: 40 },
+    nodoCard: { marginBottom: 8 },
+    nodoHeader: { flexDirection: 'row', alignItems: 'flex-start' },
+    nodoIconBox: {
+      width: 52,
+      height: 52,
+      borderRadius: 14,
+      backgroundColor: COLORS.yellow,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+    },
+    nodoIconText: { fontSize: 26 },
+    nodoInfo: { flex: 1 },
+    nodoName: { fontSize: 17, fontWeight: '800', color: theme.text, marginBottom: 3 },
+    nodoCode: { fontSize: 12, color: theme.textSec, fontWeight: '600', marginBottom: 4 },
+    nodoAddress: { fontSize: 13, color: theme.textSec, lineHeight: 18 },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.textSec,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginTop: 8,
+      marginBottom: 8,
+    },
+  });
+}
+
 export default function AgenciaHomeScreen() {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
+
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
   const navigation = useNavigation();
   const [nodo, setNodo] = useState<Nodo | null>(null);
@@ -88,34 +125,3 @@ export default function AgenciaHomeScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F8F8' },
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  container: { padding: 20, paddingBottom: 40 },
-  nodoCard: { marginBottom: 8 },
-  nodoHeader: { flexDirection: 'row', alignItems: 'flex-start' },
-  nodoIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: COLORS.yellow,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  nodoIconText: { fontSize: 26 },
-  nodoInfo: { flex: 1 },
-  nodoName: { fontSize: 17, fontWeight: '800', color: COLORS.black, marginBottom: 3 },
-  nodoCode: { fontSize: 12, color: COLORS.gray, fontWeight: '600', marginBottom: 4 },
-  nodoAddress: { fontSize: 13, color: COLORS.gray, lineHeight: 18 },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.gray,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: 8,
-    marginBottom: 8,
-  },
-});

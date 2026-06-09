@@ -6,8 +6,52 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../../../src/lib/supabase';
 import { COLORS, Button, Card } from '../../../../src/components/ui';
+import { useTheme } from '../../../../src/lib/theme';
+
+function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.bg },
+    flex: { flex: 1 },
+    container: { padding: 20, paddingBottom: 40 },
+    infoCard: {
+      alignItems: 'center',
+      paddingVertical: 28,
+      marginBottom: 12,
+      backgroundColor: '#EFF6FF',
+      borderWidth: 1.5,
+      borderColor: COLORS.blue + '44',
+    },
+    infoIcon: { fontSize: 48, marginBottom: 10 },
+    infoTitle: { fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 6 },
+    infoText: { fontSize: 14, color: theme.textSec, textAlign: 'center', lineHeight: 20 },
+    label: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: theme.text,
+      marginBottom: 8,
+      marginTop: 16,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    input: {
+      backgroundColor: theme.input,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: theme.inputBorder,
+      padding: 14,
+      fontSize: 16,
+      color: theme.text,
+      fontWeight: '600',
+    },
+    textArea: { minHeight: 80, textAlignVertical: 'top', fontWeight: '400' },
+    saveBtn: { marginTop: 28 },
+  });
+}
 
 export default function SacasExpedicaoScreen() {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
+
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
   const [quantidade, setQuantidade] = useState('');
   const [placa, setPlaca] = useState('');
@@ -88,6 +132,7 @@ export default function SacasExpedicaoScreen() {
           <TextInput
             style={styles.input}
             placeholder="Ex: 30"
+            placeholderTextColor={theme.textTer}
             value={quantidade}
             onChangeText={setQuantidade}
             keyboardType="number-pad"
@@ -98,6 +143,7 @@ export default function SacasExpedicaoScreen() {
           <TextInput
             style={styles.input}
             placeholder="Ex: ABC1234"
+            placeholderTextColor={theme.textTer}
             value={placa}
             onChangeText={(t) => setPlaca(formatPlaca(t))}
             autoCapitalize="characters"
@@ -109,6 +155,7 @@ export default function SacasExpedicaoScreen() {
           <TextInput
             style={styles.input}
             placeholder="Ex: Total Express"
+            placeholderTextColor={theme.textTer}
             value={transportadora}
             onChangeText={setTransportadora}
             returnKeyType="next"
@@ -119,6 +166,7 @@ export default function SacasExpedicaoScreen() {
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Observações adicionais..."
+            placeholderTextColor={theme.textTer}
             value={observacao}
             onChangeText={setObservacao}
             multiline
@@ -137,41 +185,3 @@ export default function SacasExpedicaoScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F8F8' },
-  flex: { flex: 1 },
-  container: { padding: 20, paddingBottom: 40 },
-  infoCard: {
-    alignItems: 'center',
-    paddingVertical: 28,
-    marginBottom: 12,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1.5,
-    borderColor: COLORS.blue + '44',
-  },
-  infoIcon: { fontSize: 48, marginBottom: 10 },
-  infoTitle: { fontSize: 20, fontWeight: '800', color: COLORS.black, marginBottom: 6 },
-  infoText: { fontSize: 14, color: COLORS.gray, textAlign: 'center', lineHeight: 20 },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.black,
-    marginBottom: 8,
-    marginTop: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.grayBorder,
-    padding: 14,
-    fontSize: 16,
-    color: COLORS.black,
-    fontWeight: '600',
-  },
-  textArea: { minHeight: 80, textAlignVertical: 'top', fontWeight: '400' },
-  saveBtn: { marginTop: 28 },
-});

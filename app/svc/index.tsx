@@ -5,6 +5,7 @@ import {
 import { router } from 'expo-router';
 import { supabase } from '../../src/lib/supabase';
 import { COLORS, MenuCard, Card } from '../../src/components/ui';
+import { useTheme } from '../../src/lib/theme';
 
 interface RecentRecebimento {
   id: string;
@@ -14,7 +15,53 @@ interface RecentRecebimento {
   created_at: string;
 }
 
+function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.bg },
+    container: { padding: 20, paddingBottom: 40 },
+    banner: {
+      backgroundColor: COLORS.black,
+      borderRadius: 20,
+      padding: 24,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      gap: 16,
+    },
+    bannerIcon: { fontSize: 40 },
+    bannerTitle: { fontSize: 24, fontWeight: '900', color: COLORS.yellow },
+    bannerSubtitle: { fontSize: 14, color: '#AAA' },
+    statCard: {
+      alignItems: 'center',
+      paddingVertical: 24,
+      backgroundColor: COLORS.yellow,
+      marginBottom: 8,
+    },
+    statValue: { fontSize: 48, fontWeight: '900', color: COLORS.black },
+    statLabel: { fontSize: 14, color: '#555', fontWeight: '500' },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.textSec,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginTop: 16,
+      marginBottom: 10,
+    },
+    recCard: { padding: 14 },
+    recRow: { flexDirection: 'row', alignItems: 'center' },
+    recIcon: { fontSize: 24, marginRight: 12 },
+    recInfo: { flex: 1 },
+    recQtd: { fontSize: 16, fontWeight: '800', color: theme.text },
+    recDetail: { fontSize: 13, color: theme.textSec, marginTop: 2 },
+    recTime: { fontSize: 12, color: theme.textSec },
+  });
+}
+
 export default function SVCHomeScreen() {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
+
   const [recentes, setRecentes] = useState<RecentRecebimento[]>([]);
   const [totalHoje, setTotalHoje] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -98,39 +145,3 @@ export default function SVCHomeScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F8F8' },
-  container: { padding: 20, paddingBottom: 40 },
-  banner: {
-    backgroundColor: COLORS.black,
-    borderRadius: 20,
-    padding: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 16,
-  },
-  bannerIcon: { fontSize: 40 },
-  bannerTitle: { fontSize: 24, fontWeight: '900', color: COLORS.yellow },
-  bannerSubtitle: { fontSize: 14, color: '#AAA' },
-  statCard: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    backgroundColor: COLORS.yellow,
-    marginBottom: 8,
-  },
-  statValue: { fontSize: 48, fontWeight: '900', color: COLORS.black },
-  statLabel: { fontSize: 14, color: '#555', fontWeight: '500' },
-  sectionLabel: {
-    fontSize: 12, fontWeight: '700', color: COLORS.gray,
-    textTransform: 'uppercase', letterSpacing: 1, marginTop: 16, marginBottom: 10,
-  },
-  recCard: { padding: 14 },
-  recRow: { flexDirection: 'row', alignItems: 'center' },
-  recIcon: { fontSize: 24, marginRight: 12 },
-  recInfo: { flex: 1 },
-  recQtd: { fontSize: 16, fontWeight: '800', color: COLORS.black },
-  recDetail: { fontSize: 13, color: COLORS.gray, marginTop: 2 },
-  recTime: { fontSize: 12, color: COLORS.gray },
-});

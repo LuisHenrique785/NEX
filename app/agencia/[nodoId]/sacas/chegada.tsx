@@ -6,8 +6,52 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../../../src/lib/supabase';
 import { COLORS, Button, Card } from '../../../../src/components/ui';
+import { useTheme } from '../../../../src/lib/theme';
+
+function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.bg },
+    flex: { flex: 1 },
+    container: { padding: 20, paddingBottom: 40 },
+    infoCard: {
+      alignItems: 'center',
+      paddingVertical: 28,
+      marginBottom: 12,
+      backgroundColor: '#F0FFF4',
+      borderWidth: 1.5,
+      borderColor: COLORS.green + '44',
+    },
+    infoIcon: { fontSize: 48, marginBottom: 10 },
+    infoTitle: { fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 6 },
+    infoText: { fontSize: 14, color: theme.textSec, textAlign: 'center', lineHeight: 20 },
+    label: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: theme.text,
+      marginBottom: 8,
+      marginTop: 16,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    input: {
+      backgroundColor: theme.input,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: theme.inputBorder,
+      padding: 14,
+      fontSize: 18,
+      color: theme.text,
+      fontWeight: '600',
+    },
+    textArea: { fontSize: 15, fontWeight: '400', minHeight: 80, textAlignVertical: 'top' },
+    saveBtn: { marginTop: 28 },
+  });
+}
 
 export default function SacasChegadaScreen() {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
+
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
   const [quantidade, setQuantidade] = useState('');
   const [observacao, setObservacao] = useState('');
@@ -70,6 +114,7 @@ export default function SacasChegadaScreen() {
           <TextInput
             style={styles.input}
             placeholder="Ex: 25"
+            placeholderTextColor={theme.textTer}
             value={quantidade}
             onChangeText={setQuantidade}
             keyboardType="number-pad"
@@ -80,6 +125,7 @@ export default function SacasChegadaScreen() {
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Ex: Carga do turno da manhã..."
+            placeholderTextColor={theme.textTer}
             value={observacao}
             onChangeText={setObservacao}
             multiline
@@ -98,41 +144,3 @@ export default function SacasChegadaScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F8F8' },
-  flex: { flex: 1 },
-  container: { padding: 20, paddingBottom: 40 },
-  infoCard: {
-    alignItems: 'center',
-    paddingVertical: 28,
-    marginBottom: 12,
-    backgroundColor: '#F0FFF4',
-    borderWidth: 1.5,
-    borderColor: COLORS.green + '44',
-  },
-  infoIcon: { fontSize: 48, marginBottom: 10 },
-  infoTitle: { fontSize: 20, fontWeight: '800', color: COLORS.black, marginBottom: 6 },
-  infoText: { fontSize: 14, color: COLORS.gray, textAlign: 'center', lineHeight: 20 },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.black,
-    marginBottom: 8,
-    marginTop: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.grayBorder,
-    padding: 14,
-    fontSize: 18,
-    color: COLORS.black,
-    fontWeight: '600',
-  },
-  textArea: { fontSize: 15, fontWeight: '400', minHeight: 80, textAlignVertical: 'top' },
-  saveBtn: { marginTop: 28 },
-});

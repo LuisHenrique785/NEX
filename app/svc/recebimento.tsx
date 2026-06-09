@@ -9,6 +9,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useNavigation } from 'expo-router';
 import { supabase } from '../../src/lib/supabase';
 import { COLORS, Button, Card } from '../../src/components/ui';
+import { useTheme } from '../../src/lib/theme';
+import type { Theme } from '../../src/lib/theme';
 
 interface Pacote {
   codigo: string;
@@ -30,8 +32,35 @@ function formatPlaca(text: string) {
   return text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
 }
 
+function makeStyles(t: Theme) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: t.bg },
+    flex: { flex: 1 },
+    container: { padding: 20, paddingBottom: 40 },
+    sectionLabel: { fontSize: 12, fontWeight: '700', color: t.textSec, textTransform: 'uppercase', letterSpacing: 1, marginTop: 16, marginBottom: 10 },
+    fieldLabel: { fontSize: 13, fontWeight: '700', color: t.text, marginBottom: 6, marginTop: 12 },
+    input: { backgroundColor: t.input, borderRadius: 10, borderWidth: 1.5, borderColor: t.inputBorder, padding: 12, fontSize: 15, color: t.text },
+    addButtons: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+    addBtn: { flex: 1, borderRadius: 14, padding: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: t.isDark ? 0.25 : 0.12, shadowRadius: 6, elevation: 3 },
+    addBtnIcon: { fontSize: 22, marginBottom: 4 },
+    addBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+    manualInput: { borderWidth: 2, borderColor: t.yellow, borderRadius: 10, padding: 12, fontSize: 16, textAlign: 'center', color: t.text, fontWeight: '700', fontFamily: 'monospace', backgroundColor: t.isDark ? '#2C2C00' : '#FFFEF0' },
+    photoPreview: { width: '100%', height: 160, borderRadius: 10, marginBottom: 8 },
+    pacoteRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: t.surface, borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: t.border },
+    pacoteIcon: { fontSize: 18, marginRight: 10, width: 26 },
+    pacoteCodigo: { flex: 1, fontSize: 13, color: t.text, fontFamily: 'monospace', fontWeight: '600' },
+    pacoteRemove: { color: t.red, fontSize: 18, fontWeight: '700', paddingHorizontal: 6 },
+    emptyCard: { alignItems: 'center', paddingVertical: 20 },
+    emptyText: { color: t.textSec, fontSize: 14 },
+    permBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, backgroundColor: t.bg },
+    permText: { fontSize: 16, textAlign: 'center', marginBottom: 24, color: t.text },
+  });
+}
+
 export default function SVCRecebimentoScreen() {
   const navigation = useNavigation();
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const [nomeMotorista, setNomeMotorista] = useState('');
   const [cpfMotorista, setCpfMotorista] = useState('');
@@ -53,12 +82,12 @@ export default function SVCRecebimentoScreen() {
     navigation.setOptions({
       headerShown: inputMode !== 'scanner',
       title: 'Recebimento de Pacotes',
-      headerStyle: { backgroundColor: COLORS.yellow },
-      headerTintColor: COLORS.black,
+      headerStyle: { backgroundColor: theme.header },
+      headerTintColor: theme.headerText,
       headerTitleStyle: { fontWeight: '800' },
       headerShadowVisible: false,
     });
-  }, [inputMode]);
+  }, [inputMode, theme]);
 
   function addPacote(codigo: string, tipo: 'scanner' | 'manual' | 'foto', fotoUri?: string) {
     const trimmed = codigo.trim();
@@ -185,44 +214,44 @@ export default function SVCRecebimentoScreen() {
       );
     }
     return (
-      <View style={styles.scannerContainer}>
-        <CameraView style={styles.camera} facing="back" enableTorch={flashEnabled}
+      <View style={scannerStyles.scannerContainer}>
+        <CameraView style={scannerStyles.camera} facing="back" enableTorch={flashEnabled}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'datamatrix'] }}
           onBarcodeScanned={handleBarcodeScanned}
         />
-        <View style={styles.scanOverlay}>
+        <View style={scannerStyles.scanOverlay}>
           <SafeAreaView>
-            <View style={styles.scanHeader}>
-              <TouchableOpacity onPress={() => setInputMode('none')} style={styles.scanBackBtn}>
-                <Text style={styles.scanBackText}>✓ Feito ({pacotes.length})</Text>
+            <View style={scannerStyles.scanHeader}>
+              <TouchableOpacity onPress={() => setInputMode('none')} style={scannerStyles.scanBackBtn}>
+                <Text style={scannerStyles.scanBackText}>✓ Feito ({pacotes.length})</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setFlashEnabled((f) => !f)} style={styles.flashBtn}>
-                <Text style={styles.flashBtnText}>{flashEnabled ? '🔦 ON' : '🔦 OFF'}</Text>
+              <TouchableOpacity onPress={() => setFlashEnabled((f) => !f)} style={scannerStyles.flashBtn}>
+                <Text style={scannerStyles.flashBtnText}>{flashEnabled ? '🔦 ON' : '🔦 OFF'}</Text>
               </TouchableOpacity>
             </View>
           </SafeAreaView>
-          <View style={styles.scanCounter}>
-            <Text style={styles.scanCounterText}>{pacotes.length} para receber</Text>
+          <View style={scannerStyles.scanCounter}>
+            <Text style={scannerStyles.scanCounterText}>{pacotes.length} para receber</Text>
           </View>
-          <View style={styles.scanFrame}>
-            <View style={[styles.corner, styles.cornerTL]} />
-            <View style={[styles.corner, styles.cornerTR]} />
-            <View style={[styles.corner, styles.cornerBL]} />
-            <View style={[styles.corner, styles.cornerBR]} />
+          <View style={scannerStyles.scanFrame}>
+            <View style={[scannerStyles.corner, scannerStyles.cornerTL]} />
+            <View style={[scannerStyles.corner, scannerStyles.cornerTR]} />
+            <View style={[scannerStyles.corner, scannerStyles.cornerBL]} />
+            <View style={[scannerStyles.corner, scannerStyles.cornerBR]} />
           </View>
           {lastScanned ? (
-            <View style={[styles.scanResult, { backgroundColor: lastScanned.startsWith('⚠️') ? COLORS.orange : COLORS.green }]}>
-              <Text style={styles.scanResultText}>{lastScanned}</Text>
+            <View style={[scannerStyles.scanResult, { backgroundColor: lastScanned.startsWith('⚠️') ? COLORS.orange : COLORS.green }]}>
+              <Text style={scannerStyles.scanResultText}>{lastScanned}</Text>
             </View>
           ) : (
-            <View style={styles.scanHint}><Text style={styles.scanHintText}>Aponte para o código do pacote</Text></View>
+            <View style={scannerStyles.scanHint}><Text style={scannerStyles.scanHintText}>Aponte para o código do pacote</Text></View>
           )}
           {pacotes.length > 0 && (
-            <View style={styles.recentList}>
-              <Text style={styles.recentLabel}>Na lista ({pacotes.length}):</Text>
+            <View style={scannerStyles.recentList}>
+              <Text style={scannerStyles.recentLabel}>Na lista ({pacotes.length}):</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {pacotes.slice(0, 8).map((p, i) => (
-                  <View key={i} style={styles.recentChip}><Text style={styles.recentChipText}>{p.codigo.slice(-8)}</Text></View>
+                  <View key={i} style={scannerStyles.recentChip}><Text style={scannerStyles.recentChipText}>{p.codigo.slice(-8)}</Text></View>
                 ))}
               </ScrollView>
             </View>
@@ -239,13 +268,13 @@ export default function SVCRecebimentoScreen() {
           <Text style={styles.sectionLabel}>DADOS DO MOTORISTA (opcional)</Text>
           <Card>
             <Text style={styles.fieldLabel}>Nome</Text>
-            <TextInput style={styles.input} placeholder="Nome do motorista" value={nomeMotorista} onChangeText={setNomeMotorista} autoCapitalize="words" />
+            <TextInput style={styles.input} placeholder="Nome do motorista" placeholderTextColor={theme.textTer} value={nomeMotorista} onChangeText={setNomeMotorista} autoCapitalize="words" />
             <Text style={styles.fieldLabel}>CPF</Text>
-            <TextInput style={styles.input} placeholder="000.000.000-00" value={cpfMotorista} onChangeText={(t) => setCpfMotorista(formatCPF(t))} keyboardType="number-pad" maxLength={14} />
+            <TextInput style={styles.input} placeholder="000.000.000-00" placeholderTextColor={theme.textTer} value={cpfMotorista} onChangeText={(t) => setCpfMotorista(formatCPF(t))} keyboardType="number-pad" maxLength={14} />
             <Text style={styles.fieldLabel}>Placa</Text>
-            <TextInput style={styles.input} placeholder="ABC1234" value={placa} onChangeText={(t) => setPlaca(formatPlaca(t))} autoCapitalize="characters" maxLength={7} />
+            <TextInput style={styles.input} placeholder="ABC1234" placeholderTextColor={theme.textTer} value={placa} onChangeText={(t) => setPlaca(formatPlaca(t))} autoCapitalize="characters" maxLength={7} />
             <Text style={styles.fieldLabel}>Transportadora</Text>
-            <TextInput style={styles.input} placeholder="Ex: Total Express" value={transportadora} onChangeText={setTransportadora} autoCapitalize="words" />
+            <TextInput style={styles.input} placeholder="Ex: Total Express" placeholderTextColor={theme.textTer} value={transportadora} onChangeText={setTransportadora} autoCapitalize="words" />
           </Card>
 
           <Text style={styles.sectionLabel}>PACOTES RECEBIDOS ({pacotes.length})</Text>
@@ -268,7 +297,7 @@ export default function SVCRecebimentoScreen() {
 
           {inputMode === 'manual' && (
             <Card style={{ marginBottom: 4 }}>
-              <TextInput style={styles.manualInput} placeholder="Digite o código..." value={manualCode} onChangeText={setManualCode} autoCapitalize="characters" autoFocus
+              <TextInput style={styles.manualInput} placeholder="Digite o código..." placeholderTextColor={theme.textTer} value={manualCode} onChangeText={setManualCode} autoCapitalize="characters" autoFocus
                 returnKeyType="done"
                 onSubmitEditing={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }} />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
@@ -287,7 +316,7 @@ export default function SVCRecebimentoScreen() {
                     <Button label="🖼 Galeria" onPress={handlePickPhoto} variant="outline" style={{ flex: 1 }} />
                   </View>
               }
-              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código visível na foto" value={photoCode} onChangeText={setPhotoCode} autoCapitalize="characters" />
+              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código visível na foto" placeholderTextColor={theme.textTer} value={photoCode} onChangeText={setPhotoCode} autoCapitalize="characters" />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
                 <Button label="Salvar" onPress={() => { if (!photoUri || !photoCode.trim()) { Alert.alert('Preencha todos os campos'); return; } addPacote(photoCode.trim(), 'foto', photoUri); setPhotoUri(null); setPhotoCode(''); setInputMode('none'); }} style={{ flex: 1 }} />
                 <Button label="Cancelar" onPress={() => { setInputMode('none'); setPhotoUri(null); setPhotoCode(''); }} variant="outline" style={{ flex: 1 }} />
@@ -316,50 +345,30 @@ export default function SVCRecebimentoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F8F8' },
-  flex: { flex: 1 },
-  container: { padding: 20, paddingBottom: 40 },
-  sectionLabel: { fontSize: 12, fontWeight: '700', color: COLORS.gray, textTransform: 'uppercase', letterSpacing: 1, marginTop: 16, marginBottom: 10 },
-  fieldLabel: { fontSize: 13, fontWeight: '700', color: COLORS.black, marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: '#F8F8F8', borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.grayBorder, padding: 12, fontSize: 15, color: COLORS.black },
-  addButtons: { flexDirection: 'row', gap: 10, marginBottom: 12 },
-  addBtn: { flex: 1, borderRadius: 14, padding: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 },
-  addBtnIcon: { fontSize: 22, marginBottom: 4 },
-  addBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
-  manualInput: { borderWidth: 2, borderColor: COLORS.yellow, borderRadius: 10, padding: 12, fontSize: 16, textAlign: 'center', color: COLORS.black, fontWeight: '700', fontFamily: 'monospace', backgroundColor: '#FFFEF0' },
-  photoPreview: { width: '100%', height: 160, borderRadius: 10, marginBottom: 8 },
-  pacoteRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: COLORS.grayBorder },
-  pacoteIcon: { fontSize: 18, marginRight: 10, width: 26 },
-  pacoteCodigo: { flex: 1, fontSize: 13, color: COLORS.black, fontFamily: 'monospace', fontWeight: '600' },
-  pacoteRemove: { color: COLORS.red, fontSize: 18, fontWeight: '700', paddingHorizontal: 6 },
-  emptyCard: { alignItems: 'center', paddingVertical: 20 },
-  emptyText: { color: COLORS.gray, fontSize: 14 },
-  // Scanner
+// Static styles for the scanner overlay (always dark/camera context)
+const scannerStyles = StyleSheet.create({
   scannerContainer: { flex: 1, backgroundColor: '#000' },
   camera: { flex: 1 },
   scanOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
   scanHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.5)' },
   scanBackBtn: { padding: 8 },
-  scanBackText: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
+  scanBackText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   flashBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  flashBtnText: { color: COLORS.white, fontWeight: '700' },
+  flashBtnText: { color: '#FFFFFF', fontWeight: '700' },
   scanCounter: { alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
-  scanCounterText: { color: COLORS.yellow, fontWeight: '800', fontSize: 15 },
+  scanCounterText: { color: '#FFE600', fontWeight: '800', fontSize: 15 },
   scanFrame: { width: 260, height: 160, alignSelf: 'center', position: 'relative' },
-  corner: { position: 'absolute', width: 30, height: 30, borderColor: COLORS.yellow, borderWidth: 3 },
+  corner: { position: 'absolute', width: 30, height: 30, borderColor: '#FFE600', borderWidth: 3 },
   cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
   cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
   cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
   cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
   scanResult: { alignSelf: 'center', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 16, maxWidth: 320 },
-  scanResultText: { color: COLORS.white, fontWeight: '700', fontSize: 15, textAlign: 'center' },
+  scanResultText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15, textAlign: 'center' },
   scanHint: { alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
   scanHintText: { color: '#DDD', fontSize: 13 },
   recentList: { backgroundColor: 'rgba(0,0,0,0.7)', padding: 12, paddingBottom: 32 },
   recentLabel: { color: '#AAA', fontSize: 12, marginBottom: 8 },
   recentChip: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, marginRight: 8 },
-  recentChipText: { color: COLORS.white, fontSize: 12, fontFamily: 'monospace' },
-  permBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  permText: { fontSize: 16, textAlign: 'center', marginBottom: 24, color: COLORS.black },
+  recentChipText: { color: '#FFFFFF', fontSize: 12, fontFamily: 'monospace' },
 });
