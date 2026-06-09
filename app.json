@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "NEX Inventory",
+    "slug": "nex-inventory",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "nex",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#FFE600"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mercadolivre.nex",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Necessário para escanear QR codes e códigos de barras dos pacotes.",
+        "NSLocationWhenInUseUsageDescription": "Necessário para identificar o NODO mais próximo de você.",
+        "NSPhotoLibraryUsageDescription": "Necessário para enviar fotos de pacotes."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFE600"
+      },
+      "package": "com.mercadolivre.nex",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Necessário para escanear QR codes e códigos de barras dos pacotes."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Necessário para identificar o NODO mais próximo de você."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Necessário para enviar fotos de pacotes."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
