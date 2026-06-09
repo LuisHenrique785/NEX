@@ -223,11 +223,7 @@ export default function ExpedicaoPacotesScreen() {
     }
 
     setSaving(false);
-    Alert.alert(
-      '✅ Expedição Registrada!',
-      `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso.`,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+    router.back();
   }
 
   const typeIcon = (tipo: string) =>

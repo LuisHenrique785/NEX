@@ -183,11 +183,7 @@ export default function SVCRecebimentoScreen() {
     await supabase.from('svc_recebimentos_pacotes').insert(items);
 
     setSaving(false);
-    Alert.alert(
-      '✅ Recebimento Registrado!',
-      `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} com sucesso.`,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+    router.back();
   }
 
   const typeIcon = (t: string) => t === 'scanner' ? '📷' : t === 'manual' ? '⌨️' : '📸';
