@@ -291,9 +291,13 @@ export default function ExpedicaoPacotesScreen() {
               <TouchableOpacity onPress={() => setInputMode('none')} style={scannerStyles.scanBackBtn}>
                 <Text style={scannerStyles.scanBackText}>✓ Feito ({pacotes.length})</Text>
               </TouchableOpacity>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity onPress={() => setFacing((f) => f === 'back' ? 'front' : 'back')} style={scannerStyles.flashBtn}>
-                  <Text style={scannerStyles.flashBtnText}>🔄</Text>
+              <View style={scannerStyles.scanActions}>
+                <TouchableOpacity
+                  onPress={() => setFacing((f) => f === 'back' ? 'front' : 'back')}
+                  style={scannerStyles.flipBtn}
+                >
+                  <Text style={{ fontSize: 16 }}>🔄</Text>
+                  <Text style={scannerStyles.flipBtnText}>{facing === 'front' ? 'Frontal' : 'Traseira'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setFlashEnabled((f) => !f)} style={scannerStyles.flashBtn}>
                   <Text style={scannerStyles.flashBtnText}>{flashEnabled ? '🔦 ON' : '🔦 OFF'}</Text>
@@ -462,11 +466,14 @@ const scannerStyles = StyleSheet.create({
   scannerContainer: { flex: 1, backgroundColor: '#000' },
   camera: { flex: 1 },
   scanOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
-  scanHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.5)' },
+  scanHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 52, backgroundColor: 'rgba(0,0,0,0.65)' },
   scanBackBtn: { padding: 8 },
   scanBackText: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
-  flashBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  flashBtnText: { color: COLORS.white, fontWeight: '700' },
+  scanActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  flipBtn: { backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  flipBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
+  flashBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
+  flashBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
   scanCounter: { alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
   scanCounterText: { color: COLORS.yellow, fontWeight: '800', fontSize: 15 },
   scanFrame: { width: 260, height: 160, alignSelf: 'center', position: 'relative' },

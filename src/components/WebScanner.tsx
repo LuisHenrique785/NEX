@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { BrowserMultiFormatReader, NotFoundException } from '@zxing/browser';
+import { BrowserMultiFormatReader } from '@zxing/browser';
 import { DecodeHintType, BarcodeFormat } from '@zxing/library';
 
 interface Props {
@@ -11,17 +11,11 @@ interface Props {
   recentCodes?: string[];
 }
 
-// From a QR/barcode result, extract the most meaningful code:
-// - If it looks like a URL or has non-numeric prefix, extract the longest digit sequence
-// - Otherwise return as-is
 function extractCode(raw: string): string {
   const trimmed = raw.trim();
-  // If already a clean code (alphanumeric, no spaces, reasonable length) → use as-is
   if (/^[A-Z0-9\-]{6,30}$/i.test(trimmed)) return trimmed.toUpperCase();
-  // Extract the longest sequence of digits (≥6 digits) — common in tracking numbers
   const matches = trimmed.match(/\d{6,}/g);
   if (matches) return matches.reduce((a, b) => (a.length >= b.length ? a : b));
-  // Fallback: strip spaces and return
   return trimmed.replace(/\s+/g, '');
 }
 
@@ -29,9 +23,12 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
   const videoRef = useRef<any>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const cooldown = useRef(false);
+  // Always-current ref so the ZXing callback never uses a stale closure
+  const onScannedRef = useRef(onScanned);
+  useEffect(() => { onScannedRef.current = onScanned; }, [onScanned]);
 
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [deviceIdx, setDeviceIdx] = useState(-1); // -1 = not selected yet
+  const [deviceIdx, setDeviceIdx] = useState(-1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,48 +55,44 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
           return;
         }
         setDevices(devs);
-
-        // Pick the rear camera:
-        // On Android Chrome the back camera label usually contains "back", "traseira", "0" or is the LAST device
         const rearIdx = devs.findIndex((d) =>
           /back|rear|traseira|posterior|environment/i.test(d.label)
         );
-        const idx = rearIdx >= 0 ? rearIdx : devs.length - 1;
-        setDeviceIdx(idx);
+        setDeviceIdx(rearIdx >= 0 ? rearIdx : devs.length - 1);
       })
       .catch(() => setError('Não foi possível listar as câmeras.'));
-
-    return () => {
-      readerRef.current?.reset();
-    };
   }, []);
 
   // ─── Start scanning when deviceIdx is ready ────────────────────
   useEffect(() => {
     if (deviceIdx < 0 || !devices[deviceIdx] || !readerRef.current) return;
 
+    let active = true;
     setLoading(true);
     const deviceId = devices[deviceIdx].deviceId;
+    const reader = readerRef.current;
 
-    readerRef.current
-      .decodeFromVideoDevice(
-        deviceId,
-        videoRef.current,
-        (result, err) => {
-          if (result && !cooldown.current) {
-            cooldown.current = true;
-            const code = extractCode(result.getText());
-            onScanned(code);
-            setTimeout(() => { cooldown.current = false; }, 1500);
-          }
-        }
-      )
-      .then(() => setLoading(false))
-      .catch((e) => {
-        // decodeFromVideoDevice resolves when stopped — not an error
-        setLoading(false);
-      });
+    reader
+      .decodeFromVideoDevice(deviceId, videoRef.current, (result) => {
+        if (!active || !result || cooldown.current) return;
+        cooldown.current = true;
+        const code = extractCode(result.getText());
+        onScannedRef.current(code);
+        setTimeout(() => { cooldown.current = false; }, 1500);
+      })
+      .then(() => { if (active) setLoading(false); })
+      .catch(() => { if (active) setLoading(false); });
+
+    return () => {
+      active = false;
+      reader.reset();
+    };
   }, [deviceIdx, devices]);
+
+  function handleClose() {
+    readerRef.current?.reset();
+    onClose();
+  }
 
   function flipCamera() {
     if (devices.length < 2) return;
@@ -112,7 +105,7 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
       <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center', padding: 32 }}>
         <Text style={{ fontSize: 40, marginBottom: 16 }}>📷</Text>
         <Text style={{ color: '#fff', textAlign: 'center', fontSize: 15, lineHeight: 24, marginBottom: 28 }}>{error}</Text>
-        <TouchableOpacity onPress={onClose} style={{ backgroundColor: '#FFE600', paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12 }}>
+        <TouchableOpacity onPress={handleClose} style={{ backgroundColor: '#FFE600', paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12 }}>
           <Text style={{ fontWeight: '800', fontSize: 15 }}>Voltar</Text>
         </TouchableOpacity>
       </View>
@@ -125,7 +118,6 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
-      {/* Video element — fills screen */}
       {React.createElement('video', {
         ref: videoRef,
         style: {
@@ -136,7 +128,6 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
         },
       })}
 
-      {/* Loading spinner */}
       {loading && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 3, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#FFE600" />
@@ -144,22 +135,19 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
         </View>
       )}
 
-      {/* Overlay — above video */}
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2, justifyContent: 'space-between' }}>
-
         {/* Top bar */}
         <View style={{
           flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
           padding: 16, paddingTop: 52,
           backgroundColor: 'rgba(0,0,0,0.65)',
         }}>
-          <TouchableOpacity onPress={onClose} style={{ padding: 8 }}>
+          <TouchableOpacity onPress={handleClose} style={{ padding: 8 }}>
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
               ✓ Feito ({count})
             </Text>
           </TouchableOpacity>
 
-          {/* Always show flip button */}
           <TouchableOpacity
             onPress={flipCamera}
             style={{
