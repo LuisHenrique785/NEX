@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { supabase } from '../../src/lib/supabase';
 import { COLORS, MenuCard, Card } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
+import { formatTimeBRT, startOfTodayBRT } from '../../src/lib/utils';
 
 interface RecentRecebimento {
   id: string;
@@ -38,7 +39,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
       marginBottom: 8,
     },
     statValue: { fontSize: 48, fontWeight: '900', color: COLORS.black },
-    statLabel: { fontSize: 14, color: COLORS.black, fontWeight: '500' },
+    statLabel: { fontSize: 14, color: '#555', fontWeight: '500' },
     sectionLabel: {
       fontSize: 12,
       fontWeight: '700',
@@ -71,13 +72,10 @@ export default function SVCHomeScreen() {
   }, []);
 
   async function loadStats() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     const { data } = await supabase
       .from('svc_recebimentos')
       .select('id, total_pacotes, transportadora, placa, created_at')
-      .gte('created_at', today.toISOString())
+      .gte('created_at', startOfTodayBRT().toISOString())
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -87,9 +85,7 @@ export default function SVCHomeScreen() {
     setLoading(false);
   }
 
-  function formatTime(dateStr: string) {
-    return new Date(dateStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  }
+  function formatTime(dateStr: string) { return formatTimeBRT(dateStr); }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -117,6 +113,14 @@ export default function SVCHomeScreen() {
           subtitle="Registrar pacotes recebidos das agências"
           color={COLORS.blue}
           onPress={() => router.push('/svc/recebimento')}
+        />
+
+        <MenuCard
+          icon="🔍"
+          title="Consulta"
+          subtitle="Expedições, pendências e rastreio de pacotes"
+          color="#1A3A5C"
+          onPress={() => router.push('/admin/consulta')}
         />
 
         {/* Histórico */}

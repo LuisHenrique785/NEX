@@ -11,6 +11,7 @@ import { supabase } from '../../../../src/lib/supabase';
 import { COLORS, Button, Card, Badge } from '../../../../src/components/ui';
 import { useTheme } from '../../../../src/lib/theme';
 import { WebScanner } from '../../../../src/components/WebScanner';
+import { formatTimeBRT, startOfTodayBRT, startOfYesterdayBRT } from '../../../../src/lib/utils';
 
 interface Pacote {
   id: string;
@@ -227,6 +228,7 @@ export default function InventarioFisicoScreen() {
   const [mode, setMode] = useState<Mode>('menu');
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
   const [pendencias, setPendencias] = useState<Pacote[]>([]);
+  const [expPendencias, setExpPendencias] = useState<{ codigo: string; expedited_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -257,10 +259,8 @@ export default function InventarioFisicoScreen() {
 
   async function loadPacotes() {
     setLoading(true);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const today = startOfTodayBRT();
+    const yesterday = startOfYesterdayBRT();
 
     const { data: todayData } = await supabase
       .from('pacotes_inventario')
@@ -283,6 +283,29 @@ export default function InventarioFisicoScreen() {
 
     setPacotes(todayData || []);
     setPendencias(pendentes);
+
+    // Expedition pendencies: packages sent by this agency but not yet received at SVC
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: expedited } = await supabase
+      .from('pacotes_inventario')
+      .select('codigo, expedited_at')
+      .eq('nodo_id', nodoId)
+      .eq('status', 'expedited')
+      .gte('expedited_at', sevenDaysAgo)
+      .order('expedited_at', { ascending: false });
+
+    if (expedited && expedited.length > 0) {
+      const codes = expedited.map((p: any) => p.codigo);
+      const { data: received } = await supabase
+        .from('svc_recebimentos_pacotes')
+        .select('codigo')
+        .in('codigo', codes);
+      const receivedSet = new Set((received || []).map((r: any) => r.codigo));
+      setExpPendencias(expedited.filter((p: any) => !receivedSet.has(p.codigo)));
+    } else {
+      setExpPendencias([]);
+    }
+
     setLoading(false);
   }
 
@@ -386,7 +409,7 @@ export default function InventarioFisicoScreen() {
   }
 
   function formatTime(dateStr: string) {
-    return new Date(dateStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return formatTimeBRT(dateStr);
   }
 
   const typeIcon = (tipo: string) =>
@@ -605,6 +628,29 @@ export default function InventarioFisicoScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
+        {/* Expedition pendencies: sent by agency, not yet received at SVC */}
+        {expPendencias.length > 0 && (
+          <Card style={[styles.pendingCard, { borderColor: COLORS.red + '66', backgroundColor: theme.isDark ? '#3D0000' : '#FFF0F0' }]}>
+            <View style={styles.pendingHeader}>
+              <Text style={[styles.pendingTitle, { color: theme.isDark ? '#FF6B6B' : '#B71C1C' }]}>
+                🚨 Não Recebidos no SVC
+              </Text>
+              <Badge label={`${expPendencias.length}`} color={COLORS.red} />
+            </View>
+            <Text style={[styles.pendingSubtitle, { color: theme.isDark ? '#FF6B6B' : '#B71C1C' }]}>
+              Estes pacotes foram expedidos mas o SVC ainda não confirmou o recebimento:
+            </Text>
+            {expPendencias.slice(0, 5).map((p, i) => (
+              <Text key={i} style={[styles.pendingCode, { color: theme.isDark ? '#FF6B6B' : '#B71C1C' }]}>• {p.codigo}</Text>
+            ))}
+            {expPendencias.length > 5 && (
+              <Text style={[styles.pendingMore, { color: theme.isDark ? '#FF6B6B' : '#B71C1C' }]}>
+                ... e mais {expPendencias.length - 5}
+              </Text>
+            )}
+          </Card>
+        )}
+
         {pendencias.length > 0 && (
           <Card style={styles.pendingCard}>
             <View style={styles.pendingHeader}>

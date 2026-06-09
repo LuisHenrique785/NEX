@@ -22,7 +22,9 @@ function extractCode(raw: string): string {
 export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes }: Props) {
   const videoRef = useRef<any>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
-  const cooldown = useRef(false);
+  // Per-code deduplication: same code blocked for 2s, different codes scan immediately
+  const lastCode = useRef('');
+  const lastCodeTime = useRef(0);
   // Always-current ref so the ZXing callback never uses a stale closure
   const onScannedRef = useRef(onScanned);
   useEffect(() => { onScannedRef.current = onScanned; }, [onScanned]);
@@ -46,7 +48,7 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
       BarcodeFormat.CODABAR,
     ]);
     hints.set(DecodeHintType.TRY_HARDER, true);
-    readerRef.current = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 200 });
+    readerRef.current = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 100 });
 
     BrowserMultiFormatReader.listVideoInputDevices()
       .then((devs) => {
@@ -74,11 +76,14 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
 
     reader
       .decodeFromVideoDevice(deviceId, videoRef.current, (result) => {
-        if (!active || !result || cooldown.current) return;
-        cooldown.current = true;
+        if (!active || !result) return;
         const code = extractCode(result.getText());
+        const now = Date.now();
+        // Same code: ignore for 2 seconds to prevent double-scan
+        if (code === lastCode.current && now - lastCodeTime.current < 2000) return;
+        lastCode.current = code;
+        lastCodeTime.current = now;
         onScannedRef.current(code);
-        setTimeout(() => { cooldown.current = false; }, 1500);
       })
       .then(() => { if (active) setLoading(false); })
       .catch(() => { if (active) setLoading(false); });

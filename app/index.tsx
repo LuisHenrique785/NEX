@@ -169,10 +169,41 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 28, color: 'rgba(255,255,255,0.2)' }}>›</Text>
           </TouchableOpacity>
 
+          {/* Consulta button */}
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#1A3A5C',
+              borderRadius: 20,
+              padding: 24,
+              marginTop: 14,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+            onPress={() => router.push('/admin/consulta')}
+            activeOpacity={0.88}
+          >
+            <View style={{
+              width: 56, height: 56, borderRadius: 16,
+              backgroundColor: 'rgba(100,180,255,0.15)',
+              alignItems: 'center', justifyContent: 'center', marginRight: 18,
+            }}>
+              <Text style={{ fontSize: 30 }}>🔍</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: '#64B4FF', letterSpacing: -0.5 }}>
+                Consulta
+              </Text>
+              <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 3, fontWeight: '500' }}>
+                Expedições, pendências e rastreio
+              </Text>
+            </View>
+            <Text style={{ fontSize: 28, color: 'rgba(255,255,255,0.2)' }}>›</Text>
+          </TouchableOpacity>
+
           {/* Admin button */}
           <TouchableOpacity
             style={{
-              marginTop: 24,
+              marginTop: 14,
               borderRadius: 16,
               borderWidth: 1.5,
               borderColor: theme.border,
