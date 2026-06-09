@@ -183,7 +183,7 @@ export default function SVCRecebimentoScreen() {
     await supabase.from('svc_recebimentos_pacotes').insert(items);
 
     setSaving(false);
-    router.back();
+    router.replace('/svc');
   }
 
   const typeIcon = (t: string) => t === 'scanner' ? '📷' : t === 'manual' ? '⌨️' : '📸';

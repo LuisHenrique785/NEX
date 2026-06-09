@@ -223,7 +223,7 @@ export default function ExpedicaoPacotesScreen() {
     }
 
     setSaving(false);
-    router.back();
+    router.replace(`/agencia/${nodoId}/pacotes`);
   }
 
   const typeIcon = (tipo: string) =>
