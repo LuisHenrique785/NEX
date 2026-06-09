@@ -1,18 +1,29 @@
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const encoded = encodeURIComponent(address + ', Brasil');
-    const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1&countrycodes=br`;
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'NEX-Inventory-App/1.0' },
-    });
-    const data = await res.json();
-    if (data && data.length > 0) {
-      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  const clean = address.trim();
+  // Try accented form first, then normalized (no accents) as fallback.
+  // OSM/Nominatim indexing is inconsistent with accented Brazilian addresses.
+  const attempts = [
+    clean,
+    clean.normalize('NFD').replace(/[̀-ͯ]/g, ''),
+  ];
+
+  for (let i = 0; i < attempts.length; i++) {
+    try {
+      if (i > 0) await new Promise((r) => setTimeout(r, 1100));
+      const encoded = encodeURIComponent(attempts[i] + ', Brasil');
+      const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1&countrycodes=br`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'NEX-Inventory-App/1.0' },
+      });
+      const data = await res.json();
+      if (data && data.length > 0) {
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+    } catch {
+      // continue to next attempt
     }
-    return null;
-  } catch {
-    return null;
   }
+  return null;
 }
 
 export function haversineDistance(

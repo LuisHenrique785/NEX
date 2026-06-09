@@ -23,7 +23,7 @@ export default function NovosNodosScreen() {
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState('');
-  const [stats, setStats] = useState<{ added: number; skipped: number } | null>(null);
+  const [stats, setStats] = useState<{ added: number; updated: number; skipped: number } | null>(null);
 
   useEffect(() => {
     loadNodos();
@@ -45,11 +45,16 @@ export default function NovosNodosScreen() {
     setStats(null);
     try {
       const result = await fn();
-      setStats({ added: result.added, skipped: result.skipped });
+      setStats({ added: result.added, updated: result.updated, skipped: result.skipped });
+      const parts = [];
+      if (result.added > 0) parts.push(`${result.added} novo${result.added !== 1 ? 's' : ''}`);
+      if (result.updated > 0) parts.push(`${result.updated} corrigido${result.updated !== 1 ? 's' : ''}`);
+      if (result.skipped > 0) parts.push(`${result.skipped} já ok`);
+      const summary = parts.join(' · ');
       const msg =
         result.errors.length > 0
-          ? `${result.added} adicionados, ${result.skipped} já existentes.\n\nErros:\n${result.errors.slice(0, 5).join('\n')}`
-          : `${result.added} novo${result.added !== 1 ? 's' : ''} NODO${result.added !== 1 ? 's' : ''} importado${result.added !== 1 ? 's' : ''}.\n${result.skipped} já existiam.`;
+          ? `${summary}\n\nErros:\n${result.errors.slice(0, 5).join('\n')}`
+          : summary || 'Nenhuma alteração necessária.';
       Alert.alert(result.errors.length > 0 ? 'Concluído com erros' : '✅ Concluído!', msg);
       await loadNodos();
     } catch (e: any) {
@@ -157,9 +162,13 @@ export default function NovosNodosScreen() {
               <Text style={[styles.statVal, { color: COLORS.green }]}>{stats.added}</Text>
               <Text style={styles.statLbl}>Novos</Text>
             </View>
+            <View style={[styles.statBox, { backgroundColor: COLORS.blue + '22', borderColor: COLORS.blue }]}>
+              <Text style={[styles.statVal, { color: COLORS.blue }]}>{stats.updated}</Text>
+              <Text style={styles.statLbl}>Corrigidos</Text>
+            </View>
             <View style={[styles.statBox, { backgroundColor: COLORS.gray + '22', borderColor: COLORS.gray }]}>
               <Text style={[styles.statVal, { color: COLORS.gray }]}>{stats.skipped}</Text>
-              <Text style={styles.statLbl}>Já existiam</Text>
+              <Text style={styles.statLbl}>Já ok</Text>
             </View>
           </View>
         )}

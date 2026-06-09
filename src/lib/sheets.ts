@@ -3,7 +3,9 @@ import { geocodeAddress } from './geocoding';
 import { supabase } from './supabase';
 
 export function parseCSV(csv: string): string[][] {
-  const lines = csv.split('\n').filter((l) => l.trim());
+  // Strip UTF-8 BOM if present
+  const text = csv.charCodeAt(0) === 0xFEFF ? csv.slice(1) : csv;
+  const lines = text.split('\n').filter((l) => l.trim());
   return lines.map((line) => {
     const result: string[] = [];
     let current = '';
@@ -44,16 +46,20 @@ function extractCidadeEstado(endereco: string): { cidade: string; estado: string
 async function processRows(
   rows: string[][],
   onProgress?: (msg: string) => void
-): Promise<{ added: number; skipped: number; errors: string[] }> {
-  const stats = { added: 0, skipped: 0, errors: [] as string[] };
+): Promise<{ added: number; updated: number; skipped: number; errors: string[] }> {
+  const stats = { added: 0, updated: 0, skipped: 0, errors: [] as string[] };
 
   // CSV columns: A=ETA, B=Nó origem, C=Facility NEx (código), D=Modal, E=Nome Place, F=Endereço
   const dataRows = rows.slice(1).filter((r) => r.length >= 3 && r[2]);
 
   onProgress?.(`${dataRows.length} nodos encontrados...`);
 
-  const { data: existing } = await supabase.from('nodos').select('codigo');
-  const existingCodes = new Set((existing || []).map((n) => n.codigo));
+  // Load existing NODOs with their current lat to decide insert vs update
+  const { data: existing } = await supabase.from('nodos').select('id, codigo, lat');
+  // Map: codigo → { id, hasCoords }
+  const existingMap = new Map(
+    (existing || []).map((n) => [n.codigo, { id: n.id, hasCoords: n.lat !== null }])
+  );
 
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i];
@@ -63,8 +69,16 @@ async function processRows(
     const { cidade, estado } = extractCidadeEstado(endereco);
 
     if (!codigo) { stats.skipped++; continue; }
-    if (existingCodes.has(codigo)) { stats.skipped++; continue; }
 
+    const entry = existingMap.get(codigo);
+
+    if (entry?.hasCoords) {
+      // Already has coordinates → skip entirely
+      stats.skipped++;
+      continue;
+    }
+
+    // Geocode (new or existing without coordinates)
     onProgress?.(`[${i + 1}/${dataRows.length}] ${nome}...`);
 
     let lat: number | null = null;
@@ -75,15 +89,31 @@ async function processRows(
       if (coords) { lat = coords.lat; lng = coords.lng; }
     }
 
-    const { error } = await supabase.from('nodos').insert({
-      codigo, nome, endereco, cidade, estado, lat, lng,
-    });
+    if (entry) {
+      // Exists but had no coordinates → UPDATE
+      const { error } = await supabase
+        .from('nodos')
+        .update({ nome, endereco, cidade, estado, lat, lng })
+        .eq('id', entry.id);
 
-    if (error) {
-      stats.errors.push(`${nome}: ${error.message}`);
+      if (error) {
+        stats.errors.push(`${nome}: ${error.message}`);
+      } else {
+        stats.updated++;
+        if (lat) existingMap.set(codigo, { id: entry.id, hasCoords: true });
+      }
     } else {
-      stats.added++;
-      existingCodes.add(codigo);
+      // New → INSERT
+      const { error } = await supabase.from('nodos').insert({
+        codigo, nome, endereco, cidade, estado, lat, lng,
+      });
+
+      if (error) {
+        stats.errors.push(`${nome}: ${error.message}`);
+      } else {
+        stats.added++;
+        existingMap.set(codigo, { id: '', hasCoords: lat !== null });
+      }
     }
 
     if (endereco) await new Promise((r) => setTimeout(r, 1100));
@@ -94,7 +124,7 @@ async function processRows(
 
 export async function importNodosFromSheets(
   onProgress?: (msg: string) => void
-): Promise<{ added: number; skipped: number; errors: string[] }> {
+): Promise<{ added: number; updated: number; skipped: number; errors: string[] }> {
   onProgress?.('Buscando planilha Google Sheets...');
   const res = await fetch(SHEETS_CSV_URL);
   if (!res.ok) throw new Error('Não foi possível acessar a planilha. Tente fazer upload do CSV.');
@@ -106,7 +136,7 @@ export async function importNodosFromSheets(
 export async function importNodosFromCSV(
   csvText: string,
   onProgress?: (msg: string) => void
-): Promise<{ added: number; skipped: number; errors: string[] }> {
+): Promise<{ added: number; updated: number; skipped: number; errors: string[] }> {
   onProgress?.('Lendo arquivo CSV...');
   const rows = parseCSV(csvText);
   return processRows(rows, onProgress);
