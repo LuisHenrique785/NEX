@@ -4,8 +4,39 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { COLORS, MenuCard, Card } from '../../../../src/components/ui';
+import { useTheme } from '../../../../src/lib/theme';
+
+function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.bg },
+    container: { padding: 20, paddingBottom: 40 },
+    infoCard: {
+      alignItems: 'center',
+      paddingVertical: 28,
+      marginBottom: 8,
+      backgroundColor: '#EFF6FF',
+      borderWidth: 1.5,
+      borderColor: COLORS.blue + '44',
+    },
+    infoIcon: { fontSize: 48, marginBottom: 10 },
+    infoTitle: { fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 6 },
+    infoText: { fontSize: 14, color: theme.textSec, textAlign: 'center', lineHeight: 20 },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.textSec,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginTop: 8,
+      marginBottom: 8,
+    },
+  });
+}
 
 export default function PacotesMainScreen() {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
+
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
 
   return (
@@ -40,28 +71,3 @@ export default function PacotesMainScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F8F8' },
-  container: { padding: 20, paddingBottom: 40 },
-  infoCard: {
-    alignItems: 'center',
-    paddingVertical: 28,
-    marginBottom: 8,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1.5,
-    borderColor: COLORS.blue + '44',
-  },
-  infoIcon: { fontSize: 48, marginBottom: 10 },
-  infoTitle: { fontSize: 20, fontWeight: '800', color: COLORS.black, marginBottom: 6 },
-  infoText: { fontSize: 14, color: COLORS.gray, textAlign: 'center', lineHeight: 20 },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.gray,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: 8,
-    marginBottom: 8,
-  },
-});

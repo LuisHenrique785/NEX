@@ -9,6 +9,7 @@ import { supabase } from '../../src/lib/supabase';
 import { haversineDistance } from '../../src/lib/geocoding';
 import { COLORS, Card, Badge } from '../../src/components/ui';
 import { MAX_DISTANCE_KM } from '../../src/config';
+import { useTheme } from '../../src/lib/theme';
 
 interface Nodo {
   id: string;
@@ -22,7 +23,82 @@ interface Nodo {
   distance?: number;
 }
 
+function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.bg },
+    container: { flex: 1 },
+    loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
+    loadingText: { marginTop: 12, color: theme.textSec, fontSize: 14 },
+    locationWarning: {
+      backgroundColor: '#FFF3CD',
+      padding: 12,
+      margin: 16,
+      borderRadius: 10,
+      borderLeftWidth: 4,
+      borderLeftColor: COLORS.orange,
+    },
+    locationWarningText: { color: '#856404', fontSize: 13, fontWeight: '500' },
+    searchBox: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      backgroundColor: theme.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    searchInput: {
+      backgroundColor: theme.surfaceAlt,
+      borderRadius: 12,
+      padding: 12,
+      fontSize: 15,
+      color: theme.text,
+    },
+    list: { padding: 16, paddingBottom: 32 },
+    nodoCard: {
+      backgroundColor: theme.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: theme.isDark ? 0.2 : 0.06,
+      shadowRadius: 8,
+      elevation: 2,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+    },
+    nodoCardNearby: {
+      borderColor: COLORS.yellow,
+      backgroundColor: '#FFFEF0',
+    },
+    nodoCardLeft: { marginRight: 14 },
+    nodoIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    nodoIconText: { fontSize: 22 },
+    nodoCardContent: { flex: 1 },
+    nodoCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+    nodoName: { fontSize: 15, fontWeight: '700', color: theme.text, flex: 1 },
+    nodoCode: { fontSize: 12, color: theme.textSec, fontWeight: '600', marginBottom: 4 },
+    nodoAddress: { fontSize: 12, color: theme.textSec, lineHeight: 18, marginBottom: 2 },
+    nodoDistance: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+    arrow: { fontSize: 24, color: theme.border, marginLeft: 8 },
+    empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+    emptyIcon: { fontSize: 60, marginBottom: 16 },
+    emptyText: { fontSize: 18, fontWeight: '700', color: theme.text, marginBottom: 8 },
+    emptySubtext: { fontSize: 14, color: theme.textSec, textAlign: 'center', lineHeight: 20 },
+  });
+}
+
 export default function SelectNodoScreen() {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
+
   const [nodos, setNodos] = useState<Nodo[]>([]);
   const [filtered, setFiltered] = useState<Nodo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,7 +231,7 @@ export default function SelectNodoScreen() {
             </Text>
           ) : null}
           {item.distance !== undefined && (
-            <Text style={[styles.nodoDistance, { color: isNearby ? COLORS.green : COLORS.gray }]}>
+            <Text style={[styles.nodoDistance, { color: isNearby ? COLORS.green : theme.textSec }]}>
               📏 {item.distance < 1 ? `${(item.distance * 1000).toFixed(0)}m` : `${item.distance.toFixed(1)}km`} de você
             </Text>
           )}
@@ -189,6 +265,7 @@ export default function SelectNodoScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="🔍  Buscar por nome, código ou cidade..."
+            placeholderTextColor={theme.textTer}
             value={search}
             onChangeText={setSearch}
             clearButtonMode="always"
@@ -218,73 +295,3 @@ export default function SelectNodoScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F8F8' },
-  container: { flex: 1 },
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F8F8' },
-  loadingText: { marginTop: 12, color: COLORS.gray, fontSize: 14 },
-  locationWarning: {
-    backgroundColor: '#FFF3CD',
-    padding: 12,
-    margin: 16,
-    borderRadius: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.orange,
-  },
-  locationWarningText: { color: '#856404', fontSize: 13, fontWeight: '500' },
-  searchBox: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.grayBorder,
-  },
-  searchInput: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 15,
-    color: COLORS.black,
-  },
-  list: { padding: 16, paddingBottom: 32 },
-  nodoCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  nodoCardNearby: {
-    borderColor: COLORS.yellow,
-    backgroundColor: '#FFFEF0',
-  },
-  nodoCardLeft: { marginRight: 14 },
-  nodoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nodoIconText: { fontSize: 22 },
-  nodoCardContent: { flex: 1 },
-  nodoCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
-  nodoName: { fontSize: 15, fontWeight: '700', color: COLORS.black, flex: 1 },
-  nodoCode: { fontSize: 12, color: COLORS.gray, fontWeight: '600', marginBottom: 4 },
-  nodoAddress: { fontSize: 12, color: COLORS.gray, lineHeight: 18, marginBottom: 2 },
-  nodoDistance: { fontSize: 12, fontWeight: '600', marginTop: 2 },
-  arrow: { fontSize: 24, color: COLORS.grayBorder, marginLeft: 8 },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  emptyIcon: { fontSize: 60, marginBottom: 16 },
-  emptyText: { fontSize: 18, fontWeight: '700', color: COLORS.black, marginBottom: 8 },
-  emptySubtext: { fontSize: 14, color: COLORS.gray, textAlign: 'center', lineHeight: 20 },
-});
