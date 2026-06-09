@@ -4,27 +4,15 @@ on:
   push:
     branches:
       - main
-      - master
   workflow_dispatch:
 
-# Permissões necessárias para o GitHub Pages
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Evitar deploys simultâneos
-concurrency:
-  group: pages
-  cancel-in-progress: true
+  contents: write
 
 jobs:
   build-and-deploy:
     name: Build e Deploy
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout
@@ -44,14 +32,10 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: Configurar GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artefato
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy para gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: dist
-
-      - name: Deploy para GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
