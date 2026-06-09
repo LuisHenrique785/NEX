@@ -70,6 +70,7 @@ export default function ExpedicaoPacotesScreen() {
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
   const [inputMode, setInputMode] = useState<InputMode>('none');
   const [saving, setSaving] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false);
   const [lastScanned, setLastScanned] = useState('');
 
   // Camera
@@ -159,91 +160,73 @@ export default function ExpedicaoPacotesScreen() {
     } catch { return null; }
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!nomeMotorista.trim()) { Alert.alert('Atenção', 'Informe o nome do motorista.'); return; }
     if (cpfMotorista.replace(/\D/g, '').length !== 11) { Alert.alert('Atenção', 'CPF inválido.'); return; }
     if (!placa.trim()) { Alert.alert('Atenção', 'Informe a placa.'); return; }
     if (!transportadora.trim()) { Alert.alert('Atenção', 'Informe a transportadora.'); return; }
     if (pacotes.length === 0) { Alert.alert('Atenção', 'Adicione pelo menos um pacote.'); return; }
+    setConfirmModal(true);
+  }
 
+  async function doSave() {
+    setConfirmModal(false);
+    setSaving(true);
+
+    const { data: expData, error: expError } = await supabase
+      .from('pacotes_expedicoes')
+      .insert({
+        nodo_id: nodoId,
+        nome_motorista: nomeMotorista.trim(),
+        cpf_motorista: cpfMotorista.replace(/\D/g, ''),
+        placa: placa.trim(),
+        transportadora: transportadora.trim(),
+        total_pacotes: pacotes.length,
+      })
+      .select()
+      .single();
+
+    if (expError) {
+      setSaving(false);
+      Alert.alert('Erro', expError.message);
+      return;
+    }
+
+    for (const p of pacotes) {
+      let fotoUrl: string | null = null;
+      if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
+
+      const { data: existing } = await supabase
+        .from('pacotes_inventario')
+        .select('id')
+        .eq('nodo_id', nodoId)
+        .eq('codigo', p.codigo)
+        .eq('status', 'inventoried')
+        .single();
+
+      if (existing) {
+        await supabase
+          .from('pacotes_inventario')
+          .update({ status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() })
+          .eq('id', existing.id);
+      } else {
+        await supabase.from('pacotes_inventario').insert({
+          nodo_id: nodoId,
+          codigo: p.codigo,
+          tipo_entrada: p.tipo_entrada,
+          foto_url: fotoUrl,
+          status: 'expedited',
+          expedicao_id: expData.id,
+          expedited_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    setSaving(false);
     Alert.alert(
-      'Confirmar Expedição',
-      `Expedir ${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} com ${nomeMotorista.trim()} (${placa.trim()})?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            setSaving(true);
-
-            // Create expedition
-            const { data: expData, error: expError } = await supabase
-              .from('pacotes_expedicoes')
-              .insert({
-                nodo_id: nodoId,
-                nome_motorista: nomeMotorista.trim(),
-                cpf_motorista: cpfMotorista.replace(/\D/g, ''),
-                placa: placa.trim(),
-                transportadora: transportadora.trim(),
-                total_pacotes: pacotes.length,
-              })
-              .select()
-              .single();
-
-            if (expError) {
-              setSaving(false);
-              Alert.alert('Erro', expError.message);
-              return;
-            }
-
-            // Upload photos and update inventory
-            for (const p of pacotes) {
-              let fotoUrl: string | null = null;
-              if (p.foto_uri) {
-                fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
-              }
-
-              // Try to update existing inventory record
-              const { data: existing } = await supabase
-                .from('pacotes_inventario')
-                .select('id')
-                .eq('nodo_id', nodoId)
-                .eq('codigo', p.codigo)
-                .eq('status', 'inventoried')
-                .single();
-
-              if (existing) {
-                await supabase
-                  .from('pacotes_inventario')
-                  .update({
-                    status: 'expedited',
-                    expedicao_id: expData.id,
-                    expedited_at: new Date().toISOString(),
-                  })
-                  .eq('id', existing.id);
-              } else {
-                // Not in inventory yet — create as expedited
-                await supabase.from('pacotes_inventario').insert({
-                  nodo_id: nodoId,
-                  codigo: p.codigo,
-                  tipo_entrada: p.tipo_entrada,
-                  foto_url: fotoUrl,
-                  status: 'expedited',
-                  expedicao_id: expData.id,
-                  expedited_at: new Date().toISOString(),
-                });
-              }
-            }
-
-            setSaving(false);
-            Alert.alert(
-              '✅ Expedição Registrada!',
-              `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso.`,
-              [{ text: 'OK', onPress: () => router.back() }]
-            );
-          },
-        },
-      ]
+      '✅ Expedição Registrada!',
+      `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso.`,
+      [{ text: 'OK', onPress: () => router.back() }]
     );
   }
 
@@ -457,6 +440,23 @@ export default function ExpedicaoPacotesScreen() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={confirmModal} transparent animationType="fade" onRequestClose={() => setConfirmModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 }}>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>
+              Confirmar Expedição
+            </Text>
+            <Text style={{ fontSize: 15, color: theme.textSec, lineHeight: 22, marginBottom: 20 }}>
+              Expedir {pacotes.length} pacote{pacotes.length !== 1 ? 's' : ''} com {nomeMotorista.trim()} ({placa.trim()})?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancelar" onPress={() => setConfirmModal(false)} variant="outline" style={{ flex: 1 }} />
+              <Button label="Confirmar" onPress={doSave} style={{ flex: 1 }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
