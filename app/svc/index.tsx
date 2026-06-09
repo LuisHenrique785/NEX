@@ -38,7 +38,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
       marginBottom: 8,
     },
     statValue: { fontSize: 48, fontWeight: '900', color: COLORS.black },
-    statLabel: { fontSize: 14, color: '#555', fontWeight: '500' },
+    statLabel: { fontSize: 14, color: COLORS.black, fontWeight: '500' },
     sectionLabel: {
       fontSize: 12,
       fontWeight: '700',

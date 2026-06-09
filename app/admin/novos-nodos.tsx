@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Alert, Platform,
 } from 'react-native';
 import { supabase } from '../../src/lib/supabase';
-import { importNodosFromSheets, importNodosFromCSV } from '../../src/lib/sheets';
+import { importNodosFromSheets, importNodosFromCSV, importNodosFromExcel } from '../../src/lib/sheets';
 import { COLORS, Button, Card, Badge } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
 
@@ -24,7 +24,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     safe: { flex: 1, backgroundColor: theme.bg },
     container: { padding: 20, paddingBottom: 40 },
     infoCard: {
-      backgroundColor: '#FFFEF0',
+      backgroundColor: theme.isDark ? theme.surfaceAlt : '#FFFEF0',
       borderWidth: 1.5,
       borderColor: COLORS.yellow,
       marginBottom: 16,
@@ -60,7 +60,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     uploadTitle: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
     uploadSubtitle: { color: theme.textTer, fontSize: 13, marginTop: 3 },
     howToCard: {
-      backgroundColor: '#F0F8FF',
+      backgroundColor: theme.isDark ? theme.surfaceAlt : '#F0F8FF',
       borderWidth: 1,
       borderColor: COLORS.blue + '44',
       marginBottom: 8,
@@ -108,7 +108,7 @@ export default function NovosNodosScreen() {
     setLoading(false);
   }
 
-  async function runImport(fn: () => Promise<{ added: number; skipped: number; errors: string[] }>) {
+  async function runImport(fn: () => Promise<{ added: number; updated: number; skipped: number; errors: string[] }>) {
     setImporting(true);
     setStats(null);
     try {
@@ -144,16 +144,26 @@ export default function NovosNodosScreen() {
     );
   }
 
-  function handleCSVFile(e: any) {
+  function handleFile(e: any) {
     const file = e.target?.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev: any) => {
-      const text = ev.target?.result as string;
-      if (text) runImport(() => importNodosFromCSV(text, (msg) => setProgress(msg)));
-    };
-    reader.readAsText(file, 'UTF-8');
-    // Reset so same file can be re-selected
+    const name = (file.name || '').toLowerCase();
+    const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls');
+    if (isExcel) {
+      const reader = new FileReader();
+      reader.onload = (ev: any) => {
+        const buffer = ev.target?.result as ArrayBuffer;
+        if (buffer) runImport(() => importNodosFromExcel(buffer, (msg) => setProgress(msg)));
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev: any) => {
+        const text = ev.target?.result as string;
+        if (text) runImport(() => importNodosFromCSV(text, (msg) => setProgress(msg)));
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
     e.target.value = '';
   }
 
@@ -180,21 +190,18 @@ export default function NovosNodosScreen() {
           Tenta buscar diretamente da planilha. Pode falhar por restrição de acesso.
         </Text>
 
-        {/* Opção 2: Upload CSV */}
-        <Text style={[styles.sectionLabel, { marginTop: 20 }]}>OPÇÃO 2 — UPLOAD DE CSV (RECOMENDADO)</Text>
+        {/* Opção 2: Upload Excel / CSV */}
+        <Text style={[styles.sectionLabel, { marginTop: 20 }]}>OPÇÃO 2 — UPLOAD EXCEL OU CSV (RECOMENDADO)</Text>
 
-        {/* On web: overlay invisible <input type="file"> directly on the button.
-            This is required for iOS Safari and Chrome mobile — programmatic .click()
-            on a dynamically-created input is blocked by those browsers. */}
         <View style={[styles.uploadBtn, importing && styles.uploadBtnDisabled]}>
           <Text style={styles.uploadIcon}>📂</Text>
           <View style={styles.uploadText}>
-            <Text style={styles.uploadTitle}>Selecionar arquivo CSV</Text>
-            <Text style={styles.uploadSubtitle}>Exporte da planilha e faça upload aqui</Text>
+            <Text style={styles.uploadTitle}>Selecionar Excel ou CSV</Text>
+            <Text style={styles.uploadSubtitle}>.xlsx · .xls · .csv</Text>
           </View>
           {Platform.OS === 'web' && !importing && React.createElement('input', {
             type: 'file',
-            accept: '.csv,text/csv',
+            accept: '.xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel',
             style: {
               position: 'absolute',
               top: 0, left: 0, right: 0, bottom: 0,
@@ -203,15 +210,15 @@ export default function NovosNodosScreen() {
               width: '100%',
               height: '100%',
             },
-            onChange: handleCSVFile,
+            onChange: handleFile,
           })}
         </View>
 
         <Card style={styles.howToCard}>
-          <Text style={styles.howToTitle}>Como exportar o CSV da planilha:</Text>
-          <Text style={styles.howToStep}>1. Abra a planilha Google Sheets (aba "BASE - Nodos")</Text>
-          <Text style={styles.howToStep}>2. Clique em <Text style={styles.bold}>Arquivo → Fazer download → CSV</Text></Text>
-          <Text style={styles.howToStep}>3. Salve o arquivo no celular/computador</Text>
+          <Text style={styles.howToTitle}>Como exportar da planilha Google Sheets:</Text>
+          <Text style={styles.howToStep}>1. Abra a planilha (aba "BASE - Nodos")</Text>
+          <Text style={styles.howToStep}>2. <Text style={styles.bold}>Arquivo → Fazer download → Excel (.xlsx)</Text></Text>
+          <Text style={styles.howToStep}>3. Salve no celular/computador</Text>
           <Text style={styles.howToStep}>4. Toque no botão acima e selecione o arquivo</Text>
         </Card>
 

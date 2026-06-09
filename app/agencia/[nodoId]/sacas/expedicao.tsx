@@ -17,7 +17,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
       alignItems: 'center',
       paddingVertical: 28,
       marginBottom: 12,
-      backgroundColor: '#EFF6FF',
+      backgroundColor: theme.isDark ? theme.surfaceAlt : '#EFF6FF',
       borderWidth: 1.5,
       borderColor: COLORS.blue + '44',
     },

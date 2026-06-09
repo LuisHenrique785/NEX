@@ -74,6 +74,7 @@ export default function ExpedicaoPacotesScreen() {
   // Camera
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [flashEnabled, setFlashEnabled] = useState(false);
+  const [facing, setFacing] = useState<'back' | 'front'>('back');
   const scanCooldown = useRef(false);
 
   // Manual
@@ -263,7 +264,7 @@ export default function ExpedicaoPacotesScreen() {
       <View style={scannerStyles.scannerContainer}>
         <CameraView
           style={scannerStyles.camera}
-          facing="back"
+          facing={facing}
           enableTorch={flashEnabled}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'datamatrix'] }}
           onBarcodeScanned={handleBarcodeScanned}
@@ -274,9 +275,14 @@ export default function ExpedicaoPacotesScreen() {
               <TouchableOpacity onPress={() => setInputMode('none')} style={scannerStyles.scanBackBtn}>
                 <Text style={scannerStyles.scanBackText}>✓ Feito ({pacotes.length})</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setFlashEnabled((f) => !f)} style={scannerStyles.flashBtn}>
-                <Text style={scannerStyles.flashBtnText}>{flashEnabled ? '🔦 ON' : '🔦 OFF'}</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={() => setFacing((f) => f === 'back' ? 'front' : 'back')} style={scannerStyles.flashBtn}>
+                  <Text style={scannerStyles.flashBtnText}>🔄</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setFlashEnabled((f) => !f)} style={scannerStyles.flashBtn}>
+                  <Text style={scannerStyles.flashBtnText}>{flashEnabled ? '🔦 ON' : '🔦 OFF'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </SafeAreaView>
           <View style={scannerStyles.scanCounter}>

@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import { SHEETS_CSV_URL } from '../config';
 import { geocodeAddress } from './geocoding';
 import { supabase } from './supabase';
@@ -25,6 +26,14 @@ export function parseCSV(csv: string): string[][] {
   });
 }
 
+export function parseXLSX(buffer: ArrayBuffer): string[][] {
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
+  return data.map((row) => row.map((cell) => String(cell ?? '').trim()));
+}
+
 // Extracts city and state from full address strings like:
 // "RUA FULANO 123, Bairro - Cidade, MG" or "RUA FULANO 123 CIDADE MG"
 function extractCidadeEstado(endereco: string): { cidade: string; estado: string } {
@@ -49,14 +58,13 @@ async function processRows(
 ): Promise<{ added: number; updated: number; skipped: number; errors: string[] }> {
   const stats = { added: 0, updated: 0, skipped: 0, errors: [] as string[] };
 
-  // CSV columns: A=ETA, B=Nó origem, C=Facility NEx (código), D=Modal, E=Nome Place, F=Endereço
+  // CSV/XLSX columns: A=ETA, B=Nó origem, C=Facility NEx (código), D=Modal, E=Nome Place, F=Endereço
   const dataRows = rows.slice(1).filter((r) => r.length >= 3 && r[2]);
 
   onProgress?.(`${dataRows.length} nodos encontrados...`);
 
   // Load existing NODOs with their current lat to decide insert vs update
   const { data: existing } = await supabase.from('nodos').select('id, codigo, lat');
-  // Map: codigo → { id, hasCoords }
   const existingMap = new Map(
     (existing || []).map((n) => [n.codigo, { id: n.id, hasCoords: n.lat !== null }])
   );
@@ -73,12 +81,10 @@ async function processRows(
     const entry = existingMap.get(codigo);
 
     if (entry?.hasCoords) {
-      // Already has coordinates → skip entirely
       stats.skipped++;
       continue;
     }
 
-    // Geocode (new or existing without coordinates)
     onProgress?.(`[${i + 1}/${dataRows.length}] ${nome}...`);
 
     let lat: number | null = null;
@@ -86,11 +92,18 @@ async function processRows(
 
     if (endereco) {
       const coords = await geocodeAddress(endereco);
-      if (coords) { lat = coords.lat; lng = coords.lng; }
+      if (coords) {
+        lat = coords.lat;
+        lng = coords.lng;
+      } else if (cidade) {
+        // Fallback: try just city + state
+        await new Promise((r) => setTimeout(r, 1100));
+        const coords2 = await geocodeAddress(`${cidade}${estado ? `, ${estado}` : ''}`);
+        if (coords2) { lat = coords2.lat; lng = coords2.lng; }
+      }
     }
 
     if (entry) {
-      // Exists but had no coordinates → UPDATE
       const { error } = await supabase
         .from('nodos')
         .update({ nome, endereco, cidade, estado, lat, lng })
@@ -103,7 +116,6 @@ async function processRows(
         if (lat) existingMap.set(codigo, { id: entry.id, hasCoords: true });
       }
     } else {
-      // New → INSERT
       const { error } = await supabase.from('nodos').insert({
         codigo, nome, endereco, cidade, estado, lat, lng,
       });
@@ -127,7 +139,7 @@ export async function importNodosFromSheets(
 ): Promise<{ added: number; updated: number; skipped: number; errors: string[] }> {
   onProgress?.('Buscando planilha Google Sheets...');
   const res = await fetch(SHEETS_CSV_URL);
-  if (!res.ok) throw new Error('Não foi possível acessar a planilha. Tente fazer upload do CSV.');
+  if (!res.ok) throw new Error('Não foi possível acessar a planilha. Tente fazer upload do arquivo.');
   const csv = await res.text();
   const rows = parseCSV(csv);
   return processRows(rows, onProgress);
@@ -139,5 +151,14 @@ export async function importNodosFromCSV(
 ): Promise<{ added: number; updated: number; skipped: number; errors: string[] }> {
   onProgress?.('Lendo arquivo CSV...');
   const rows = parseCSV(csvText);
+  return processRows(rows, onProgress);
+}
+
+export async function importNodosFromExcel(
+  buffer: ArrayBuffer,
+  onProgress?: (msg: string) => void
+): Promise<{ added: number; updated: number; skipped: number; errors: string[] }> {
+  onProgress?.('Lendo arquivo Excel...');
+  const rows = parseXLSX(buffer);
   return processRows(rows, onProgress);
 }

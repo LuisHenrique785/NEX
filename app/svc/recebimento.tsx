@@ -73,6 +73,7 @@ export default function SVCRecebimentoScreen() {
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [flashEnabled, setFlashEnabled] = useState(false);
+  const [facing, setFacing] = useState<'back' | 'front'>('back');
   const scanCooldown = useRef(false);
   const [manualCode, setManualCode] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -215,7 +216,7 @@ export default function SVCRecebimentoScreen() {
     }
     return (
       <View style={scannerStyles.scannerContainer}>
-        <CameraView style={scannerStyles.camera} facing="back" enableTorch={flashEnabled}
+        <CameraView style={scannerStyles.camera} facing={facing} enableTorch={flashEnabled}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'datamatrix'] }}
           onBarcodeScanned={handleBarcodeScanned}
         />
@@ -225,9 +226,14 @@ export default function SVCRecebimentoScreen() {
               <TouchableOpacity onPress={() => setInputMode('none')} style={scannerStyles.scanBackBtn}>
                 <Text style={scannerStyles.scanBackText}>✓ Feito ({pacotes.length})</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setFlashEnabled((f) => !f)} style={scannerStyles.flashBtn}>
-                <Text style={scannerStyles.flashBtnText}>{flashEnabled ? '🔦 ON' : '🔦 OFF'}</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={() => setFacing((f) => f === 'back' ? 'front' : 'back')} style={scannerStyles.flashBtn}>
+                  <Text style={scannerStyles.flashBtnText}>🔄</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setFlashEnabled((f) => !f)} style={scannerStyles.flashBtn}>
+                  <Text style={scannerStyles.flashBtnText}>{flashEnabled ? '🔦 ON' : '🔦 OFF'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </SafeAreaView>
           <View style={scannerStyles.scanCounter}>
