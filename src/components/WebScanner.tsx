@@ -1,5 +1,7 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/browser';
+import { DecodeHintType, BarcodeFormat } from '@zxing/library';
 
 interface Props {
   onScanned: (code: string) => void;
@@ -9,127 +11,102 @@ interface Props {
   recentCodes?: string[];
 }
 
+// From a QR/barcode result, extract the most meaningful code:
+// - If it looks like a URL or has non-numeric prefix, extract the longest digit sequence
+// - Otherwise return as-is
+function extractCode(raw: string): string {
+  const trimmed = raw.trim();
+  // If already a clean code (alphanumeric, no spaces, reasonable length) → use as-is
+  if (/^[A-Z0-9\-]{6,30}$/i.test(trimmed)) return trimmed.toUpperCase();
+  // Extract the longest sequence of digits (≥6 digits) — common in tracking numbers
+  const matches = trimmed.match(/\d{6,}/g);
+  if (matches) return matches.reduce((a, b) => (a.length >= b.length ? a : b));
+  // Fallback: strip spaces and return
+  return trimmed.replace(/\s+/g, '');
+}
+
 export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes }: Props) {
   const videoRef = useRef<any>(null);
-  const detectorRef = useRef<any>(null);
-  const rafRef = useRef<number>(0);
-  const streamRef = useRef<MediaStream | null>(null);
+  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const cooldown = useRef(false);
 
-  const [error, setError] = useState<string | null>(null);
-  // 0 = back, 1 = front, cycling through all video devices
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [deviceIdx, setDeviceIdx] = useState(0);
+  const [deviceIdx, setDeviceIdx] = useState(-1); // -1 = not selected yet
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // ─── Start camera by deviceId ──────────────────────────────────
-  const startStream = useCallback(async (deviceId: string) => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    cancelAnimationFrame(rafRef.current);
-
-    try {
-      const stream = await (navigator as any).mediaDevices.getUserMedia({
-        video: {
-          deviceId: { exact: deviceId },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-      });
-      streamRef.current = stream;
-
-      const video = videoRef.current as HTMLVideoElement | null;
-      if (video) {
-        video.srcObject = stream;
-        await video.play();
-        // Try continuous autofocus
-        const track = stream.getVideoTracks()[0] as any;
-        try {
-          const caps = track.getCapabilities?.();
-          if (caps?.focusMode?.includes('continuous')) {
-            await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
-          }
-        } catch { /* focus not supported */ }
-      }
-      scanLoop();
-    } catch (e: any) {
-      setError('Erro ao acessar a câmera: ' + (e.message || 'permissão negada'));
-    }
-  }, []);
-
-  // ─── Enumerate devices → pick rear camera ──────────────────────
+  // ─── Initialize ZXing and enumerate cameras ────────────────────
   useEffect(() => {
-    const BD = (window as any).BarcodeDetector;
-    if (!BD) {
-      setError('Seu navegador não suporta scanner automático.\nUse a entrada manual (⌨️ Digitar).');
-      return;
-    }
-    detectorRef.current = new BD({
-      formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8', 'data_matrix', 'itf'],
-    });
+    const hints = new Map();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.QR_CODE,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.DATA_MATRIX,
+      BarcodeFormat.ITF,
+      BarcodeFormat.CODABAR,
+    ]);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    readerRef.current = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 200 });
 
-    (async () => {
-      try {
-        // Step 1: request any camera to unlock device labels
-        const tmpStream = await (navigator as any).mediaDevices.getUserMedia({ video: true });
-        tmpStream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+    BrowserMultiFormatReader.listVideoInputDevices()
+      .then((devs) => {
+        if (devs.length === 0) {
+          setError('Nenhuma câmera encontrada.');
+          return;
+        }
+        setDevices(devs);
 
-        // Step 2: enumerate with labels now available
-        const all = await (navigator as any).mediaDevices.enumerateDevices() as MediaDeviceInfo[];
-        const vids = all.filter((d) => d.kind === 'videoinput');
-        if (vids.length === 0) { setError('Nenhuma câmera encontrada.'); return; }
-
-        setDevices(vids);
-
-        // Step 3: pick the rear camera
-        // Prefer label containing 'back', 'rear', 'traseira', 'posterior', 'environment'
-        // On Android Chrome: typically labeled "camera2 0" (front) and "camera2 1" (back)
-        // or "Back Camera" / "Front Camera"
-        const rearIdx = vids.findIndex((d) =>
-          /back|rear|traseira|posterior|environment|\b1\b/i.test(d.label)
+        // Pick the rear camera:
+        // On Android Chrome the back camera label usually contains "back", "traseira", "0" or is the LAST device
+        const rearIdx = devs.findIndex((d) =>
+          /back|rear|traseira|posterior|environment/i.test(d.label)
         );
-        // If no match by label, use last device (rear camera is usually last on Android)
-        const idx = rearIdx >= 0 ? rearIdx : vids.length - 1;
+        const idx = rearIdx >= 0 ? rearIdx : devs.length - 1;
         setDeviceIdx(idx);
-        await startStream(vids[idx].deviceId);
-      } catch (e: any) {
-        setError('Não foi possível acessar a câmera.\nVerifique as permissões do navegador.');
-      }
-    })();
+      })
+      .catch(() => setError('Não foi possível listar as câmeras.'));
 
     return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      cancelAnimationFrame(rafRef.current);
+      readerRef.current?.reset();
     };
   }, []);
 
-  // ─── Flip: cycle to next device ────────────────────────────────
-  async function flipCamera() {
-    if (devices.length < 2) return;
-    const next = (deviceIdx + 1) % devices.length;
-    setDeviceIdx(next);
-    await startStream(devices[next].deviceId);
-  }
+  // ─── Start scanning when deviceIdx is ready ────────────────────
+  useEffect(() => {
+    if (deviceIdx < 0 || !devices[deviceIdx] || !readerRef.current) return;
 
-  // ─── Barcode scan loop ─────────────────────────────────────────
-  function scanLoop() {
-    const video = videoRef.current as HTMLVideoElement | null;
-    if (!detectorRef.current || !video || video.readyState < 2) {
-      rafRef.current = requestAnimationFrame(scanLoop);
-      return;
-    }
-    detectorRef.current
-      .detect(video)
-      .then((results: any[]) => {
-        if (results.length > 0 && !cooldown.current) {
-          cooldown.current = true;
-          onScanned(results[0].rawValue);
-          setTimeout(() => { cooldown.current = false; }, 1500);
+    setLoading(true);
+    const deviceId = devices[deviceIdx].deviceId;
+
+    readerRef.current
+      .decodeFromVideoDevice(
+        deviceId,
+        videoRef.current,
+        (result, err) => {
+          if (result && !cooldown.current) {
+            cooldown.current = true;
+            const code = extractCode(result.getText());
+            onScanned(code);
+            setTimeout(() => { cooldown.current = false; }, 1500);
+          }
         }
-      })
-      .catch(() => {})
-      .finally(() => { rafRef.current = requestAnimationFrame(scanLoop); });
+      )
+      .then(() => setLoading(false))
+      .catch((e) => {
+        // decodeFromVideoDevice resolves when stopped — not an error
+        setLoading(false);
+      });
+  }, [deviceIdx, devices]);
+
+  function flipCamera() {
+    if (devices.length < 2) return;
+    readerRef.current?.reset();
+    setDeviceIdx((i) => (i + 1) % devices.length);
   }
 
-  // ─── Error state ───────────────────────────────────────────────
   if (error) {
     return (
       <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center', padding: 32 }}>
@@ -142,13 +119,13 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
     );
   }
 
-  const camLabel = devices[deviceIdx]?.label || '';
-  const isFront = /front|frontal|user|face|selfie|\b0\b/i.test(camLabel);
+  const currentLabel = devices[deviceIdx]?.label || '';
+  const isFront = /front|frontal|user|face|selfie/i.test(currentLabel) ||
+    (devices.length >= 2 && deviceIdx === 0 && !/back|rear|traseira/i.test(currentLabel));
 
-  // ─── Scanner UI ────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
-      {/* Video element fills screen */}
+      {/* Video element — fills screen */}
       {React.createElement('video', {
         ref: videoRef,
         style: {
@@ -157,89 +134,87 @@ export function WebScanner({ onScanned, onClose, count, lastScanned, recentCodes
           objectFit: 'cover',
           zIndex: 1,
         },
-        playsInline: true,
-        muted: true,
-        autoPlay: true,
       })}
 
+      {/* Loading spinner */}
+      {loading && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 3, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FFE600" />
+          <Text style={{ color: '#fff', marginTop: 12, fontSize: 13 }}>Iniciando câmera...</Text>
+        </View>
+      )}
+
       {/* Overlay — above video */}
-      <View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 2,
-        justifyContent: 'space-between',
-      }}>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2, justifyContent: 'space-between' }}>
 
         {/* Top bar */}
         <View style={{
           flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
           padding: 16, paddingTop: 52,
-          backgroundColor: 'rgba(0,0,0,0.6)',
+          backgroundColor: 'rgba(0,0,0,0.65)',
         }}>
           <TouchableOpacity onPress={onClose} style={{ padding: 8 }}>
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
               ✓ Feito ({count})
             </Text>
           </TouchableOpacity>
-          {devices.length > 1 && (
-            <TouchableOpacity
-              onPress={flipCamera}
-              style={{ backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
-                🔄 {isFront ? 'Frontal' : 'Traseira'}
-              </Text>
-            </TouchableOpacity>
-          )}
+
+          {/* Always show flip button */}
+          <TouchableOpacity
+            onPress={flipCamera}
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.25)',
+              paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+            }}
+          >
+            <Text style={{ fontSize: 16 }}>🔄</Text>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
+              {isFront ? 'Frontal' : 'Traseira'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Center frame */}
         <View style={{ alignItems: 'center' }}>
-          <View style={{ width: 260, height: 160, position: 'relative' }}>
+          <View style={{ width: 280, height: 170, position: 'relative' }}>
             {[
               { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
               { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
               { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
               { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
             ].map((s, i) => (
-              <View key={i} style={[{
-                position: 'absolute', width: 32, height: 32,
-                borderColor: '#FFE600', borderWidth: 3,
-              }, s as any]} />
+              <View key={i} style={[{ position: 'absolute', width: 32, height: 32, borderColor: '#FFE600', borderWidth: 3 }, s as any]} />
             ))}
           </View>
         </View>
 
-        {/* Bottom: result + recent list */}
+        {/* Bottom: feedback + recent list */}
         <View style={{ paddingBottom: 24 }}>
-          <View style={{ alignItems: 'center', marginBottom: 8 }}>
+          <View style={{ alignItems: 'center', marginBottom: 8, paddingHorizontal: 16 }}>
             {lastScanned ? (
               <View style={{
                 backgroundColor: lastScanned.startsWith('⚠️') ? '#FB8C00' : '#43A047',
                 paddingHorizontal: 24, paddingVertical: 10, borderRadius: 16,
               }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{lastScanned}</Text>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14, textAlign: 'center' }}>
+                  {lastScanned}
+                </Text>
               </View>
             ) : (
               <View style={{ backgroundColor: 'rgba(0,0,0,0.55)', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 12 }}>
-                <Text style={{ color: '#ddd', fontSize: 13 }}>Aponte para o código de barras</Text>
+                <Text style={{ color: '#ddd', fontSize: 13 }}>Aponte para o código de barras ou QR</Text>
               </View>
             )}
           </View>
 
           {recentCodes && recentCodes.length > 0 && (
-            <View style={{ backgroundColor: 'rgba(0,0,0,0.7)', padding: 12 }}>
-              <Text style={{ color: '#aaa', fontSize: 11, marginBottom: 6 }}>
-                Na lista ({count}):
-              </Text>
+            <View style={{ backgroundColor: 'rgba(0,0,0,0.75)', padding: 12 }}>
+              <Text style={{ color: '#aaa', fontSize: 11, marginBottom: 6 }}>Na lista ({count}):</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {recentCodes.slice(0, 8).map((code, i) => (
-                  <View key={i} style={{
-                    backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8,
-                    paddingHorizontal: 10, paddingVertical: 4, marginRight: 8,
-                  }}>
-                    <Text style={{ color: '#fff', fontSize: 12, fontFamily: 'monospace' }}>
-                      {code.slice(-8)}
-                    </Text>
+                  <View key={i} style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, marginRight: 8 }}>
+                    <Text style={{ color: '#fff', fontSize: 12, fontFamily: 'monospace' }}>{code.slice(-8)}</Text>
                   </View>
                 ))}
               </ScrollView>
