@@ -1,7 +1,7 @@
 // Supabase configuration
 // Preencha com suas credenciais do Supabase (Projeto: gjjwcpdkdqvfgephwulk)
 export const SUPABASE_URL = 'https://gjjwcpdkdqvfgephwulk.supabase.co';
-export const SUPABASE_ANON_KEY = 'COLOQUE_SUA_ANON_KEY_AQUI';
+export const SUPABASE_ANON_KEY = 'sb_publishable_-HMbRDIFNNnCLrk9U1QmIg_s0GAcNdT';
 
 // Google Sheets - BASE de Nodos
 export const SHEETS_ID = '1LrqzUMaptrqA6Dm86JRFpBEmgdKRSChToEPK05mLxrs';
@@ -10,7 +10,7 @@ export const SHEETS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEETS_I
 
 // PIN de administrador para cadastro de novos NODOS
 // Mude para um PIN seguro após o primeiro acesso
-export const ADMIN_PIN = '9876';
+export const ADMIN_PIN = '7852';
 
 // Raio máximo em km para exibir NODOS próximos
 export const MAX_DISTANCE_KM = 1;
