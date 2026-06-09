@@ -28,6 +28,23 @@ interface AgenciaData {
   pacotes: AgenciaPacote[];
 }
 
+interface MotoristaPacoteFaltando {
+  codigo: string;
+  nodo_nome: string;
+  expedited_at: string | null;
+}
+
+interface MotoristaData {
+  chave: string;
+  nome: string;
+  cpf: string | null;
+  total_expedicoes: number;
+  total_pego: number;
+  total_entregue: number;
+  total_faltando: number;
+  faltando: MotoristaPacoteFaltando[];
+}
+
 interface Expedicao {
   id: string;
   created_at: string;
@@ -127,6 +144,30 @@ function makeStyles(t: Theme) {
     timelineTime: { fontSize: 12, color: t.textSec, marginTop: 2 },
     timelineConnector: { width: 2, height: 16, backgroundColor: t.border, marginLeft: 5, marginBottom: 0, marginTop: -4 },
 
+    // Motorista cards
+    motCard: { padding: 14, marginBottom: 10 },
+    motHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+    motName: { fontSize: 15, fontWeight: '800', color: t.text, flex: 1 },
+    motMeta: { fontSize: 12, color: t.textSec, marginBottom: 10 },
+    motAlertBox: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      backgroundColor: COLORS.red + '18', borderRadius: 10,
+      padding: 12, marginBottom: 10,
+    },
+    motAlertIcon: { fontSize: 22 },
+    motAlertTitle: { fontSize: 14, fontWeight: '800', color: COLORS.red },
+    motAlertSub: { fontSize: 12, color: COLORS.red, marginTop: 1 },
+    motOkBox: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      backgroundColor: COLORS.green + '18', borderRadius: 10,
+      padding: 12, marginBottom: 10,
+    },
+    motOkTitle: { fontSize: 14, fontWeight: '800', color: COLORS.green },
+    faltandoItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: t.border },
+    faltandoCode: { flex: 1, fontSize: 12, color: t.text, fontFamily: 'monospace', fontWeight: '600' },
+    faltandoAgencia: { fontSize: 11, color: t.textSec },
+    faltandoDate: { fontSize: 10, color: t.textTer, marginTop: 1 },
+
     sectionLabel: {
       fontSize: 11, fontWeight: '800', color: t.textSec,
       textTransform: 'uppercase', letterSpacing: 1.5,
@@ -144,7 +185,7 @@ export default function ConsultaScreen() {
 
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState('');
-  const [tab, setTab] = useState<'expedicoes' | 'agencias' | 'busca' | 'exportar'>('expedicoes');
+  const [tab, setTab] = useState<'expedicoes' | 'agencias' | 'motoristas' | 'busca' | 'exportar'>('expedicoes');
 
   // Export tab state
   const [exportDateFrom, setExportDateFrom] = useState(() =>
@@ -159,6 +200,12 @@ export default function ConsultaScreen() {
   const [expedicoes, setExpedicoes] = useState<Expedicao[]>([]);
   const [loadingExp, setLoadingExp] = useState(false);
   const [expLoaded, setExpLoaded] = useState(false);
+
+  // Motoristas tab state
+  const [motoristas, setMotoristas] = useState<MotoristaData[]>([]);
+  const [loadingMotoristas, setLoadingMotoristas] = useState(false);
+  const [expandedMotoristas, setExpandedMotoristas] = useState<Set<string>>(new Set());
+  const [motPeriod, setMotPeriod] = useState(7);
 
   // Agências tab state
   const [agencias, setAgencias] = useState<AgenciaData[]>([]);
@@ -299,6 +346,118 @@ export default function ConsultaScreen() {
       });
     } finally {
       setSearching(false);
+    }
+  }
+
+  // ─── Motoristas ──────────────────────────────────────────────────
+  async function loadMotoristas(days = motPeriod) {
+    setLoadingMotoristas(true);
+    setExpandedMotoristas(new Set());
+    try {
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+      // Fetch expeditions in the period
+      const { data: exps } = await supabase
+        .from('pacotes_expedicoes')
+        .select('id, nome_motorista, cpf_motorista, total_pacotes')
+        .gte('created_at', since);
+
+      if (!exps || exps.length === 0) { setMotoristas([]); return; }
+
+      const expIds = exps.map((e: any) => e.id);
+
+      // Get all packages in those expeditions
+      const { data: pkgs } = await supabase
+        .from('pacotes_inventario')
+        .select('codigo, expedicao_id, expedited_at, nodo_id, nodos(nome)')
+        .in('expedicao_id', expIds)
+        .eq('status', 'expedited');
+
+      if (!pkgs || pkgs.length === 0) { setMotoristas([]); return; }
+
+      const codes = pkgs.map((p: any) => p.codigo);
+      const { data: received } = await supabase
+        .from('svc_recebimentos_pacotes')
+        .select('codigo')
+        .in('codigo', codes);
+      const receivedSet = new Set((received || []).map((r: any) => r.codigo as string));
+
+      // Map expedicao_id → motorista info
+      const expMap = new Map((exps as any[]).map((e) => [e.id, e]));
+
+      // Group by motorista key (cpf if available, else nome)
+      const motMap = new Map<string, MotoristaData>();
+      for (const p of pkgs as any[]) {
+        const exp = expMap.get(p.expedicao_id);
+        if (!exp) continue;
+        const chave = exp.cpf_motorista || exp.nome_motorista || 'desconhecido';
+        if (!motMap.has(chave)) {
+          motMap.set(chave, {
+            chave,
+            nome: exp.nome_motorista || 'Motorista desconhecido',
+            cpf: exp.cpf_motorista || null,
+            total_expedicoes: 0,
+            total_pego: 0,
+            total_entregue: 0,
+            total_faltando: 0,
+            faltando: [],
+          });
+        }
+        const mot = motMap.get(chave)!;
+        mot.total_pego++;
+        if (receivedSet.has(p.codigo)) {
+          mot.total_entregue++;
+        } else {
+          mot.total_faltando++;
+          mot.faltando.push({
+            codigo: p.codigo,
+            nodo_nome: p.nodos?.nome || '—',
+            expedited_at: p.expedited_at,
+          });
+        }
+      }
+
+      // Count expeditions per motorista
+      for (const exp of exps as any[]) {
+        const chave = exp.cpf_motorista || exp.nome_motorista || 'desconhecido';
+        if (motMap.has(chave)) motMap.get(chave)!.total_expedicoes++;
+      }
+
+      setMotoristas(
+        Array.from(motMap.values()).sort((a, b) => b.total_faltando - a.total_faltando)
+      );
+    } finally {
+      setLoadingMotoristas(false);
+    }
+  }
+
+  function toggleMotorista(chave: string) {
+    setExpandedMotoristas((prev) => {
+      const next = new Set(prev);
+      if (next.has(chave)) next.delete(chave); else next.add(chave);
+      return next;
+    });
+  }
+
+  function downloadMotoristaCSV(mot: MotoristaData) {
+    const header = 'Código,Agência,Status,Data Expedição (BRT)';
+    const rows = mot.faltando.map((p) => [
+      p.codigo,
+      `"${p.nodo_nome}"`,
+      'Não entregue no SVC',
+      p.expedited_at ? formatDateTimeBRT(p.expedited_at) : '',
+    ].join(','));
+    const csv = '﻿' + [header, ...rows].join('\n');
+    const filename = `faltando_${mot.nome.replace(/\s+/g, '_')}.csv`;
+    if (Platform.OS === 'web') {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = (document as any).createElement('a');
+      a.href = url; a.download = filename;
+      (document as any).body.appendChild(a);
+      a.click();
+      (document as any).body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   }
 
@@ -484,10 +643,11 @@ export default function ConsultaScreen() {
         {/* Tabs — 2×2 grid */}
         <View style={styles.tabRow}>
           {([
-            ['expedicoes', '📦 Expedições'],
-            ['agencias',   '🏪 Por Agência'],
-            ['busca',      '🔍 Buscar Pacote'],
-            ['exportar',   '📥 Exportar CSV'],
+            ['expedicoes',  '📦 Expedições'],
+            ['agencias',    '🏪 Por Agência'],
+            ['motoristas',  '🚛 Motoristas'],
+            ['busca',       '🔍 Buscar'],
+            ['exportar',    '📥 Exportar CSV'],
           ] as const).map(([key, label]) => (
             <TouchableOpacity
               key={key}
@@ -495,6 +655,7 @@ export default function ConsultaScreen() {
               onPress={() => {
                 setTab(key);
                 if (key === 'agencias' && agencias.length === 0 && !loadingAgencias) loadAgencias();
+                if (key === 'motoristas' && motoristas.length === 0 && !loadingMotoristas) loadMotoristas();
               }}
             >
               <Text style={[styles.tabLabel, tab === key && styles.tabLabelActive]}>{label}</Text>
@@ -653,6 +814,124 @@ export default function ConsultaScreen() {
                             ? <Text style={[styles.codeStatus, { color: COLORS.green }]}>✅ Recebido</Text>
                             : <Text style={[styles.codeStatus, { color: COLORS.red }]}>⏳ Pendente</Text>
                           }
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </Card>
+              );
+            })}
+          </>
+        )}
+
+        {/* ── MOTORISTAS TAB ── */}
+        {tab === 'motoristas' && (
+          <>
+            <View style={styles.periodRow}>
+              {([7, 15, 30] as const).map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  style={[styles.periodBtn, motPeriod === d && styles.periodBtnActive]}
+                  onPress={() => { setMotPeriod(d); loadMotoristas(d); }}
+                >
+                  <Text style={[styles.periodBtnText, motPeriod === d && styles.periodBtnTextActive]}>
+                    {d} dias
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={[styles.periodBtn, { marginLeft: 'auto' as any }]}
+                onPress={() => loadMotoristas()}
+              >
+                <Text style={styles.periodBtnText}>↺ Atualizar</Text>
+              </TouchableOpacity>
+            </View>
+
+            {loadingMotoristas && <ActivityIndicator color={COLORS.yellow} style={{ marginTop: 20 }} />}
+
+            {!loadingMotoristas && motoristas.length === 0 && (
+              <Card style={styles.emptyCard}>
+                <Text style={styles.emptyText}>Nenhuma expedição no período.</Text>
+              </Card>
+            )}
+
+            {motoristas.map((mot) => {
+              const expanded = expandedMotoristas.has(mot.chave);
+              const temFaltando = mot.total_faltando > 0;
+              return (
+                <Card key={mot.chave} style={styles.motCard}>
+                  <View style={styles.motHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.motName}>{mot.nome}</Text>
+                      {mot.cpf && (
+                        <Text style={styles.motMeta}>
+                          CPF: {mot.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                          {'  ·  '}{mot.total_expedicoes} expedição{mot.total_expedicoes !== 1 ? 'ões' : ''}
+                        </Text>
+                      )}
+                    </View>
+                    {temFaltando
+                      ? <Badge label={`${mot.total_faltando} faltando`} color={COLORS.red} />
+                      : <Badge label="✓ Tudo entregue" color={COLORS.green} />
+                    }
+                  </View>
+
+                  {/* Discrepancy summary */}
+                  {temFaltando ? (
+                    <View style={styles.motAlertBox}>
+                      <Text style={styles.motAlertIcon}>⚠️</Text>
+                      <View>
+                        <Text style={styles.motAlertTitle}>
+                          Pegou {mot.total_pego} · Entregou {mot.total_entregue} · Faltam {mot.total_faltando}
+                        </Text>
+                        <Text style={styles.motAlertSub}>
+                          Os {mot.total_faltando} pacote{mot.total_faltando !== 1 ? 's' : ''} abaixo não chegaram no SVC — voltam como pendência das agências.
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.motOkBox}>
+                      <Text style={{ fontSize: 18 }}>✅</Text>
+                      <Text style={styles.motOkTitle}>
+                        Pegou {mot.total_pego} · Entregou {mot.total_entregue} — sem divergência
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Actions */}
+                  {temFaltando && (
+                    <View style={styles.agActions}>
+                      <TouchableOpacity style={styles.agExpandBtn} onPress={() => toggleMotorista(mot.chave)}>
+                        <Text style={{ fontSize: 14 }}>{expanded ? '▲' : '▼'}</Text>
+                        <Text style={styles.agExpandText}>
+                          {expanded ? 'Fechar' : `Ver ${mot.total_faltando} IDs faltando`}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.agDownloadBtn} onPress={() => downloadMotoristaCSV(mot)}>
+                        <Text style={{ fontSize: 14 }}>📥</Text>
+                        <Text style={styles.agDownloadText}>Baixar CSV</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* Expanded missing list */}
+                  {expanded && temFaltando && (
+                    <View style={{ marginTop: 12 }}>
+                      <Text style={[styles.sectionLabel, { marginTop: 0 }]}>
+                        PACOTES NÃO ENTREGUES ({mot.faltando.length})
+                      </Text>
+                      {mot.faltando.map((p, i) => (
+                        <View key={i} style={styles.faltandoItem}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.faltandoCode}>{p.codigo}</Text>
+                            <Text style={styles.faltandoAgencia}>📍 {p.nodo_nome}</Text>
+                          </View>
+                          <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={[styles.codeStatus, { color: COLORS.red }]}>⏳ Pendente</Text>
+                            {p.expedited_at && (
+                              <Text style={styles.faltandoDate}>{formatDateTimeBRT(p.expedited_at)}</Text>
+                            )}
+                          </View>
                         </View>
                       ))}
                     </View>
