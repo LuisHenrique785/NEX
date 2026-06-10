@@ -11,6 +11,7 @@ import { supabase } from '../../src/lib/supabase';
 import { COLORS, Button, Card } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
 import type { Theme } from '../../src/lib/theme';
+import { useDemo } from '../../src/lib/demo';
 import { WebScanner } from '../../src/components/WebScanner';
 
 interface Pacote {
@@ -20,14 +21,6 @@ interface Pacote {
 }
 
 type InputMode = 'none' | 'scanner' | 'manual' | 'photo';
-
-function formatCPF(text: string) {
-  const nums = text.replace(/\D/g, '').slice(0, 11);
-  return nums
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
-}
 
 function formatPlaca(text: string) {
   return text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
@@ -62,9 +55,8 @@ export default function SVCRecebimentoScreen() {
   const navigation = useNavigation();
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const { isDemo } = useDemo();
 
-  const [nomeMotorista, setNomeMotorista] = useState('');
-  const [cpfMotorista, setCpfMotorista] = useState('');
   const [placa, setPlaca] = useState('');
   const [transportadora, setTransportadora] = useState('');
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
@@ -156,13 +148,19 @@ export default function SVCRecebimentoScreen() {
         {
           text: 'Confirmar',
           onPress: async () => {
+            if (isDemo) {
+              Alert.alert(
+                '✅ [DEMO] Recebimento Registrado!',
+                `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`,
+                [{ text: 'OK', onPress: () => router.back() }]
+              );
+              return;
+            }
             setSaving(true);
 
             const { data: recData, error: recError } = await supabase
               .from('svc_recebimentos')
               .insert({
-                nome_motorista: nomeMotorista.trim() || null,
-                cpf_motorista: cpfMotorista.replace(/\D/g, '') || null,
                 placa: placa.trim() || null,
                 transportadora: transportadora.trim() || null,
                 total_pacotes: pacotes.length,
@@ -291,12 +289,8 @@ export default function SVCRecebimentoScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.sectionLabel}>DADOS DO MOTORISTA (opcional)</Text>
+          <Text style={styles.sectionLabel}>DADOS DO VEÍCULO (opcional)</Text>
           <Card>
-            <Text style={styles.fieldLabel}>Nome</Text>
-            <TextInput style={styles.input} placeholder="Nome do motorista" placeholderTextColor={theme.textTer} value={nomeMotorista} onChangeText={setNomeMotorista} autoCapitalize="words" />
-            <Text style={styles.fieldLabel}>CPF</Text>
-            <TextInput style={styles.input} placeholder="000.000.000-00" placeholderTextColor={theme.textTer} value={cpfMotorista} onChangeText={(t) => setCpfMotorista(formatCPF(t))} keyboardType="number-pad" maxLength={14} />
             <Text style={styles.fieldLabel}>Placa</Text>
             <TextInput style={styles.input} placeholder="ABC1234" placeholderTextColor={theme.textTer} value={placa} onChangeText={(t) => setPlaca(formatPlaca(t))} autoCapitalize="characters" maxLength={7} />
             <Text style={styles.fieldLabel}>Transportadora</Text>

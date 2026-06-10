@@ -16,8 +16,8 @@ import { formatDateTimeBRT, formatTimeBRT } from '../../src/lib/utils';
 interface Expedicao {
   id: string;
   created_at: string;
-  nome_motorista: string | null;
   placa: string | null;
+  transportadora: string | null;
   total_pacotes: number;
   nodo_nome: string;
   nodo_codigo: string;
@@ -141,7 +141,7 @@ export default function ConsultaScreen() {
       // Fetch expeditions with agency info
       const { data: exps } = await supabase
         .from('pacotes_expedicoes')
-        .select('id, created_at, nome_motorista, placa, total_pacotes, nodo_id, nodos(nome, codigo)')
+        .select('id, created_at, placa, transportadora, total_pacotes, nodo_id, nodos(nome, codigo)')
         .order('created_at', { ascending: false })
         .limit(60);
 
@@ -186,8 +186,8 @@ export default function ConsultaScreen() {
         return {
           id: e.id,
           created_at: e.created_at,
-          nome_motorista: e.nome_motorista,
           placa: e.placa,
+          transportadora: e.transportadora,
           total_pacotes: e.total_pacotes,
           nodo_nome: e.nodos?.nome || '—',
           nodo_codigo: e.nodos?.codigo || '—',
@@ -346,9 +346,9 @@ export default function ConsultaScreen() {
                   )}
                 </View>
 
-                {exp.nome_motorista && (
+                {(exp.transportadora || exp.placa) && (
                   <Text style={styles.expMeta}>
-                    🚛 {exp.nome_motorista}{exp.placa ? ` · ${exp.placa}` : ''}
+                    🚛 {exp.transportadora || ''}{exp.placa ? ` · ${exp.placa}` : ''}
                   </Text>
                 )}
 

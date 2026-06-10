@@ -1,13 +1,38 @@
 import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '../src/lib/theme';
+import { DemoProvider, useDemo } from '../src/lib/demo';
+
+function DemoBanner() {
+  const { isDemo, exitDemo } = useDemo();
+  if (!isDemo) return null;
+  return (
+    <View style={{
+      backgroundColor: '#FF6B00',
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    }}>
+      <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 13, letterSpacing: 1 }}>
+        🎭 MODO DEMONSTRAÇÃO — dados não serão salvos
+      </Text>
+      <TouchableOpacity onPress={exitDemo}>
+        <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 13 }}>Sair ✕</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 function InnerLayout() {
   const { theme } = useTheme();
   return (
     <>
       <StatusBar style={theme.statusBar} backgroundColor={theme.header} />
+      <DemoBanner />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: theme.header },
@@ -37,7 +62,9 @@ function InnerLayout() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <InnerLayout />
+      <DemoProvider>
+        <InnerLayout />
+      </DemoProvider>
     </ThemeProvider>
   );
 }

@@ -5,13 +5,19 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '../src/lib/theme';
+import { useDemo } from '../src/lib/demo';
 import { Button } from '../src/components/ui';
 import { ADMIN_PIN } from '../src/config';
 
+const DEMO_PASSWORD = 'MELI@7852';
+
 export default function HomeScreen() {
   const { theme, toggle } = useTheme();
+  const { isDemo, enterDemo, exitDemo } = useDemo();
   const [adminModal, setAdminModal] = useState(false);
   const [pin, setPin] = useState('');
+  const [demoModal, setDemoModal] = useState(false);
+  const [demoPass, setDemoPass] = useState('');
 
   function handleAdminAccess() {
     if (pin === ADMIN_PIN) {
@@ -21,6 +27,17 @@ export default function HomeScreen() {
     } else {
       Alert.alert('PIN incorreto', 'Verifique o PIN e tente novamente.');
       setPin('');
+    }
+  }
+
+  function handleDemoAccess() {
+    if (demoPass === DEMO_PASSWORD) {
+      setDemoModal(false);
+      setDemoPass('');
+      enterDemo();
+    } else {
+      Alert.alert('Senha incorreta', 'Verifique a senha e tente novamente.');
+      setDemoPass('');
     }
   }
 
@@ -223,8 +240,79 @@ export default function HomeScreen() {
               Sincronizar agências
             </Text>
           </TouchableOpacity>
+
+          {/* Demo Mode button */}
+          <TouchableOpacity
+            style={{
+              marginTop: 14,
+              borderRadius: 16,
+              borderWidth: 1.5,
+              borderColor: isDemo ? '#FF6B00' : theme.border,
+              padding: 20,
+              alignItems: 'center',
+              backgroundColor: isDemo ? '#FF6B0015' : theme.surface,
+            }}
+            onPress={() => isDemo ? exitDemo() : setDemoModal(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 24, marginBottom: 6 }}>🎭</Text>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: isDemo ? '#FF6B00' : theme.textSec, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              {isDemo ? 'Sair do Demo' : 'Modo Demo'}
+            </Text>
+            <Text style={{ fontSize: 12, color: theme.textTer, marginTop: 3 }}>
+              {isDemo ? 'Demo ativo — toque para encerrar' : 'Apresentação sem salvar dados'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Demo Mode Modal */}
+      <Modal
+        visible={demoModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => { setDemoModal(false); setDemoPass(''); }}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 }}>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>
+              🎭 Modo Demonstração
+            </Text>
+            <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 20, marginBottom: 20 }}>
+              Nenhum dado será salvo no banco. Digite a senha para ativar.
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 2, borderColor: '#FF6B00', borderRadius: 12,
+                padding: 14, fontSize: 18, letterSpacing: 4, textAlign: 'center',
+                color: theme.text, backgroundColor: theme.input, marginBottom: 20,
+              }}
+              placeholder="Senha"
+              placeholderTextColor={theme.textTer}
+              value={demoPass}
+              onChangeText={setDemoPass}
+              secureTextEntry
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleDemoAccess}
+            />
+            <View style={{ flexDirection: 'row' }}>
+              <Button
+                label="Cancelar"
+                onPress={() => { setDemoModal(false); setDemoPass(''); }}
+                variant="outline"
+                style={{ flex: 1, marginRight: 8 }}
+              />
+              <Button
+                label="Ativar Demo"
+                onPress={handleDemoAccess}
+                variant="primary"
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Admin PIN Modal */}
       <Modal

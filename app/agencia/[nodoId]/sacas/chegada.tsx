@@ -7,6 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../../../src/lib/supabase';
 import { COLORS, Button, Card } from '../../../../src/components/ui';
 import { useTheme } from '../../../../src/lib/theme';
+import { useDemo } from '../../../../src/lib/demo';
 
 function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
   return StyleSheet.create({
@@ -51,6 +52,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
 export default function SacasChegadaScreen() {
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const { isDemo } = useDemo();
 
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
   const [quantidade, setQuantidade] = useState('');
@@ -72,6 +74,12 @@ export default function SacasChegadaScreen() {
         {
           text: 'Confirmar',
           onPress: async () => {
+            if (isDemo) {
+              Alert.alert('✅ [DEMO] Registrado!', `Chegada de ${qtd} saca${qtd !== 1 ? 's' : ''} registrada (modo demonstração).`, [
+                { text: 'OK', onPress: () => router.back() },
+              ]);
+              return;
+            }
             setLoading(true);
             const { error } = await supabase.from('sacas_movimentos').insert({
               nodo_id: nodoId,

@@ -10,6 +10,7 @@ import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../../../src/lib/supabase';
 import { COLORS, Button, Card, Badge } from '../../../../src/components/ui';
 import { useTheme } from '../../../../src/lib/theme';
+import { useDemo } from '../../../../src/lib/demo';
 import { WebScanner } from '../../../../src/components/WebScanner';
 import { formatTimeBRT, startOfTodayBRT, startOfYesterdayBRT } from '../../../../src/lib/utils';
 
@@ -224,6 +225,7 @@ export default function InventarioFisicoScreen() {
   const navigation = useNavigation();
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const { isDemo } = useDemo();
 
   const [mode, setMode] = useState<Mode>('menu');
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
@@ -324,6 +326,23 @@ export default function InventarioFisicoScreen() {
         setTimeout(() => setLastScanned(''), 2000);
       } else {
         Alert.alert('Duplicado', `O pacote ${trimmed} já foi bipado hoje.`);
+      }
+      return;
+    }
+
+    if (isDemo) {
+      const fakeEntry: Pacote = {
+        id: `demo_${Date.now()}`,
+        codigo: trimmed,
+        tipo_entrada: tipo,
+        inventoried_at: new Date().toISOString(),
+        foto_url: null,
+      };
+      setPacotes((prev) => [fakeEntry, ...prev]);
+      setPendencias((prev) => prev.filter((p) => p.codigo !== trimmed));
+      if (tipo === 'scanner') {
+        setLastScanned(`✅ ${trimmed}`);
+        setTimeout(() => setLastScanned(''), 2000);
       }
       return;
     }
