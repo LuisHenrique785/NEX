@@ -17,3 +17,8 @@ export const CONSULTA_PASSWORD = '91109394@';
 
 // Raio máximo em km para exibir NODOS próximos
 export const MAX_DISTANCE_KM = 1;
+
+// Coordenadas e raio do SVC para controle de acesso
+export const SVC_LAT = -22.347425;
+export const SVC_LNG = -45.9249912;
+export const SVC_MAX_KM = 1.0;

@@ -10,6 +10,7 @@ import { haversineDistance, geocodeAddress } from '../../src/lib/geocoding';
 import { COLORS, Badge } from '../../src/components/ui';
 import { MAX_DISTANCE_KM } from '../../src/config';
 import { useTheme } from '../../src/lib/theme';
+import { useDemo } from '../../src/lib/demo';
 
 interface Nodo {
   id: string;
@@ -98,6 +99,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
 export default function SelectNodoScreen() {
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const { isDemo } = useDemo();
 
   const [nodos, setNodos] = useState<Nodo[]>([]);
   const [filtered, setFiltered] = useState<Nodo[]>([]);
@@ -190,20 +192,46 @@ export default function SelectNodoScreen() {
   }
 
   function handleSelectNodo(nodo: Nodo) {
-    // NODO sem coordenadas: exige confirmação
-    if (!nodo.lat || !nodo.lng) {
+    const isFar = userLocation && nodo.distance !== undefined && nodo.distance > MAX_DISTANCE_KM;
+    const noCoords = !nodo.lat || !nodo.lng;
+
+    // Modo demo: libera tudo com aviso quando haveria restrição
+    if (isDemo && (noCoords || isFar)) {
+      Alert.alert(
+        '🎭 Acesso Demo',
+        `No modo real, este NODO estaria restrito por localização.\n\nNo modo demo o acesso está liberado, mas os dados não serão salvos.`,
+        [{ text: 'Acessar mesmo assim', onPress: () => router.push(`/agencia/${nodo.id}`) },
+         { text: 'Cancelar', style: 'cancel' }]
+      );
+      return;
+    }
+
+    // NODO sem coordenadas: exige confirmação (não conseguimos verificar distância)
+    if (noCoords) {
       setConfirmNodo(nodo);
-      setConfirmMessage(`O NODO "${nodo.nome}" não possui coordenadas cadastradas e não foi possível verificar a distância. Confirme que este é realmente o seu NODO.`);
+      setConfirmMessage(`O NODO "${nodo.nome}" não possui coordenadas cadastradas e não foi possível verificar a distância.\n\nConfirme que este é realmente o seu NODO.`);
       setConfirmModal(true);
       return;
     }
-    // NODO com coordenadas muito distante: exige confirmação
+
+    // Muito distante (> MAX + 5km): bloqueio total
     if (userLocation && nodo.distance !== undefined && nodo.distance > MAX_DISTANCE_KM + 5) {
+      Alert.alert(
+        '🚫 Acesso negado',
+        `O NODO "${nodo.nome}" está a ${nodo.distance.toFixed(1)}km de você.\n\nVocê precisa estar a menos de ${MAX_DISTANCE_KM}km do NODO para acessá-lo.`,
+        [{ text: 'Entendi', style: 'cancel' }]
+      );
+      return;
+    }
+
+    // Entre MAX e MAX+5km: confirmação suave
+    if (userLocation && nodo.distance !== undefined && nodo.distance > MAX_DISTANCE_KM) {
       setConfirmNodo(nodo);
       setConfirmMessage(`O NODO "${nodo.nome}" está a ${nodo.distance.toFixed(1)}km de você. Tem certeza que é o NODO correto?`);
       setConfirmModal(true);
       return;
     }
+
     router.push(`/agencia/${nodo.id}`);
   }
 

@@ -289,9 +289,62 @@ export default function ConsultaScreen() {
     );
   }
 
+  const totalEnviados = expedicoes.reduce((s, e) => s + e.enviados, 0);
+  const totalRecebidos = expedicoes.reduce((s, e) => s + e.recebidos, 0);
+  const totalPendentes = expedicoes.reduce((s, e) => s + e.pendentes, 0);
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+
+        {/* ── Dashboard Header ── */}
+        <View style={{ marginBottom: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+            <View>
+              <Text style={{ fontSize: 24, fontWeight: '900', color: theme.text, letterSpacing: -0.5 }}>
+                📊 Consulta NEX
+              </Text>
+              <Text style={{ fontSize: 13, color: theme.textSec, marginTop: 2 }}>
+                Painel de expedições e rastreio
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => { setUnlocked(false); setPassword(''); setExpedicoes([]); setExpLoaded(false); }}
+              style={{
+                backgroundColor: theme.surface, borderRadius: 10,
+                borderWidth: 1, borderColor: theme.border,
+                paddingVertical: 6, paddingHorizontal: 12,
+              }}
+            >
+              <Text style={{ fontSize: 12, color: theme.textSec, fontWeight: '700' }}>Sair</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Stats cards */}
+          {loadingExp && !expLoaded ? (
+            <ActivityIndicator color={COLORS.yellow} />
+          ) : expLoaded ? (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {([
+                { val: expedicoes.length, label: 'Expedições', color: COLORS.blue },
+                { val: totalEnviados,     label: 'Enviados',   color: '#FF9500' },
+                { val: totalRecebidos,    label: 'Recebidos',  color: COLORS.green },
+                { val: totalPendentes,    label: 'Pendentes',  color: totalPendentes > 0 ? '#FF3B30' : COLORS.green },
+              ] as const).map(({ val, label, color }) => (
+                <View key={label} style={{
+                  flex: 1, backgroundColor: color + '22',
+                  borderRadius: 12, padding: 10, alignItems: 'center',
+                }}>
+                  <Text style={{ fontSize: 20, fontWeight: '900', color }}>{val}</Text>
+                  <Text style={{ fontSize: 9, fontWeight: '700', color: theme.textSec, textTransform: 'uppercase', letterSpacing: 0.3, marginTop: 2 }}>
+                    {label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+
         {/* Tabs */}
         <View style={styles.tabRow}>
           <TouchableOpacity
