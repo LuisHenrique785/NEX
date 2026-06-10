@@ -11,6 +11,7 @@ import { supabase } from '../../../../src/lib/supabase';
 import { COLORS, Button, Card, Badge } from '../../../../src/components/ui';
 import { useTheme } from '../../../../src/lib/theme';
 import type { Theme } from '../../../../src/lib/theme';
+import { useDemo } from '../../../../src/lib/demo';
 import { WebScanner } from '../../../../src/components/WebScanner';
 
 interface Pacote {
@@ -20,14 +21,6 @@ interface Pacote {
 }
 
 type InputMode = 'none' | 'scanner' | 'manual' | 'photo';
-
-function formatCPF(text: string) {
-  const nums = text.replace(/\D/g, '').slice(0, 11);
-  return nums
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
-}
 
 function formatPlaca(text: string) {
   return text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
@@ -62,9 +55,8 @@ export default function ExpedicaoPacotesScreen() {
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const { isDemo } = useDemo();
 
-  const [nomeMotorista, setNomeMotorista] = useState('');
-  const [cpfMotorista, setCpfMotorista] = useState('');
   const [placa, setPlaca] = useState('');
   const [transportadora, setTransportadora] = useState('');
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
@@ -75,6 +67,7 @@ export default function ExpedicaoPacotesScreen() {
 
   // Camera
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [facing, setFacing] = useState<'back' | 'front'>('back');
   const scanCooldown = useRef(false);
@@ -160,31 +153,42 @@ export default function ExpedicaoPacotesScreen() {
     } catch { return null; }
   }
 
-  function handleSave() {
-    if (!nomeMotorista.trim()) { Alert.alert('Atenção', 'Informe o nome do motorista.'); return; }
-    if (cpfMotorista.replace(/\D/g, '').length !== 11) { Alert.alert('Atenção', 'CPF inválido.'); return; }
+  async function handleSave() {
     if (!placa.trim()) { Alert.alert('Atenção', 'Informe a placa.'); return; }
     if (!transportadora.trim()) { Alert.alert('Atenção', 'Informe a transportadora.'); return; }
     if (pacotes.length === 0) { Alert.alert('Atenção', 'Adicione pelo menos um pacote.'); return; }
     setConfirmModal(true);
   }
 
-  async function doSave() {
-    setConfirmModal(false);
-    setSaving(true);
+    Alert.alert(
+      'Confirmar Expedição',
+      `Expedir ${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} — ${transportadora.trim()} (${placa.trim()})?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Confirmar',
+          onPress: async () => {
+            if (isDemo) {
+              Alert.alert(
+                '✅ [DEMO] Expedição Registrada!',
+                `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`,
+                [{ text: 'OK', onPress: () => router.back() }]
+              );
+              return;
+            }
+            setSaving(true);
 
-    const { data: expData, error: expError } = await supabase
-      .from('pacotes_expedicoes')
-      .insert({
-        nodo_id: nodoId,
-        nome_motorista: nomeMotorista.trim(),
-        cpf_motorista: cpfMotorista.replace(/\D/g, ''),
-        placa: placa.trim(),
-        transportadora: transportadora.trim(),
-        total_pacotes: pacotes.length,
-      })
-      .select()
-      .single();
+            // Create expedition
+            const { data: expData, error: expError } = await supabase
+              .from('pacotes_expedicoes')
+              .insert({
+                nodo_id: nodoId,
+                placa: placa.trim(),
+                transportadora: transportadora.trim(),
+                total_pacotes: pacotes.length,
+              })
+              .select()
+              .single();
 
     if (expError) {
       setSaving(false);
@@ -231,7 +235,6 @@ export default function ExpedicaoPacotesScreen() {
 
   // ─── SCANNER MODAL ────────────────────────────────────────────
   if (inputMode === 'scanner') {
-    // Web: use native getUserMedia scanner with BarcodeDetector
     if (Platform.OS === 'web') {
       return (
         <WebScanner
@@ -243,8 +246,6 @@ export default function ExpedicaoPacotesScreen() {
         />
       );
     }
-
-    // Native: use expo-camera
     if (!cameraPermission?.granted) {
       return (
         <View style={styles.permBox}>
@@ -272,7 +273,7 @@ export default function ExpedicaoPacotesScreen() {
               </TouchableOpacity>
               <View style={scannerStyles.scanActions}>
                 <TouchableOpacity
-                  onPress={() => setFacing((f) => f === 'back' ? 'front' : 'back')}
+                  onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
                   style={scannerStyles.flipBtn}
                 >
                   <Text style={{ fontSize: 16 }}>🔄</Text>
@@ -304,7 +305,7 @@ export default function ExpedicaoPacotesScreen() {
           )}
           {pacotes.length > 0 && (
             <View style={scannerStyles.recentList}>
-              <Text style={scannerStyles.recentLabel}>Na lista:</Text>
+              <Text style={scannerStyles.recentLabel}>Na lista ({pacotes.length}):</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {pacotes.slice(0, 8).map((p, i) => (
                   <View key={i} style={scannerStyles.recentChip}>
@@ -324,15 +325,9 @@ export default function ExpedicaoPacotesScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.container}>
-          {/* Driver info */}
-          <Text style={styles.sectionLabel}>DADOS DO MOTORISTA</Text>
+          {/* Vehicle info */}
+          <Text style={styles.sectionLabel}>DADOS DO VEÍCULO</Text>
           <Card>
-            <Text style={styles.fieldLabel}>Nome do Motorista *</Text>
-            <TextInput style={styles.input} placeholder="Nome completo" placeholderTextColor={theme.textTer} value={nomeMotorista} onChangeText={setNomeMotorista} autoCapitalize="words" returnKeyType="next" />
-
-            <Text style={styles.fieldLabel}>CPF do Motorista *</Text>
-            <TextInput style={styles.input} placeholder="000.000.000-00" placeholderTextColor={theme.textTer} value={cpfMotorista} onChangeText={(t) => setCpfMotorista(formatCPF(t))} keyboardType="number-pad" maxLength={14} returnKeyType="next" />
-
             <Text style={styles.fieldLabel}>Placa do Veículo *</Text>
             <TextInput style={styles.input} placeholder="ABC1234" placeholderTextColor={theme.textTer} value={placa} onChangeText={(t) => setPlaca(formatPlaca(t))} autoCapitalize="characters" maxLength={7} returnKeyType="next" />
 
@@ -346,7 +341,7 @@ export default function ExpedicaoPacotesScreen() {
           <View style={styles.addButtons}>
             <TouchableOpacity
               style={[styles.addBtn, { backgroundColor: COLORS.black }]}
-              onPress={async () => { if (!cameraPermission?.granted) await requestCameraPermission(); setInputMode('scanner'); }}
+              onPress={async () => { if (Platform.OS !== 'web' && !cameraPermission?.granted) await requestCameraPermission(); setInputMode('scanner'); }}
             >
               <Text style={styles.addBtnIcon}>📷</Text>
               <Text style={styles.addBtnText}>Scanner</Text>

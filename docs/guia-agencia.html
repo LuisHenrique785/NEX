@@ -153,6 +153,7 @@
   .step-number.green { background: var(--green); color: white; }
   .step-number.blue { background: var(--blue); color: white; }
   .step-number.orange { background: var(--orange); color: white; }
+  .step-number.red { background: var(--red); color: white; }
   .step-body { flex: 1; padding-top: 4px; }
   .step-title {
     font-size: 16px;
@@ -199,6 +200,10 @@
     font-size: 11px;
     text-align: center;
   }
+  .phone-header.dark {
+    background: #1A1A1A;
+    color: var(--yellow);
+  }
   .phone-body {
     background: #F8F8F8;
     border-radius: 0 0 10px 10px;
@@ -218,6 +223,7 @@
   .phone-btn.yellow { background: var(--yellow); color: var(--black); }
   .phone-btn.blue { background: var(--blue); color: white; }
   .phone-btn.green { background: var(--green); color: white; }
+  .phone-btn.red { background: var(--red); color: white; }
   .phone-label {
     font-size: 9px;
     color: #999;
@@ -255,6 +261,10 @@
     border-radius: 4px;
     margin-left: 4px;
   }
+  .phone-tag.red {
+    background: #FFEBEE;
+    color: var(--red);
+  }
   .phone-caption {
     text-align: center;
     font-size: 11px;
@@ -279,6 +289,7 @@
   .alert.green { background: #E8F5E9; border-left: 4px solid var(--green); color: #1B5E20; }
   .alert.blue { background: #E3F2FD; border-left: 4px solid var(--blue); color: #0D47A1; }
   .alert.red { background: #FFEBEE; border-left: 4px solid var(--red); color: #B71C1C; }
+  .alert.orange { background: #FFF3E0; border-left: 4px solid var(--orange); color: #E65100; }
   .alert-icon { font-size: 18px; flex-shrink: 0; }
   .alert strong { font-weight: 700; display: block; margin-bottom: 3px; }
 
@@ -296,6 +307,7 @@
   .tag.green { background: #E8F5E9; color: var(--green); border: 1px solid var(--green); }
   .tag.orange { background: #FFF3E0; color: var(--orange); border: 1px solid var(--orange); }
   .tag.blue { background: #E3F2FD; color: var(--blue); border: 1px solid var(--blue); }
+  .tag.red { background: #FFEBEE; color: var(--red); border: 1px solid var(--red); }
 
   /* TABLE */
   .table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
@@ -347,7 +359,7 @@
       </div>
       <div class="cover-meta-item">
         <strong>Sistema</strong>
-        NEX Inventory v1.0
+        NEX Inventory v2.0
       </div>
       <div class="cover-meta-item">
         <strong>Acesso</strong>
@@ -378,7 +390,7 @@
         <div class="step-number">2</div>
         <div class="step-body">
           <div class="step-title">Toque em "Agência"</div>
-          <div class="step-desc">Na tela inicial você verá dois botões. Toque no botão amarelo <strong>Agência</strong>.</div>
+          <div class="step-desc">Na tela inicial você verá os botões de perfil. Toque no botão amarelo <strong>Agência</strong>.</div>
         </div>
       </div>
 
@@ -394,6 +406,7 @@
             <div style="font-size:9px;color:#888;text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Selecione seu perfil</div>
             <div class="phone-btn yellow">🏪 Agência</div>
             <div class="phone-btn" style="margin-top:6px">🏭 SVC</div>
+            <div class="phone-btn blue" style="margin-top:6px">🔍 Consulta</div>
           </div>
           <div class="phone-caption">Tela Inicial</div>
         </div>
@@ -433,15 +446,15 @@
               <div class="phone-card">
                 <div class="phone-card-icon" style="background:#FFF3E0">🎒</div>
                 <div>
-                  <div style="font-weight:700;font-size:10px">Inventário de Sacas</div>
+                  <div style="font-weight:700;font-size:10px">Sacas</div>
                   <div style="font-size:9px;color:#999">Chegada e expedição</div>
                 </div>
               </div>
               <div class="phone-card">
                 <div class="phone-card-icon" style="background:#E3F2FD">📦</div>
                 <div>
-                  <div style="font-weight:700;font-size:10px">Inventário de Pacotes</div>
-                  <div style="font-size:9px;color:#999">Inventário físico e expedição</div>
+                  <div style="font-weight:700;font-size:10px">Pacotes</div>
+                  <div style="font-size:9px;color:#999">Inventário e expedição</div>
                 </div>
               </div>
             </div>
@@ -452,7 +465,7 @@
 
       <div class="alert yellow">
         <div class="alert-icon">💡</div>
-        <div><strong>Dica: Localização</strong>O sistema mostra primeiro os NODOS que estão a menos de 1km de você. Se o seu NODO não aparecer no topo, use a busca para encontrá-lo pelo nome ou código.</div>
+        <div><strong>Dica: Localização</strong>O sistema mostra primeiro os NODOs que estão a menos de 1km de você. Se o seu NODO não aparecer no topo, use a busca para encontrá-lo pelo nome ou código.</div>
       </div>
     </div>
 
@@ -465,8 +478,8 @@
       <div class="step">
         <div class="step-number green">1</div>
         <div class="step-body">
-          <div class="step-title">Toque em "Inventário de Sacas"</div>
-          <div class="step-desc">No menu da sua agência, escolha a operação que deseja registrar.</div>
+          <div class="step-title">Toque em "Sacas" no menu da agência</div>
+          <div class="step-desc">Escolha a operação que deseja registrar: chegada ou expedição de sacas.</div>
         </div>
       </div>
 
@@ -482,7 +495,7 @@
           <tr>
             <td>📥 <strong>Chegada de Sacas</strong></td>
             <td>Quando receber sacas de entrega</td>
-            <td>Quantidade de sacas recebidas</td>
+            <td>Quantidade + Transportadora + Placa do veículo</td>
           </tr>
           <tr>
             <td>📤 <strong>Expedição de Sacas</strong></td>
@@ -499,9 +512,11 @@
             <div class="phone-header">📥 Chegada de Sacas</div>
             <div class="phone-body">
               <div class="phone-label">Quantidade de Sacas *</div>
-              <div style="border:2px solid #FFE600;border-radius:8px;padding:10px;text-align:center;font-size:18px;font-weight:900;margin-bottom:10px">25</div>
-              <div class="phone-label">Observação (opcional)</div>
-              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:8px;font-size:10px;color:#999;margin-bottom:10px">Turno da manhã...</div>
+              <div style="border:2px solid #FFE600;border-radius:8px;padding:10px;text-align:center;font-size:18px;font-weight:900;margin-bottom:8px">25</div>
+              <div class="phone-label">Transportadora *</div>
+              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:8px">Total Express</div>
+              <div class="phone-label">Placa *</div>
+              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:10px">ABC1234</div>
               <div class="phone-btn green">✓ Registrar Chegada</div>
             </div>
           </div>
@@ -524,6 +539,40 @@
           </div>
           <div class="phone-caption">Registrar expedição</div>
         </div>
+
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-header">📋 Inventário de Sacas</div>
+            <div class="phone-body">
+              <div style="background:#E8F5E9;border-radius:8px;padding:8px;margin-bottom:8px;text-align:center">
+                <div style="font-size:18px;font-weight:900;color:#1B5E20">12</div>
+                <div style="font-size:9px;color:#388E3C">sacas em estoque hoje</div>
+              </div>
+              <div class="phone-label">Última movimentação</div>
+              <div class="phone-card">
+                <div style="font-size:12px">📥</div>
+                <div>
+                  <div style="font-weight:700;font-size:10px">+25 sacas</div>
+                  <div style="font-size:9px;color:#999">14:32 BRT · Total Express</div>
+                </div>
+              </div>
+              <div class="phone-card">
+                <div style="font-size:12px">📤</div>
+                <div>
+                  <div style="font-weight:700;font-size:10px">-13 sacas</div>
+                  <div style="font-size:9px;color:#999">11:05 BRT · Jadlog</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="phone-caption">Histórico do dia</div>
+        </div>
+      </div>
+
+      <div class="alert yellow">
+        <div class="alert-icon">🕐</div>
+        <div><strong>Horário em BRT</strong>Todos os registros são salvos no horário de Brasília (UTC-3) independente do fuso do dispositivo. O histórico exibe os horários corretamente em BRT.</div>
       </div>
     </div>
 
@@ -536,7 +585,7 @@
       <div class="step">
         <div class="step-number blue">1</div>
         <div class="step-body">
-          <div class="step-title">Escolha "Inventário de Pacotes" → "Inventário Físico"</div>
+          <div class="step-title">Escolha "Pacotes" → "Inventário Físico"</div>
           <div class="step-desc">Você terá 3 formas de adicionar pacotes ao inventário:</div>
         </div>
       </div>
@@ -545,11 +594,11 @@
         <div class="phone">
           <div class="phone-notch"></div>
           <div class="phone-screen">
-            <div class="phone-header">🔍 Inventário Físico</div>
+            <div class="phone-header">📦 Inventário de Pacotes</div>
             <div class="phone-body">
               <div style="background:#FFE600;border-radius:8px;padding:8px;text-align:center;margin-bottom:10px">
-                <div style="font-size:24px;font-weight:900;color:#1A1A1A">12</div>
-                <div style="font-size:9px;color:#555">pacotes no inventário de hoje</div>
+                <div style="font-size:24px;font-weight:900;color:#1A1A1A">28</div>
+                <div style="font-size:9px;color:#555">pacotes inventariados hoje</div>
               </div>
               <div class="phone-label">Adicionar Pacotes</div>
               <div class="phone-btn" style="font-size:10px">📷 Escanear (Câmera)</div>
@@ -563,33 +612,62 @@
         <div class="phone">
           <div class="phone-notch"></div>
           <div class="phone-screen" style="background:#000;border-radius:12px;overflow:hidden;padding:0">
-            <div style="background:rgba(0,0,0,0.5);padding:10px;display:flex;justify-content:space-between">
+            <div style="background:rgba(0,0,0,0.6);padding:10px;display:flex;justify-content:space-between;align-items:center">
               <span style="color:white;font-size:10px;font-weight:700">✕ Fechar</span>
-              <span style="color:white;font-size:10px">🔦 OFF</span>
+              <span style="color:#FFE600;font-size:10px;font-weight:800">7 bipados</span>
+              <span style="color:white;font-size:10px">🔦</span>
             </div>
-            <div style="background:rgba(0,0,0,0.4);padding:6px;text-align:center">
-              <span style="color:#FFE600;font-size:10px;font-weight:800">5 bipados</span>
-            </div>
-            <div style="display:flex;justify-content:center;align-items:center;padding:16px 0">
+            <div style="display:flex;justify-content:center;align-items:center;padding:20px 0">
               <div style="width:80px;height:50px;position:relative">
                 <div style="position:absolute;top:0;left:0;width:12px;height:12px;border-top:3px solid #FFE600;border-left:3px solid #FFE600"></div>
                 <div style="position:absolute;top:0;right:0;width:12px;height:12px;border-top:3px solid #FFE600;border-right:3px solid #FFE600"></div>
                 <div style="position:absolute;bottom:0;left:0;width:12px;height:12px;border-bottom:3px solid #FFE600;border-left:3px solid #FFE600"></div>
                 <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-bottom:3px solid #FFE600;border-right:3px solid #FFE600"></div>
+                <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(255,230,0,0.5)"></div>
               </div>
             </div>
-            <div style="background:rgba(0,128,0,0.8);padding:6px;text-align:center;margin:0 20px;border-radius:8px">
-              <span style="color:white;font-size:9px;font-weight:700">✅ MLM987654321</span>
+            <div style="background:rgba(0,128,0,0.85);padding:7px;text-align:center;margin:0 16px 8px;border-radius:8px">
+              <span style="color:white;font-size:9px;font-weight:700">✅ MLM987654321BR</span>
             </div>
             <div style="background:rgba(0,0,0,0.7);padding:8px">
               <div style="color:#AAA;font-size:9px;margin-bottom:4px">Últimos bipados:</div>
-              <div style="display:flex;gap:4px">
-                <div style="background:rgba(255,255,255,0.15);padding:3px 6px;border-radius:4px"><span style="color:white;font-size:8px">321098</span></div>
-                <div style="background:rgba(255,255,255,0.15);padding:3px 6px;border-radius:4px"><span style="color:white;font-size:8px">654321</span></div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap">
+                <div style="background:rgba(255,255,255,0.15);padding:3px 5px;border-radius:4px"><span style="color:white;font-size:8px">…321BR</span></div>
+                <div style="background:rgba(255,255,255,0.15);padding:3px 5px;border-radius:4px"><span style="color:white;font-size:8px">…654SP</span></div>
               </div>
             </div>
           </div>
           <div class="phone-caption">Modo scanner</div>
+        </div>
+
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-header">📦 Inventário de Pacotes</div>
+            <div class="phone-body">
+              <div style="background:#FFEBEE;border-radius:8px;padding:8px;margin-bottom:8px">
+                <div style="font-size:9px;font-weight:800;color:#C62828;margin-bottom:4px">🚨 NÃO RECEBIDOS NO SVC</div>
+                <div style="font-size:9px;color:#B71C1C">3 pacotes expedidos ontem ainda pendentes</div>
+              </div>
+              <div class="phone-card">
+                <div style="font-size:12px">⚠️</div>
+                <div>
+                  <div style="font-weight:700;font-size:9px">MLM111222333BR</div>
+                  <div style="font-size:9px;color:#999">Expedido 13/06 · João Silva</div>
+                </div>
+                <span class="phone-tag red">Pendente</span>
+              </div>
+              <div class="phone-card">
+                <div style="font-size:12px">⚠️</div>
+                <div>
+                  <div style="font-weight:700;font-size:9px">MLM444555666BR</div>
+                  <div style="font-size:9px;color:#999">Expedido 13/06 · João Silva</div>
+                </div>
+                <span class="phone-tag red">Pendente</span>
+              </div>
+            </div>
+          </div>
+          <div class="phone-caption">Pendências SVC</div>
         </div>
       </div>
 
@@ -599,18 +677,18 @@
         </thead>
         <tbody>
           <tr>
-            <td>📷 <strong>Scanner</strong></td>
-            <td>Aponte a câmera para o QR Code ou código de barras</td>
+            <td>📷 <strong>Scanner (Câmera)</strong></td>
+            <td>Aponte a câmera para o QR Code ou código de barras. Cada leitura é registrada automaticamente</td>
             <td>Uso principal — mais rápido e preciso</td>
           </tr>
           <tr>
             <td>⌨️ <strong>Digitar</strong></td>
-            <td>Digite o código do pacote manualmente</td>
+            <td>Digite o código do pacote manualmente e confirme</td>
             <td>Quando o código estiver danificado ou ilegível</td>
           </tr>
           <tr>
             <td>📸 <strong>Foto</strong></td>
-            <td>Fotografe o pacote com o ID visível</td>
+            <td>Fotografe o pacote com o código visível — o sistema lê automaticamente</td>
             <td>Último recurso — quando os outros não funcionarem</td>
           </tr>
         </tbody>
@@ -621,9 +699,9 @@
         <div><strong>Pacotes duplicados não são aceitos</strong>Se você tentar bipar um pacote que já foi escaneado hoje, o sistema vai avisar e ignorar automaticamente.</div>
       </div>
 
-      <div class="alert yellow">
-        <div class="alert-icon">⚠️</div>
-        <div><strong>Atenção: Pendências</strong>Pacotes bipados ontem que não aparecerem no inventário de hoje serão exibidos como <strong>PENDÊNCIAS</strong> no topo da tela. Não se esqueça de inventariá-los!</div>
+      <div class="alert orange">
+        <div class="alert-icon">🚨</div>
+        <div><strong>Seção "Não Recebidos no SVC"</strong>No topo do inventário, aparece a lista de pacotes que foram expedidos pelo motorista mas o SVC ainda não confirmou o recebimento. Esses pacotes ficam como pendência da agência até que o SVC os escaneie. Se o motorista devolveu pacotes sem entregar, eles continuarão pendentes aqui.</div>
       </div>
     </div>
 
@@ -636,8 +714,8 @@
       <div class="step">
         <div class="step-number orange">1</div>
         <div class="step-body">
-          <div class="step-title">Acesse "Inventário de Pacotes" → "Expedição de Pacotes"</div>
-          <div class="step-desc">Quando for enviar pacotes com um motorista, use esta opção.</div>
+          <div class="step-title">Acesse "Pacotes" → "Expedição de Pacotes"</div>
+          <div class="step-desc">Quando for enviar pacotes com um motorista, use esta opção. <strong>Não confunda com o Inventário Físico</strong> — a expedição registra a saída dos pacotes com dados do motorista.</div>
         </div>
       </div>
 
@@ -645,31 +723,122 @@
         <div class="step-number orange">2</div>
         <div class="step-body">
           <div class="step-title">Preencha os dados do motorista</div>
-          <div class="step-desc">Todos os campos são obrigatórios para registrar a expedição.</div>
+          <div class="step-desc">Todos os campos abaixo são obrigatórios. O botão de confirmar fica bloqueado enquanto algum campo estiver vazio.</div>
         </div>
       </div>
 
       <table class="table">
-        <thead><tr><th>Campo</th><th>Exemplo</th></tr></thead>
+        <thead><tr><th>Campo</th><th>Exemplo</th><th>Observação</th></tr></thead>
         <tbody>
-          <tr><td>👤 Nome do Motorista</td><td>João da Silva</td></tr>
-          <tr><td>🪪 CPF do Motorista</td><td>123.456.789-00</td></tr>
-          <tr><td>🚛 Placa do Veículo</td><td>ABC1234</td></tr>
-          <tr><td>🏢 Transportadora</td><td>Total Express</td></tr>
+          <tr><td>👤 Nome do Motorista</td><td>João da Silva</td><td>Nome completo</td></tr>
+          <tr><td>🪪 CPF do Motorista</td><td>123.456.789-00</td><td>Somente números aceitos</td></tr>
+          <tr><td>🚛 Placa do Veículo</td><td>ABC1234</td><td>Formato antigo ou Mercosul</td></tr>
+          <tr><td>🏢 Transportadora</td><td>Total Express</td><td>Nome da empresa de transporte</td></tr>
         </tbody>
       </table>
 
       <div class="step" style="margin-top:16px">
         <div class="step-number orange">3</div>
         <div class="step-body">
-          <div class="step-title">Adicione os pacotes (scanner / digitar / foto)</div>
-          <div class="step-desc">Use qualquer um dos 3 métodos para adicionar os pacotes que estão sendo expedidos. Após confirmar, os pacotes <strong>saem do inventário</strong> e não aparecem mais como pendência.</div>
+          <div class="step-title">Escaneie os pacotes que serão expedidos</div>
+          <div class="step-desc">Use scanner, digitação ou foto. Adicione todos os pacotes da remessa antes de confirmar. A lista aparece na tela para conferência.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number orange">4</div>
+        <div class="step-body">
+          <div class="step-title">Toque em "Confirmar Expedição"</div>
+          <div class="step-desc">Um modal de confirmação aparece com o resumo (nome do motorista e quantidade de pacotes). Confirme para gravar. O app volta automaticamente para a tela de pacotes.</div>
+        </div>
+      </div>
+
+      <div class="mockup-row">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-header">🚚 Expedição de Pacotes</div>
+            <div class="phone-body">
+              <div class="phone-label">Motorista</div>
+              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:6px">João da Silva</div>
+              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:6px">123.456.789-00</div>
+              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:8px">ABC1234 · Total Express</div>
+              <div class="phone-label">Pacotes adicionados: 5</div>
+              <div class="phone-btn" style="background:#F39C12;color:white;font-size:10px;margin-bottom:6px">+ Escanear pacote</div>
+              <div class="phone-btn green">Confirmar Expedição</div>
+            </div>
+          </div>
+          <div class="phone-caption">Formulário preenchido</div>
+        </div>
+
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-header dark">⚠️ Confirmar?</div>
+            <div class="phone-body">
+              <div style="text-align:center;padding:10px 0">
+                <div style="font-size:28px;margin-bottom:8px">🚚</div>
+                <div style="font-size:11px;font-weight:800;margin-bottom:4px">Expedir 5 pacotes</div>
+                <div style="font-size:10px;color:#666;margin-bottom:4px">Motorista: João da Silva</div>
+                <div style="font-size:10px;color:#666;margin-bottom:12px">Placa: ABC1234</div>
+                <div style="font-size:10px;color:#B71C1C;background:#FFEBEE;padding:6px;border-radius:8px;margin-bottom:10px">Esta ação não pode ser desfeita</div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <div class="phone-btn" style="flex:1;font-size:10px;background:#F0F0F0;color:#333;margin-bottom:0">Cancelar</div>
+                <div class="phone-btn green" style="flex:1;font-size:10px;margin-bottom:0">Confirmar</div>
+              </div>
+            </div>
+          </div>
+          <div class="phone-caption">Modal de confirmação</div>
         </div>
       </div>
 
       <div class="alert green">
         <div class="alert-icon">✅</div>
-        <div><strong>Após a expedição</strong>Os pacotes expedidos são removidos automaticamente do inventário ativo. Eles não aparecerão mais como pendência para a agência.</div>
+        <div><strong>Após a expedição</strong>Os pacotes expedidos são removidos automaticamente do inventário ativo. O app volta para a tela de pacotes. No inventário, a seção "Não Recebidos no SVC" mostrará estes pacotes até que o SVC confirme o recebimento.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- PENDÊNCIAS SVC -->
+    <div class="section">
+      <div class="section-label">Entendendo as Pendências</div>
+
+      <div class="step">
+        <div class="step-number red">!</div>
+        <div class="step-body">
+          <div class="step-title">O que são "Não Recebidos no SVC"?</div>
+          <div class="step-desc">Quando a agência expede pacotes, eles aparecem na seção <strong>"Não Recebidos no SVC"</strong> do inventário. Eles ficam lá até o SVC escanear e confirmar o recebimento. Isso garante rastreabilidade total.</div>
+        </div>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr><th>Situação</th><th>O que acontece</th><th>O que fazer</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tag red">Pendente</span></td>
+            <td>Pacote foi expedido mas SVC ainda não escaneou</td>
+            <td>Aguardar confirmação do SVC</td>
+          </tr>
+          <tr>
+            <td><span class="tag orange">Devolvido</span></td>
+            <td>Motorista devolveu sem entregar ao SVC</td>
+            <td>Reinventariar o pacote na agência</td>
+          </tr>
+          <tr>
+            <td><span class="tag green">Recebido</span></td>
+            <td>SVC confirmou o recebimento</td>
+            <td>Nenhuma ação necessária</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="alert yellow">
+        <div class="alert-icon">💡</div>
+        <div><strong>Dica: Motorista devolveu pacotes</strong>Se o motorista trouxe pacotes de volta (sem entregar ao SVC), eles continuarão como pendência. Você precisa reinventariá-los normalmente no Inventário Físico para que fiquem novamente no estoque da agência.</div>
       </div>
     </div>
 
@@ -682,7 +851,7 @@
         <div style="flex:1;min-width:100px;background:#FFFDE7;border-radius:12px;padding:16px;text-align:center">
           <div style="font-size:28px;margin-bottom:8px">🌅</div>
           <div style="font-weight:800;font-size:13px;color:#7A6500;margin-bottom:4px">Manhã</div>
-          <div style="font-size:11px;color:#999;line-height:1.5">Verificar pendências do dia anterior</div>
+          <div style="font-size:11px;color:#999;line-height:1.5">Verificar pendências no SVC do dia anterior</div>
         </div>
         <div style="flex:1;min-width:100px;background:#E8F5E9;border-radius:12px;padding:16px;text-align:center">
           <div style="font-size:28px;margin-bottom:8px">📦</div>
@@ -694,6 +863,11 @@
           <div style="font-weight:800;font-size:13px;color:#0D47A1;margin-bottom:4px">Ao expedir</div>
           <div style="font-size:11px;color:#999;line-height:1.5">Expedição de pacotes + expedição de sacas</div>
         </div>
+        <div style="flex:1;min-width:100px;background:#FFEBEE;border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:28px;margin-bottom:8px">🔍</div>
+          <div style="font-weight:800;font-size:13px;color:#C62828;margin-bottom:4px">Acompanhar</div>
+          <div style="font-size:11px;color:#999;line-height:1.5">Confirmar que SVC recebeu os pacotes expedidos</div>
+        </div>
       </div>
     </div>
 
@@ -702,7 +876,7 @@
   <!-- FOOTER -->
   <div class="footer">
     <div class="footer-logo">NEX Inventory</div>
-    <div class="footer-text">Mercado Livre Logística · v1.0 · Para imprimir: Ctrl+P → Salvar como PDF</div>
+    <div class="footer-text">Mercado Livre Logística · v2.0 · Para imprimir: Ctrl+P → Salvar como PDF</div>
   </div>
 
 </div>

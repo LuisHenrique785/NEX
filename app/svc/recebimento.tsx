@@ -11,6 +11,7 @@ import { supabase } from '../../src/lib/supabase';
 import { COLORS, Button, Card } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
 import type { Theme } from '../../src/lib/theme';
+import { useDemo } from '../../src/lib/demo';
 import { WebScanner } from '../../src/components/WebScanner';
 
 interface Pacote {
@@ -20,14 +21,6 @@ interface Pacote {
 }
 
 type InputMode = 'none' | 'scanner' | 'manual' | 'photo';
-
-function formatCPF(text: string) {
-  const nums = text.replace(/\D/g, '').slice(0, 11);
-  return nums
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
-}
 
 function formatPlaca(text: string) {
   return text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
@@ -62,9 +55,8 @@ export default function SVCRecebimentoScreen() {
   const navigation = useNavigation();
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const { isDemo } = useDemo();
 
-  const [nomeMotorista, setNomeMotorista] = useState('');
-  const [cpfMotorista, setCpfMotorista] = useState('');
   const [placa, setPlaca] = useState('');
   const [transportadora, setTransportadora] = useState('');
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
@@ -74,6 +66,7 @@ export default function SVCRecebimentoScreen() {
   const [lastScanned, setLastScanned] = useState('');
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [facing, setFacing] = useState<'back' | 'front'>('back');
   const scanCooldown = useRef(false);
@@ -151,21 +144,33 @@ export default function SVCRecebimentoScreen() {
     setConfirmModal(true);
   }
 
-  async function doSave() {
-    setConfirmModal(false);
-    setSaving(true);
+    Alert.alert(
+      'Confirmar Recebimento',
+      `Registrar recebimento de ${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Confirmar',
+          onPress: async () => {
+            if (isDemo) {
+              Alert.alert(
+                '✅ [DEMO] Recebimento Registrado!',
+                `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`,
+                [{ text: 'OK', onPress: () => router.back() }]
+              );
+              return;
+            }
+            setSaving(true);
 
-    const { data: recData, error: recError } = await supabase
-      .from('svc_recebimentos')
-      .insert({
-        nome_motorista: nomeMotorista.trim() || null,
-        cpf_motorista: cpfMotorista.replace(/\D/g, '') || null,
-        placa: placa.trim() || null,
-        transportadora: transportadora.trim() || null,
-        total_pacotes: pacotes.length,
-      })
-      .select()
-      .single();
+            const { data: recData, error: recError } = await supabase
+              .from('svc_recebimentos')
+              .insert({
+                placa: placa.trim() || null,
+                transportadora: transportadora.trim() || null,
+                total_pacotes: pacotes.length,
+              })
+              .select()
+              .single();
 
     if (recError) {
       setSaving(false);
@@ -190,7 +195,6 @@ export default function SVCRecebimentoScreen() {
 
   // Scanner
   if (inputMode === 'scanner') {
-    // Web: use native getUserMedia scanner with BarcodeDetector
     if (Platform.OS === 'web') {
       return (
         <WebScanner
@@ -202,7 +206,6 @@ export default function SVCRecebimentoScreen() {
         />
       );
     }
-
     if (!cameraPermission?.granted) {
       return (
         <View style={styles.permBox}>
@@ -214,7 +217,11 @@ export default function SVCRecebimentoScreen() {
     }
     return (
       <View style={scannerStyles.scannerContainer}>
-        <CameraView key={facing} style={scannerStyles.camera} facing={facing} enableTorch={flashEnabled}
+        <CameraView
+          key={facing}
+          style={scannerStyles.camera}
+          facing={facing}
+          enableTorch={flashEnabled}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'datamatrix'] }}
           onBarcodeScanned={handleBarcodeScanned}
         />
@@ -226,7 +233,7 @@ export default function SVCRecebimentoScreen() {
               </TouchableOpacity>
               <View style={scannerStyles.scanActions}>
                 <TouchableOpacity
-                  onPress={() => setFacing((f) => f === 'back' ? 'front' : 'back')}
+                  onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
                   style={scannerStyles.flipBtn}
                 >
                   <Text style={{ fontSize: 16 }}>🔄</Text>
@@ -273,12 +280,8 @@ export default function SVCRecebimentoScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.sectionLabel}>DADOS DO MOTORISTA (opcional)</Text>
+          <Text style={styles.sectionLabel}>DADOS DO VEÍCULO (opcional)</Text>
           <Card>
-            <Text style={styles.fieldLabel}>Nome</Text>
-            <TextInput style={styles.input} placeholder="Nome do motorista" placeholderTextColor={theme.textTer} value={nomeMotorista} onChangeText={setNomeMotorista} autoCapitalize="words" />
-            <Text style={styles.fieldLabel}>CPF</Text>
-            <TextInput style={styles.input} placeholder="000.000.000-00" placeholderTextColor={theme.textTer} value={cpfMotorista} onChangeText={(t) => setCpfMotorista(formatCPF(t))} keyboardType="number-pad" maxLength={14} />
             <Text style={styles.fieldLabel}>Placa</Text>
             <TextInput style={styles.input} placeholder="ABC1234" placeholderTextColor={theme.textTer} value={placa} onChangeText={(t) => setPlaca(formatPlaca(t))} autoCapitalize="characters" maxLength={7} />
             <Text style={styles.fieldLabel}>Transportadora</Text>
@@ -289,7 +292,7 @@ export default function SVCRecebimentoScreen() {
 
           <View style={styles.addButtons}>
             <TouchableOpacity style={[styles.addBtn, { backgroundColor: COLORS.black }]}
-              onPress={async () => { if (!cameraPermission?.granted) await requestCameraPermission(); setInputMode('scanner'); }}>
+              onPress={async () => { if (Platform.OS !== 'web' && !cameraPermission?.granted) await requestCameraPermission(); setInputMode('scanner'); }}>
               <Text style={styles.addBtnIcon}>📷</Text>
               <Text style={styles.addBtnText}>Scanner</Text>
             </TouchableOpacity>

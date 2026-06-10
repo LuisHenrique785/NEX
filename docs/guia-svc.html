@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guia SVC Log — NEX Inventory</title>
+<title>Guia SVC — NEX Inventory</title>
 <style>
   :root {
     --yellow: #FFE600;
@@ -126,10 +126,7 @@
     justify-content: center;
   }
 
-  .cover-meta-item {
-    text-align: center;
-  }
-
+  .cover-meta-item { text-align: center; }
   .cover-meta-label {
     font-size: 10px;
     color: rgba(255,255,255,0.35);
@@ -137,7 +134,6 @@
     letter-spacing: 2px;
     margin-bottom: 4px;
   }
-
   .cover-meta-value {
     font-size: 13px;
     color: rgba(255,255,255,0.75);
@@ -196,10 +192,7 @@
     padding: 20px 24px;
     border: 1.5px solid #E5E7EB;
     align-items: flex-start;
-    transition: box-shadow 0.2s;
   }
-
-  .step:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
 
   .step-num {
     width: 38px; height: 38px;
@@ -216,6 +209,7 @@
   .step-num.yellow { background: var(--yellow); color: var(--black); }
   .step-num.purple { background: var(--purple); color: white; }
   .step-num.black { background: var(--black); color: white; }
+  .step-num.red { background: var(--red); color: white; }
 
   .step-content h3 {
     font-size: 16px;
@@ -272,6 +266,8 @@
   .alert-content h4 { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
   .alert-content p { font-size: 13px; line-height: 1.65; }
   .alert-content strong { font-weight: 700; }
+  .alert-content ul { margin-top: 8px; padding-left: 16px; }
+  .alert-content li { font-size: 13px; line-height: 1.8; }
 
   .alert.yellow { background: #FFFDE7; border-color: var(--yellow); }
   .alert.yellow .alert-content h4 { color: #7B6B00; }
@@ -311,88 +307,103 @@
   tbody td { padding: 13px 18px; color: #374151; border-bottom: 1px solid #E5E7EB; }
   tbody tr:last-child td { border-bottom: none; }
 
-  /* PHONE MOCKUP */
-  .phone-mockup {
-    width: 200px;
-    background: var(--black);
-    border-radius: 36px;
-    padding: 12px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    margin: 0 auto;
-    position: relative;
-  }
-
-  .phone-screen {
-    background: #F8F9FA;
-    border-radius: 26px;
-    padding: 24px 16px;
-    min-height: 340px;
-    overflow: hidden;
-  }
-
-  .phone-mockup::before {
-    content: '';
-    position: absolute;
-    top: 17px; left: 50%;
-    transform: translateX(-50%);
-    width: 60px; height: 4px;
-    background: #333;
-    border-radius: 2px;
-    z-index: 2;
-  }
-
-  /* FLOW DIAGRAM */
-  .flow {
+  /* MOCKUP */
+  .mockup-row {
     display: flex;
-    flex-direction: column;
-    gap: 0;
+    gap: 20px;
     margin: 24px 0;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
-  .flow-item {
+  .phone-wrap {
+    background: #0A0A0A;
+    border-radius: 28px;
+    padding: 14px;
+    width: 180px;
+    flex-shrink: 0;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+  }
+
+  .phone-screen-wrap {
+    background: #F8F9FA;
+    border-radius: 18px;
+    overflow: hidden;
+    min-height: 280px;
+  }
+
+  .phone-top {
+    background: #0A0A0A;
+    padding: 10px 14px 8px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    justify-content: center;
   }
 
-  .flow-node {
-    background: var(--white);
-    border: 2px solid var(--blue);
-    border-radius: 12px;
-    padding: 14px 20px;
-    flex: 1;
-    font-size: 14px;
+  .phone-notch-bar {
+    width: 50px; height: 4px;
+    background: #333;
+    border-radius: 2px;
+  }
+
+  .ph-header {
+    background: #FFE600;
+    color: #0A0A0A;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 7px 10px;
+    text-align: center;
+  }
+
+  .ph-header.dark {
+    background: #1A1A1A;
+    color: #FFE600;
+  }
+
+  .ph-body {
+    padding: 10px;
+    font-size: 10px;
+    color: #0A0A0A;
+  }
+
+  .ph-btn {
+    border-radius: 8px;
+    padding: 7px 10px;
+    text-align: center;
+    font-size: 9px;
     font-weight: 700;
-    color: var(--black);
-    text-align: center;
+    margin-bottom: 6px;
   }
 
-  .flow-arrow {
-    text-align: center;
-    font-size: 20px;
-    color: var(--gray);
-    padding: 4px 0;
-    margin-left: 20px;
-    width: 1px;
-  }
+  .ph-btn.green { background: #22C55E; color: white; }
+  .ph-btn.black { background: #0A0A0A; color: #FFE600; }
+  .ph-btn.blue { background: #3B82F6; color: white; }
+  .ph-btn.gray { background: #F3F4F6; color: #374151; }
 
-  .flow-connector {
+  .ph-row {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding-left: 36px;
+    gap: 6px;
+    margin-bottom: 6px;
   }
 
-  .flow-line {
-    width: 2px;
-    height: 24px;
-    background: #D1D5DB;
+  .ph-stat {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    padding: 8px 6px;
+    text-align: center;
+    border: 1px solid #E5E7EB;
   }
 
-  .flow-arrow-down {
-    font-size: 18px;
-    color: var(--blue);
-    margin-top: -4px;
+  .ph-stat-val { font-size: 18px; font-weight: 900; color: #0A0A0A; }
+  .ph-stat-label { font-size: 8px; color: #9CA3AF; }
+
+  .phone-caption {
+    text-align: center;
+    font-size: 11px;
+    color: #9CA3AF;
+    margin-top: 10px;
+    font-style: italic;
   }
 
   /* HIGHLIGHT BOX */
@@ -496,6 +507,48 @@
     text-transform: uppercase;
     letter-spacing: 1px;
   }
+
+  /* CONSULTA TABS */
+  .tab-demo {
+    background: white;
+    border-radius: 16px;
+    border: 1.5px solid #E5E7EB;
+    overflow: hidden;
+    margin: 20px 0;
+  }
+  .tab-demo-header {
+    background: #0A0A0A;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab-demo-title {
+    color: #FFE600;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .tab-demo-body { padding: 16px; }
+  .tab-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .tab-pill {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #F3F4F6;
+    color: #374151;
+    border: 1.5px solid #E5E7EB;
+  }
+  .tab-pill.active {
+    background: #0A0A0A;
+    color: #FFE600;
+    border-color: #0A0A0A;
+  }
 </style>
 </head>
 <body>
@@ -507,7 +560,7 @@
   <div class="cover-subtitle">Mercado Livre Logística</div>
   <div class="cover-title">Guia do <span>Log SVC</span></div>
   <div class="cover-desc">
-    Tudo o que você precisa saber para receber pacotes das agências, registrar saídas e manter o inventário atualizado no sistema.
+    Tudo o que você precisa saber para receber pacotes das agências, confirmar recebimentos e acessar o painel de análise Consulta.
   </div>
   <div class="cover-meta">
     <div class="cover-meta-item">
@@ -516,7 +569,7 @@
     </div>
     <div class="cover-meta-item">
       <div class="cover-meta-label">Versão</div>
-      <div class="cover-meta-value">1.0</div>
+      <div class="cover-meta-value">2.0</div>
     </div>
     <div class="cover-meta-item">
       <div class="cover-meta-label">Sistema</div>
@@ -533,6 +586,7 @@
   <p style="font-size: 16px; color: var(--gray); line-height: 1.8; margin-bottom: 32px;">
     O <strong style="color: var(--black);">Logístico SVC</strong> é o ponto central de recebimento na operação NEX.
     Você recebe os pacotes que as agências expedem, registra tudo no sistema e garante a rastreabilidade completa da operação.
+    No menu SVC você também tem acesso ao painel de <strong style="color: var(--black);">Consulta</strong> com análise completa de expedições e motoristas.
   </p>
 
   <div class="alert blue">
@@ -558,14 +612,14 @@
       <div class="step-num black">1</div>
       <div class="step-content">
         <h3>Abra o NEX Inventory</h3>
-        <p>Acesse <strong>luishenrique785.github.io/NEX</strong> no navegador. Você verá a tela inicial com duas opções de perfil.</p>
+        <p>Acesse <strong>luishenrique785.github.io/NEX</strong> no navegador. Você verá a tela inicial com opções de perfil.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num blue">2</div>
       <div class="step-content">
         <h3>Selecione "SVC"</h3>
-        <p>Na tela inicial, toque no botão <strong>SVC</strong>. Você entrará diretamente no painel de recebimento de pacotes.</p>
+        <p>Na tela inicial, toque no botão <strong>SVC</strong> (preto com texto amarelo). Você entrará no painel de recebimento.</p>
       </div>
     </div>
     <div class="step">
@@ -577,10 +631,78 @@
     </div>
   </div>
 
+  <div class="mockup-row">
+    <div>
+      <div class="phone-wrap">
+        <div class="phone-top"><div class="phone-notch-bar"></div></div>
+        <div class="phone-screen-wrap">
+          <div class="ph-header">🏭 SVC — Recebimento</div>
+          <div class="ph-body">
+            <div class="ph-row">
+              <div class="ph-stat">
+                <div class="ph-stat-val">147</div>
+                <div class="ph-stat-label">Recebidos hoje</div>
+              </div>
+              <div class="ph-stat">
+                <div class="ph-stat-val">3</div>
+                <div class="ph-stat-label">Lotes hoje</div>
+              </div>
+            </div>
+            <div class="ph-btn black" style="margin-top:8px">📥 Receber Pacotes</div>
+            <div class="ph-btn blue" style="margin-top:6px">🔍 Consulta</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption">Painel SVC</div>
+    </div>
+
+    <div>
+      <div class="phone-wrap">
+        <div class="phone-top"><div class="phone-notch-bar"></div></div>
+        <div class="phone-screen-wrap">
+          <div class="ph-header">📥 Recebimento de Pacotes</div>
+          <div class="ph-body">
+            <div style="font-size:9px;color:#9CA3AF;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Dados do motorista (opcional)</div>
+            <div style="border:1px solid #E5E7EB;border-radius:6px;padding:5px 7px;font-size:9px;margin-bottom:4px;color:#9CA3AF">Nome do motorista</div>
+            <div style="border:1px solid #E5E7EB;border-radius:6px;padding:5px 7px;font-size:9px;margin-bottom:8px;color:#9CA3AF">Placa do veículo</div>
+            <div style="font-size:9px;color:#9CA3AF;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Pacotes: <span style="color:#22C55E;font-weight:900">12</span></div>
+            <div class="ph-btn black" style="font-size:9px">📷 Escanear</div>
+            <div class="ph-btn blue" style="font-size:9px;margin-top:4px">⌨️ Digitar</div>
+            <div class="ph-btn green" style="margin-top:6px">✓ Confirmar Recebimento</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption">Tela de recebimento</div>
+    </div>
+
+    <div>
+      <div class="phone-wrap">
+        <div class="phone-top"><div class="phone-notch-bar"></div></div>
+        <div class="phone-screen-wrap">
+          <div class="ph-header dark">⚠️ Confirmar?</div>
+          <div class="ph-body">
+            <div style="text-align:center;padding:8px 0">
+              <div style="font-size:24px;margin-bottom:6px">📦</div>
+              <div style="font-size:11px;font-weight:800;margin-bottom:4px">Confirmar recebimento</div>
+              <div style="font-size:9px;color:#6B7280;margin-bottom:4px">12 pacotes</div>
+              <div style="font-size:9px;color:#6B7280;margin-bottom:10px">Motorista: João Silva</div>
+            </div>
+            <div class="ph-row">
+              <div class="ph-btn gray" style="flex:1;margin-bottom:0">Cancelar</div>
+              <div style="width:6px"></div>
+              <div class="ph-btn green" style="flex:1;margin-bottom:0">Confirmar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption">Modal de confirmação</div>
+    </div>
+  </div>
+
   <div class="highlight-box">
     <h3>Diferença entre Agência e SVC</h3>
-    <p>A <strong style="color:var(--yellow);">Agência</strong> é um ponto de coleta: faz inventário local e expede os pacotes para o SVC.</p>
-    <p>O <strong style="color:var(--yellow);">SVC</strong> é o hub central: recebe os pacotes expedidos pelas agências e garante que chegaram corretamente.</p>
+    <p>A <strong>Agência</strong> é um ponto de coleta: faz inventário local e expede os pacotes para o SVC com dados do motorista.</p>
+    <p>O <strong>SVC</strong> é o hub central: recebe os pacotes expedidos pelas agências, confirma os volumes e atualiza o status de cada pacote para "recebido no SVC".</p>
   </div>
 
   <!-- SECTION 2 -->
@@ -593,19 +715,19 @@
   </div>
 
   <p style="font-size: 15px; color: var(--gray); margin-bottom: 24px; line-height: 1.7;">
-    Quando um caminhão chega com pacotes de uma agência, você precisa registrar todos os pacotes no sistema SVC. Existem 3 formas de fazer isso — use a que for mais prática para o momento.
+    Quando um caminhão chega com pacotes de uma agência, registre todos os pacotes. Use o método mais prático para o momento.
   </p>
 
   <div class="method-grid">
     <div class="method-card">
       <span class="method-icon">📷</span>
       <div class="method-title">Câmera / Scanner</div>
-      <div class="method-desc">Aponte para o QR Code ou código de barras do pacote. Registro imediato.</div>
+      <div class="method-desc">Aponte a câmera para o QR Code ou código de barras. Registro imediato sem confirmação extra.</div>
     </div>
     <div class="method-card">
       <span class="method-icon">⌨️</span>
       <div class="method-title">Digitação Manual</div>
-      <div class="method-desc">Digite o código do pacote no campo e confirme. Ideal quando o código não escaneia.</div>
+      <div class="method-desc">Digite o código do pacote e confirme. Ideal quando o código não escaneia.</div>
     </div>
     <div class="method-card">
       <span class="method-icon">🖼️</span>
@@ -618,11 +740,11 @@
     <div class="alert-icon">⚡</div>
     <div class="alert-content">
       <h4>Dica de velocidade</h4>
-      <p>Para lotes grandes, o modo <strong>câmera</strong> é o mais rápido. Posicione bem o celular e escaneie um por um em sequência — o sistema adiciona automaticamente sem precisar confirmar cada vez.</p>
+      <p>Para lotes grandes, o modo <strong>câmera</strong> é o mais rápido. Posicione bem o celular e escaneie em sequência — o sistema adiciona automaticamente sem precisar confirmar cada código. Duplicatas são alertadas de forma automática.</p>
     </div>
   </div>
 
-  <!-- SECTION 3 — PASSO A PASSO RECEBIMENTO -->
+  <!-- SECTION 3 -->
   <div class="section-header">
     <div class="section-icon" style="background: #EFF6FF;">📋</div>
     <div>
@@ -642,22 +764,22 @@
     <div class="step">
       <div class="step-num blue">2</div>
       <div class="step-content">
-        <h3>Abra o painel SVC no sistema</h3>
-        <p>Toque em <strong>SVC</strong> na tela inicial. O painel de recebimento será exibido.</p>
+        <h3>Toque em "Receber Pacotes"</h3>
+        <p>No painel SVC, toque em <strong>Receber Pacotes</strong>. A tela de recebimento abrirá.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num blue">3</div>
       <div class="step-content">
-        <h3>Selecione o método de entrada</h3>
-        <p>Escolha entre <strong>Câmera</strong>, <strong>Manual</strong> ou <strong>Foto</strong>. A câmera é recomendada para velocidade.</p>
+        <h3>Preencha os dados do motorista (opcional)</h3>
+        <p>Nome e placa são opcionais mas ajudam no rastreamento. Preencha se possível para facilitar análise de divergências no painel Consulta.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num green">4</div>
       <div class="step-content">
-        <h3>Escaneie cada pacote</h3>
-        <p>Passe a câmera sobre o código de barras ou QR de cada pacote. Cada leitura bem-sucedida emite um <strong>vibração/som</strong> de confirmação.</p>
+        <h3>Escaneie todos os pacotes</h3>
+        <p>Use câmera, digitação ou foto. Cada leitura bem-sucedida adiciona o código à lista. Você pode escanear <strong>centenas de pacotes em sequência</strong> sem parar.</p>
       </div>
     </div>
     <div class="step">
@@ -670,9 +792,17 @@
     <div class="step">
       <div class="step-num green">6</div>
       <div class="step-content">
-        <h3>Confirme o total ao final</h3>
-        <p>Compare o número de pacotes registrados com o manifesto físico. Se houver diferença, investigue antes de liberar o veículo.</p>
+        <h3>Toque em "Confirmar Recebimento"</h3>
+        <p>Um modal de confirmação aparecerá com o total de pacotes. Confirme para gravar. <strong>O app volta automaticamente ao painel SVC</strong> após a confirmação.</p>
       </div>
+    </div>
+  </div>
+
+  <div class="alert green">
+    <div class="alert-icon">✅</div>
+    <div class="alert-content">
+      <h4>Após confirmar</h4>
+      <p>Todos os pacotes do lote são gravados no banco. O app navega de volta ao painel SVC automaticamente. As agências que expediram esses pacotes verão o status atualizado para "Recebido no SVC" na tela de inventário delas.</p>
     </div>
   </div>
 
@@ -680,11 +810,11 @@
     <div class="alert-icon">🚨</div>
     <div class="alert-content">
       <h4>Não libere o veículo com divergência</h4>
-      <p>Se o número de pacotes escaneados for diferente do manifesto, <strong>não libere o veículo</strong>. Confira fisicamente os volumes e registre qualquer divergência antes de assinar o recebimento.</p>
+      <p>Se o número de pacotes escaneados for diferente do manifesto, <strong>não libere o veículo</strong>. Confira fisicamente os volumes e registre qualquer divergência antes de liberar.</p>
     </div>
   </div>
 
-  <!-- SECTION 4 — INVENTÁRIO DE SACAS -->
+  <!-- SECTION 4 -->
   <div class="section-header">
     <div class="section-icon" style="background: #FFF7ED;">🛍️</div>
     <div>
@@ -694,7 +824,7 @@
   </div>
 
   <p style="font-size: 15px; color: var(--gray); margin-bottom: 20px; line-height: 1.7;">
-    O SVC também registra o movimentação de <strong>sacas</strong> — as bolsas usadas para transportar pacotes entre pontos. Existem dois tipos de registro:
+    O SVC também registra a movimentação de <strong>sacas</strong> — as bolsas usadas para transportar pacotes. Existem dois tipos de registro:
   </p>
 
   <table>
@@ -708,8 +838,8 @@
     <tbody>
       <tr>
         <td><strong>✅ Chegada</strong></td>
-        <td>Quando sacas chegam ao SVC</td>
-        <td>Quantidade</td>
+        <td>Quando sacas chegam ao SVC das agências</td>
+        <td>Quantidade + Transportadora + Placa</td>
       </tr>
       <tr>
         <td><strong>🚚 Expedição</strong></td>
@@ -719,79 +849,87 @@
     </tbody>
   </table>
 
-  <div class="steps">
-    <div class="step">
-      <div class="step-num black">1</div>
-      <div class="step-content">
-        <h3>Acesse "Inventário de Sacas"</h3>
-        <p>No painel SVC, selecione a opção de sacas.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num blue">2</div>
-      <div class="step-content">
-        <h3>Selecione: Chegada ou Expedição</h3>
-        <p>Escolha a operação correta para o momento atual.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num green">3</div>
-      <div class="step-content">
-        <h3>Para Chegada: informe a quantidade</h3>
-        <p>Digite quantas sacas chegaram e confirme. O registro é salvo automaticamente com data e hora.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num orange">4</div>
-      <div class="step-content">
-        <h3>Para Expedição: preencha todos os campos</h3>
-        <p>Informe: <strong>Quantidade</strong>, <strong>Placa do veículo</strong> e <strong>Transportadora</strong>. Todos são obrigatórios para rastreabilidade.</p>
-      </div>
-    </div>
-  </div>
-
   <div class="alert green">
     <div class="alert-icon">✅</div>
     <div class="alert-content">
       <h4>Rastreabilidade completa</h4>
-      <p>Todos os registros ficam salvos com <strong>data, hora e operador</strong>. Em qualquer auditoria, é possível consultar o histórico completo de movimentação de sacas.</p>
+      <p>Todos os registros ficam salvos com <strong>data e hora em BRT (Brasília)</strong>. O histórico de sacas do dia é exibido na tela com as movimentações mais recentes no topo.</p>
     </div>
   </div>
 
-  <!-- SECTION 5 — VERIFICAÇÃO -->
+  <!-- SECTION 5 — CONSULTA -->
   <div class="section-header">
-    <div class="section-icon" style="background: #F5F3FF;">🔍</div>
+    <div class="section-icon" style="background: #EFF6FF;">🔍</div>
     <div>
       <div class="section-number">Seção 05</div>
-      <div class="section-title">Verificando o Status dos Pacotes</div>
+      <div class="section-title">Painel de Consulta</div>
     </div>
   </div>
 
   <p style="font-size: 15px; color: var(--gray); margin-bottom: 20px; line-height: 1.7;">
-    O sistema permite verificar rapidamente o status de qualquer pacote registrado.
+    O painel <strong>Consulta</strong> oferece análise completa da operação: expedições, status por agência, análise de motoristas, busca de pacotes e exportação de dados. Acessível diretamente do menu SVC.
   </p>
 
   <div class="steps">
     <div class="step">
       <div class="step-num black">1</div>
       <div class="step-content">
-        <h3>Escaneie o código do pacote</h3>
-        <p>Use a câmera, digitação ou foto para consultar um pacote específico.</p>
+        <h3>Toque em "Consulta" no painel SVC</h3>
+        <p>No painel principal do SVC, toque no botão <strong>🔍 Consulta</strong>. Também pode ser acessado diretamente da tela inicial.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num blue">2</div>
       <div class="step-content">
-        <h3>Veja o histórico do pacote</h3>
-        <p>O sistema mostrará: <strong>quando chegou</strong>, <strong>de qual agência</strong>, e <strong>se foi expedido</strong>.</p>
+        <h3>Insira a senha de acesso</h3>
+        <p>O painel pede senha de acesso. Consulte o responsável pelo sistema para obter a senha.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-num green">3</div>
       <div class="step-content">
-        <h3>Consulte o painel geral</h3>
-        <p>A lista de pacotes recebidos hoje e pendentes de dias anteriores fica disponível na tela principal do SVC.</p>
+        <h3>Navegue pelas 5 abas</h3>
+        <p>O painel tem 5 abas de análise. Cada aba mostra um aspecto diferente da operação.</p>
       </div>
+    </div>
+  </div>
+
+  <div class="tab-demo">
+    <div class="tab-demo-header">
+      <div class="tab-demo-title">🔍 Consulta — Painel de Análise</div>
+    </div>
+    <div class="tab-demo-body">
+      <div class="tab-pills">
+        <div class="tab-pill active">📦 Expedições</div>
+        <div class="tab-pill">🏪 Por Agência</div>
+        <div class="tab-pill">🚛 Motoristas</div>
+        <div class="tab-pill">🔍 Buscar</div>
+        <div class="tab-pill">📥 Exportar</div>
+      </div>
+      <p style="font-size: 13px; color: var(--gray); line-height: 1.6;">
+        <strong style="color: var(--black);">📦 Expedições:</strong> Lista as últimas 60 expedições com resumo — quantos pacotes foram enviados, quantos chegaram no SVC e quantos estão pendentes.<br><br>
+        <strong style="color: var(--black);">🏪 Por Agência:</strong> Agrupa pacotes por agência, período de 7, 15 ou 30 dias. Mostra IDs e permite download CSV por agência.<br><br>
+        <strong style="color: var(--black);">🚛 Motoristas:</strong> Análise de divergência por motorista — quantos pacotes pegou vs entregou no SVC.<br><br>
+        <strong style="color: var(--black);">🔍 Buscar Pacote:</strong> Rastreie qualquer código — inventário, expedição, recebimento SVC.<br><br>
+        <strong style="color: var(--black);">📥 Exportar CSV:</strong> Exporta inventário completo por período com todas as colunas.
+      </p>
+    </div>
+  </div>
+
+  <div class="alert blue">
+    <div class="alert-icon">📊</div>
+    <div class="alert-content">
+      <h4>Para análise detalhada</h4>
+      <p>O guia do Time MELI contém documentação completa do painel Consulta com todos os detalhes de cada aba, filtros disponíveis e como interpretar os dados.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 6 — VERIFICAÇÃO STATUS -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #F5F3FF;">📊</div>
+    <div>
+      <div class="section-number">Seção 06</div>
+      <div class="section-title">Status dos Pacotes</div>
     </div>
   </div>
 
@@ -805,74 +943,29 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="tag green">Recebido</span></td>
-        <td>Pacote chegou ao SVC</td>
-        <td>Nenhuma</td>
+        <td><span class="tag green">Recebido SVC</span></td>
+        <td>SVC escaneou e confirmou o recebimento</td>
+        <td>Nenhuma — ciclo completo</td>
       </tr>
       <tr>
-        <td><span class="tag orange">Pendente</span></td>
-        <td>Chegou mas não expedido</td>
-        <td>Verificar destino</td>
+        <td><span class="tag orange">Aguardando SVC</span></td>
+        <td>Agência expediu mas SVC ainda não recebeu</td>
+        <td>SVC deve escanear ao receber o veículo</td>
       </tr>
       <tr>
-        <td><span class="tag blue">Expedido</span></td>
-        <td>Saiu do SVC para destino</td>
-        <td>Nenhuma</td>
+        <td><span class="tag blue">Inventariado</span></td>
+        <td>Registrado na agência, ainda não expedido</td>
+        <td>Agência deve expedir</td>
       </tr>
       <tr>
         <td><span class="tag red">Duplicado</span></td>
-        <td>Código já registrado</td>
+        <td>Código já registrado no mesmo lote</td>
         <td>Investigar</td>
       </tr>
     </tbody>
   </table>
 
-  <!-- SECTION 6 — PENDÊNCIAS -->
-  <div class="section-header">
-    <div class="section-icon" style="background: #FEF2F2;">⚠️</div>
-    <div>
-      <div class="section-number">Seção 06</div>
-      <div class="section-title">Gerenciando Pendências</div>
-    </div>
-  </div>
-
-  <p style="font-size: 15px; color: var(--gray); margin-bottom: 20px; line-height: 1.7;">
-    Pacotes do dia anterior que não foram expedidos aparecem automaticamente como <strong>pendências</strong> no início de cada novo dia.
-  </p>
-
-  <div class="alert orange">
-    <div class="alert-icon">⏰</div>
-    <div class="alert-content">
-      <h4>Pendências do dia anterior</h4>
-      <p>Ao abrir o sistema pela manhã, verifique os pacotes pendentes. São itens que chegaram mas <strong>ainda não foram expedidos</strong>. Cada um precisa ser investigado ou expedido.</p>
-    </div>
-  </div>
-
-  <div class="steps">
-    <div class="step">
-      <div class="step-num black">1</div>
-      <div class="step-content">
-        <h3>Veja as pendências do dia anterior</h3>
-        <p>A seção "Pendências" lista todos os pacotes recebidos que ainda estão no SVC sem expedição registrada.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num orange">2</div>
-      <div class="step-content">
-        <h3>Investigue cada pendência</h3>
-        <p>Para cada pacote pendente: está fisicamente no SVC? Foi expedido sem registro? Houve extravio?</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num green">3</div>
-      <div class="step-content">
-        <h3>Regularize no sistema</h3>
-        <p>Se o pacote foi expedido: registre a saída normalmente. Se está no SVC: deixe como pendente até expedir.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 7 — RESUMO DIÁRIO -->
+  <!-- SECTION 7 — FLUXO DIÁRIO -->
   <div class="section-header">
     <div class="section-icon" style="background: #F0FDF4;">📊</div>
     <div>
@@ -883,26 +976,26 @@
 
   <div class="highlight-box">
     <h3>Rotina recomendada</h3>
-    <p><strong style="color:var(--yellow);">Início do turno:</strong> Verifique as pendências do dia anterior. Resolva ou registre cada uma antes de iniciar as operações do dia.</p>
-    <p><strong style="color:var(--yellow);">Durante o turno:</strong> A cada chegada de veículo, registre todos os pacotes antes de liberar. Nunca acumule para registrar depois — o risco de erro aumenta muito.</p>
-    <p><strong style="color:var(--yellow);">A cada expedição:</strong> Registre a saída com placa e transportadora. Isso fecha o ciclo do pacote no SVC.</p>
-    <p><strong style="color:var(--yellow);">Final do turno:</strong> Confirme que não há pendências não resolvidas. O que não foi registrado hoje vira pendência amanhã.</p>
+    <p><strong>Início do turno:</strong> Verifique o painel Consulta — aba Expedições — para ver se há pacotes expedidos pelas agências que ainda estão aguardando recebimento no SVC.</p>
+    <p><strong>Durante o turno:</strong> A cada chegada de veículo, toque em "Receber Pacotes", preencha os dados do motorista (opcional mas recomendado) e escaneie todos os pacotes antes de liberar o veículo.</p>
+    <p><strong>Confirmar:</strong> Sempre confirme via o botão "Confirmar Recebimento" — o app mostrará um modal de confirmação e depois voltará automaticamente ao painel SVC.</p>
+    <p><strong>Final do turno:</strong> Consulte a aba Motoristas para verificar se há divergências — motoristas que pegaram mais pacotes do que entregaram.</p>
   </div>
 
   <ul class="checklist">
-    <li><strong>Verificar pendências do dia anterior</strong> antes de iniciar</li>
+    <li><strong>Verificar painel Consulta</strong> ao iniciar o turno</li>
     <li><strong>Registrar cada chegada</strong> antes de liberar o veículo</li>
-    <li><strong>Conferir totais</strong> com o manifesto físico</li>
-    <li><strong>Registrar todas as expedições</strong> com placa e transportadora</li>
-    <li><strong>Revisar pendências</strong> ao final do turno</li>
-    <li><strong>Acionar o gestor</strong> em caso de divergência não resolvida</li>
+    <li><strong>Preencher dados do motorista</strong> quando possível</li>
+    <li><strong>Confirmar totais</strong> com o manifesto físico</li>
+    <li><strong>Não liberar veículos</strong> com divergência de volume</li>
+    <li><strong>Checar aba Motoristas</strong> ao final do turno</li>
   </ul>
 
   <div class="alert green">
     <div class="alert-icon">🏆</div>
     <div class="alert-content">
       <h4>Operação zero pendências</h4>
-      <p>O objetivo é terminar cada dia com <strong>zero pendências não justificadas</strong>. Todo pacote que chega ao SVC deve ter uma saída registrada — ou uma justificativa documentada.</p>
+      <p>O objetivo é que todo pacote expedido pelas agências seja confirmado pelo SVC no mesmo dia. Use o painel Consulta → aba <strong>Por Agência</strong> para acompanhar a situação de cada NODO.</p>
     </div>
   </div>
 
@@ -929,7 +1022,7 @@
       <tr>
         <td>Câmera não abre</td>
         <td>Permissão negada no browser</td>
-        <td>Vá em Configurações do browser → Permitir câmera para o site</td>
+        <td>Configurações do browser → Permitir câmera para o site</td>
       </tr>
       <tr>
         <td>Código não escaneia</td>
@@ -938,8 +1031,18 @@
       </tr>
       <tr>
         <td>"Já registrado"</td>
-        <td>Pacote já está no sistema</td>
+        <td>Pacote já está no lote atual</td>
         <td>Não registre novamente; verifique se não é duplicata física</td>
+      </tr>
+      <tr>
+        <td>Botão confirmar não responde</td>
+        <td>Nenhum pacote adicionado ao lote</td>
+        <td>Adicione ao menos 1 pacote antes de confirmar</td>
+      </tr>
+      <tr>
+        <td>App não volta para SVC após confirmar</td>
+        <td>Instabilidade de rede ou cache</td>
+        <td>Atualize a página (F5 / recarregar)</td>
       </tr>
       <tr>
         <td>Dados não salvam</td>
@@ -947,14 +1050,9 @@
         <td>Verifique o Wi-Fi ou dados móveis; tente novamente</td>
       </tr>
       <tr>
-        <td>Divergência de quantidade</td>
-        <td>Erro no manifesto ou extravios</td>
-        <td>NÃO libere o veículo; acione o gestor imediatamente</td>
-      </tr>
-      <tr>
         <td>Site não carrega</td>
         <td>Instabilidade de rede</td>
-        <td>Atualize a página (F5). Se persistir, use dados móveis</td>
+        <td>Atualize a página. Se persistir, use dados móveis</td>
       </tr>
     </tbody>
   </table>
@@ -971,7 +1069,7 @@
 
 <footer>
   <strong>NEX Inventory</strong> — Mercado Livre Logística<br>
-  Sistema de Gestão de Inventário · Guia do Log SVC · v1.0
+  Sistema de Gestão de Inventário · Guia do Log SVC · v2.0
 </footer>
 
 </body>

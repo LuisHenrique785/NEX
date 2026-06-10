@@ -34,10 +34,8 @@
     line-height: 1.6;
   }
 
-  /* NAV */
   .nav {
-    position: sticky;
-    top: 0;
+    position: sticky; top: 0;
     background: rgba(255,255,255,0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid #E5E7EB;
@@ -48,302 +46,119 @@
     justify-content: space-between;
     gap: 16px;
   }
-
-  .nav-logo {
-    font-size: 20px;
-    font-weight: 900;
-    color: var(--black);
-    letter-spacing: -1px;
-  }
-
+  .nav-logo { font-size: 20px; font-weight: 900; color: var(--black); letter-spacing: -1px; }
   .nav-logo span { color: var(--yellow); background: var(--black); padding: 2px 8px; border-radius: 6px; }
-
-  .nav-links {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-  }
-
-  .nav-links a {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--gray);
-    text-decoration: none;
-    padding: 6px 12px;
-    border-radius: 8px;
-    transition: all 0.15s;
-  }
-
+  .nav-links { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav-links a { font-size: 12px; font-weight: 600; color: var(--gray); text-decoration: none; padding: 6px 12px; border-radius: 8px; }
   .nav-links a:hover { background: var(--gray-light); color: var(--black); }
 
-  /* COVER */
   .cover {
     background: var(--black);
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 80px 40px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 80px 40px; text-align: center;
+    position: relative; overflow: hidden;
   }
-
   .cover-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,230,0,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,230,0,0.04) 1px, transparent 1px);
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(255,230,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,230,0,0.04) 1px, transparent 1px);
     background-size: 48px 48px;
   }
-
   .cover-glow {
-    position: absolute;
-    width: 600px; height: 600px;
+    position: absolute; width: 600px; height: 600px;
     background: radial-gradient(circle, rgba(255,230,0,0.12) 0%, transparent 70%);
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
   }
-
   .cover-badge {
-    background: var(--yellow);
-    color: var(--black);
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    padding: 8px 20px;
-    border-radius: 100px;
-    margin-bottom: 32px;
-    display: inline-block;
-    position: relative;
-    z-index: 1;
+    background: var(--yellow); color: var(--black);
+    font-size: 11px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase;
+    padding: 8px 20px; border-radius: 100px; margin-bottom: 32px;
+    display: inline-block; position: relative; z-index: 1;
   }
-
   .cover-logo {
-    font-size: 100px;
-    font-weight: 900;
-    color: var(--yellow);
-    letter-spacing: -4px;
-    line-height: 1;
-    margin-bottom: 8px;
-    position: relative;
-    z-index: 1;
+    font-size: 100px; font-weight: 900; color: var(--yellow);
+    letter-spacing: -4px; line-height: 1; margin-bottom: 8px;
+    position: relative; z-index: 1;
     text-shadow: 0 0 80px rgba(255,230,0,0.3);
   }
-
   .cover-subtitle {
-    font-size: 14px;
-    color: rgba(255,255,255,0.4);
-    font-weight: 500;
-    margin-bottom: 40px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    position: relative;
-    z-index: 1;
+    font-size: 14px; color: rgba(255,255,255,0.4); font-weight: 500;
+    margin-bottom: 40px; letter-spacing: 4px; text-transform: uppercase;
+    position: relative; z-index: 1;
   }
-
   .cover-title {
-    font-size: 48px;
-    font-weight: 900;
-    color: var(--white);
-    line-height: 1.1;
-    max-width: 640px;
-    margin-bottom: 20px;
-    position: relative;
-    z-index: 1;
+    font-size: 48px; font-weight: 900; color: var(--white);
+    line-height: 1.1; max-width: 640px; margin-bottom: 20px;
+    position: relative; z-index: 1;
   }
-
   .cover-title span { color: var(--yellow); }
-
   .cover-desc {
-    font-size: 17px;
-    color: rgba(255,255,255,0.5);
-    max-width: 500px;
-    line-height: 1.8;
-    margin-bottom: 64px;
-    position: relative;
-    z-index: 1;
+    font-size: 17px; color: rgba(255,255,255,0.5);
+    max-width: 500px; line-height: 1.8; margin-bottom: 64px;
+    position: relative; z-index: 1;
   }
-
   .cover-pills {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-    position: relative;
-    z-index: 1;
+    display: flex; gap: 12px; flex-wrap: wrap;
+    justify-content: center; position: relative; z-index: 1;
   }
-
   .cover-pill {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 100px;
-    padding: 8px 20px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.6);
-    font-weight: 500;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 100px; padding: 8px 20px;
+    font-size: 13px; color: rgba(255,255,255,0.6); font-weight: 500;
   }
 
-  /* CONTENT */
-  .content {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 72px 32px;
-  }
+  .content { max-width: 900px; margin: 0 auto; padding: 72px 32px; }
 
-  /* TOC */
   .toc {
-    background: var(--white);
-    border: 1.5px solid #E5E7EB;
-    border-radius: 20px;
-    padding: 32px;
-    margin-bottom: 64px;
+    background: var(--white); border: 1.5px solid #E5E7EB;
+    border-radius: 20px; padding: 32px; margin-bottom: 64px;
   }
-
-  .toc h2 {
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--gray);
-    margin-bottom: 20px;
-  }
-
-  .toc-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
+  .toc h2 { font-size: 14px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gray); margin-bottom: 20px; }
+  .toc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
   @media (max-width: 600px) { .toc-grid { grid-template-columns: 1fr; } }
-
   .toc-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    text-decoration: none;
-    color: var(--black);
-    transition: background 0.15s;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 10px;
+    text-decoration: none; color: var(--black);
   }
-
   .toc-item:hover { background: var(--gray-light); }
-
   .toc-num {
-    width: 28px; height: 28px;
-    border-radius: 8px;
-    background: var(--black);
-    color: var(--yellow);
-    font-size: 12px;
-    font-weight: 900;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--black); color: var(--yellow);
+    font-size: 12px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-
   .toc-text { font-size: 14px; font-weight: 600; }
 
-  /* SECTION */
-  .section {
-    margin-bottom: 80px;
-    scroll-margin-top: 80px;
-  }
+  .section { margin-bottom: 80px; scroll-margin-top: 80px; }
 
   .section-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 32px;
-    padding-bottom: 20px;
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 32px; padding-bottom: 20px;
     border-bottom: 2px solid #E5E7EB;
   }
-
-  .section-icon {
-    width: 52px; height: 52px;
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    flex-shrink: 0;
-  }
-
+  .section-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
   .section-meta { flex: 1; }
+  .section-num { font-size: 11px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; opacity: 0.4; margin-bottom: 4px; }
+  .section-title { font-size: 28px; font-weight: 900; color: var(--black); line-height: 1.2; }
 
-  .section-num {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    opacity: 0.4;
-    margin-bottom: 4px;
-  }
-
-  .section-title {
-    font-size: 28px;
-    font-weight: 900;
-    color: var(--black);
-    line-height: 1.2;
-  }
-
-  /* CARDS */
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 16px;
-    margin: 24px 0;
-  }
-
-  .card {
-    background: var(--white);
-    border: 1.5px solid #E5E7EB;
-    border-radius: 16px;
-    padding: 24px;
-    transition: box-shadow 0.2s, transform 0.2s;
-  }
-
-  .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.1); transform: translateY(-2px); }
-
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 24px 0; }
+  .card { background: var(--white); border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 24px; }
   .card-icon { font-size: 32px; margin-bottom: 14px; display: block; }
   .card-title { font-size: 16px; font-weight: 800; color: var(--black); margin-bottom: 8px; }
   .card-desc { font-size: 13px; color: var(--gray); line-height: 1.65; }
 
-  /* STEPS */
   .steps { display: flex; flex-direction: column; gap: 0; margin: 24px 0; }
-
-  .step {
-    display: flex;
-    gap: 0;
-    position: relative;
-  }
-
-  .step-left {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 52px;
-    flex-shrink: 0;
-  }
-
+  .step { display: flex; gap: 0; position: relative; }
+  .step-left { display: flex; flex-direction: column; align-items: center; width: 52px; flex-shrink: 0; }
   .step-num {
-    width: 40px; height: 40px;
-    border-radius: 50%;
+    width: 40px; height: 40px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 900;
-    flex-shrink: 0;
-    z-index: 1;
+    font-size: 16px; font-weight: 900; flex-shrink: 0; z-index: 1;
   }
-
-  .step-line {
-    width: 2px;
-    flex: 1;
-    min-height: 24px;
-    background: #E5E7EB;
-  }
-
+  .step-line { width: 2px; flex: 1; min-height: 24px; background: #E5E7EB; }
   .step:last-child .step-line { display: none; }
-
   .step-num.black { background: var(--black); color: var(--yellow); }
   .step-num.blue { background: var(--blue); color: white; }
   .step-num.green { background: var(--green); color: white; }
@@ -351,75 +166,37 @@
   .step-num.yellow { background: var(--yellow); color: var(--black); }
   .step-num.purple { background: var(--purple); color: white; }
   .step-num.teal { background: var(--teal); color: white; }
-
-  .step-body {
-    padding: 8px 0 28px 20px;
-    flex: 1;
-  }
-
+  .step-num.red { background: var(--red); color: white; }
+  .step-body { padding: 8px 0 28px 20px; flex: 1; }
   .step-body h3 { font-size: 16px; font-weight: 800; color: var(--black); margin-bottom: 6px; }
   .step-body p { font-size: 14px; color: var(--gray); line-height: 1.65; }
   .step-body strong { color: var(--black); font-weight: 700; }
-  .step-body code {
-    background: #F3F4F6;
-    border: 1px solid #E5E7EB;
-    border-radius: 6px;
-    padding: 1px 6px;
-    font-size: 12px;
-    font-family: 'SF Mono', Consolas, monospace;
-    color: var(--black);
-  }
+  .step-body code { background: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 6px; padding: 1px 6px; font-size: 12px; font-family: 'SF Mono', Consolas, monospace; color: var(--black); }
 
-  /* ALERT */
-  .alert {
-    border-radius: 14px;
-    padding: 18px 22px;
-    margin: 20px 0;
-    border-width: 1.5px;
-    border-style: solid;
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-  }
-
+  .alert { border-radius: 14px; padding: 18px 22px; margin: 20px 0; border-width: 1.5px; border-style: solid; display: flex; gap: 14px; align-items: flex-start; }
   .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
   .alert-content h4 { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
   .alert-content p { font-size: 13px; line-height: 1.65; }
   .alert-content strong { font-weight: 700; }
   .alert-content ul { margin-top: 8px; padding-left: 16px; }
   .alert-content li { font-size: 13px; line-height: 1.8; }
-
   .alert.yellow { background: #FFFDE7; border-color: var(--yellow); }
   .alert.yellow .alert-content h4 { color: #7B6B00; }
   .alert.yellow .alert-content p, .alert.yellow .alert-content li { color: #5C5000; }
-
   .alert.green { background: var(--green-light); border-color: var(--green); }
   .alert.green .alert-content h4 { color: #15803D; }
   .alert.green .alert-content p, .alert.green .alert-content li { color: #14532D; }
-
   .alert.blue { background: var(--blue-light); border-color: var(--blue); }
   .alert.blue .alert-content h4 { color: #1D4ED8; }
   .alert.blue .alert-content p, .alert.blue .alert-content li { color: #1E3A8A; }
-
   .alert.orange { background: var(--orange-light); border-color: var(--orange); }
   .alert.orange .alert-content h4 { color: #C2410C; }
   .alert.orange .alert-content p, .alert.orange .alert-content li { color: #9A3412; }
-
   .alert.red { background: var(--red-light); border-color: var(--red); }
   .alert.red .alert-content h4 { color: #B91C1C; }
   .alert.red .alert-content p, .alert.red .alert-content li { color: #7F1D1D; }
 
-  /* TABLES */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 20px 0;
-    font-size: 14px;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1.5px solid #E5E7EB;
-  }
-
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; border-radius: 12px; overflow: hidden; border: 1.5px solid #E5E7EB; }
   thead { background: var(--black); color: var(--white); }
   thead th { padding: 14px 18px; font-weight: 700; text-align: left; font-size: 12px; letter-spacing: 0.5px; }
   tbody tr:nth-child(even) { background: var(--gray-light); }
@@ -427,115 +204,32 @@
   tbody td { padding: 12px 18px; color: #374151; border-bottom: 1px solid #E5E7EB; vertical-align: top; }
   tbody tr:last-child td { border-bottom: none; }
 
-  /* ARCHITECTURE DIAGRAM */
-  .arch {
-    background: var(--white);
-    border: 1.5px solid #E5E7EB;
-    border-radius: 20px;
-    padding: 32px;
-    margin: 24px 0;
-    text-align: center;
-  }
-
-  .arch-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin: 8px 0;
-    flex-wrap: wrap;
-  }
-
-  .arch-box {
-    background: var(--gray-light);
-    border: 1.5px solid #D1D5DB;
-    border-radius: 12px;
-    padding: 12px 18px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--black);
-    text-align: center;
-    min-width: 120px;
-  }
-
+  .arch { background: var(--white); border: 1.5px solid #E5E7EB; border-radius: 20px; padding: 32px; margin: 24px 0; text-align: center; }
+  .arch-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0; flex-wrap: wrap; }
+  .arch-box { background: var(--gray-light); border: 1.5px solid #D1D5DB; border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 700; color: var(--black); text-align: center; min-width: 120px; }
   .arch-box.yellow { background: #FFFDE7; border-color: var(--yellow); }
   .arch-box.blue { background: var(--blue-light); border-color: var(--blue); }
   .arch-box.green { background: var(--green-light); border-color: var(--green); }
   .arch-box.black { background: var(--black); color: var(--yellow); border-color: var(--black); }
   .arch-box.purple { background: var(--purple-light); border-color: var(--purple); }
-
+  .arch-box.red { background: var(--red-light); border-color: var(--red); }
   .arch-arrow { font-size: 20px; color: var(--gray); }
-  .arch-label { font-size: 11px; color: var(--gray); font-weight: 500; margin-top: 4px; }
 
-  /* HIGHLIGHT */
-  .highlight-box {
-    background: var(--black);
-    border-radius: 20px;
-    padding: 32px;
-    margin: 24px 0;
-    color: var(--white);
-  }
-
-  .highlight-box h3 {
-    color: var(--yellow);
-    font-size: 20px;
-    font-weight: 900;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .highlight-box p {
-    color: rgba(255,255,255,0.65);
-    font-size: 14px;
-    line-height: 1.75;
-    margin-bottom: 12px;
-  }
-
+  .highlight-box { background: var(--black); border-radius: 20px; padding: 32px; margin: 24px 0; color: var(--white); }
+  .highlight-box h3 { color: var(--yellow); font-size: 20px; font-weight: 900; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .highlight-box p { color: rgba(255,255,255,0.65); font-size: 14px; line-height: 1.75; margin-bottom: 12px; }
   .highlight-box p:last-child { margin-bottom: 0; }
   .highlight-box strong { color: var(--yellow); font-weight: 700; }
 
-  /* TECH STACK */
-  .tech-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
-    margin: 20px 0;
-  }
-
-  .tech-item {
-    background: var(--white);
-    border: 1.5px solid #E5E7EB;
-    border-radius: 12px;
-    padding: 16px 18px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
+  .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+  .tech-item { background: var(--white); border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; }
   .tech-icon { font-size: 24px; flex-shrink: 0; }
   .tech-name { font-size: 14px; font-weight: 700; color: var(--black); }
   .tech-desc { font-size: 12px; color: var(--gray); margin-top: 2px; }
 
-  /* DIVIDER */
-  .divider {
-    height: 2px;
-    background: linear-gradient(to right, var(--yellow), transparent);
-    margin: 56px 0;
-    border-radius: 1px;
-  }
+  .divider { height: 2px; background: linear-gradient(to right, var(--yellow), transparent); margin: 56px 0; border-radius: 1px; }
 
-  /* TAG */
-  .tag {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 100px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
   .tag.green { background: var(--green-light); color: #15803D; }
   .tag.blue { background: var(--blue-light); color: #1D4ED8; }
   .tag.orange { background: var(--orange-light); color: #C2410C; }
@@ -543,90 +237,161 @@
   .tag.yellow { background: #FFFDE7; color: #7B6B00; }
   .tag.purple { background: var(--purple-light); color: #7C3AED; }
 
-  /* CODE BLOCK */
-  .code-block {
-    background: #1A1A2E;
-    border-radius: 12px;
-    padding: 20px 24px;
-    font-family: 'SF Mono', Consolas, monospace;
-    font-size: 13px;
-    line-height: 1.7;
-    color: #A8B2D8;
-    margin: 16px 0;
-    overflow-x: auto;
-  }
-
-  .code-block .kw { color: #C792EA; }
-  .code-block .str { color: #C3E88D; }
-  .code-block .cm { color: #546E7A; }
-  .code-block .fn { color: #82AAFF; }
-
-  /* FOOTER */
-  footer {
-    background: var(--black);
-    color: rgba(255,255,255,0.4);
-    text-align: center;
-    padding: 48px;
-    font-size: 13px;
-    letter-spacing: 0.5px;
-    margin-top: 0;
-  }
-
+  footer { background: var(--black); color: rgba(255,255,255,0.4); text-align: center; padding: 48px; font-size: 13px; letter-spacing: 0.5px; margin-top: 0; }
   footer strong { color: var(--yellow); }
   footer .footer-links { display: flex; gap: 24px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
   footer a { color: rgba(255,255,255,0.35); text-decoration: none; font-size: 12px; }
   footer a:hover { color: rgba(255,255,255,0.7); }
 
-  /* METRIC CARDS */
-  .metrics {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin: 20px 0;
-  }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 20px 0; }
+  .metric { background: var(--white); border: 1.5px solid #E5E7EB; border-radius: 14px; padding: 20px; text-align: center; }
+  .metric-value { font-size: 28px; font-weight: 900; color: var(--black); line-height: 1; margin-bottom: 6px; }
+  .metric-label { font-size: 12px; color: var(--gray); font-weight: 500; }
 
-  .metric {
-    background: var(--white);
+  /* CONSULTA TAB MOCKUPS */
+  .consulta-tab {
+    background: white;
     border: 1.5px solid #E5E7EB;
-    border-radius: 14px;
-    padding: 20px;
-    text-align: center;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 24px 0;
   }
-
-  .metric-value {
-    font-size: 28px;
-    font-weight: 900;
-    color: var(--black);
-    line-height: 1;
-    margin-bottom: 6px;
+  .consulta-tab-header {
+    background: #0A0A0A;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
-
-  .metric-label {
+  .consulta-tab-title { color: #FFE600; font-size: 14px; font-weight: 800; }
+  .consulta-tab-subtitle { color: rgba(255,255,255,0.4); font-size: 11px; }
+  .consulta-tab-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 14px 20px;
+    background: #F8F9FA;
+    border-bottom: 1px solid #E5E7EB;
+  }
+  .c-tab {
+    padding: 6px 14px;
+    border-radius: 8px;
     font-size: 12px;
-    color: var(--gray);
-    font-weight: 500;
+    font-weight: 700;
+    background: white;
+    color: #6B7280;
+    border: 1.5px solid #E5E7EB;
   }
+  .c-tab.active {
+    background: #0A0A0A;
+    color: #FFE600;
+    border-color: #0A0A0A;
+  }
+  .consulta-tab-body { padding: 20px; }
+
+  .expedicao-card {
+    background: white;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .expedicao-icon { font-size: 28px; flex-shrink: 0; }
+  .expedicao-info { flex: 1; }
+  .expedicao-title { font-size: 14px; font-weight: 800; color: #0A0A0A; margin-bottom: 3px; }
+  .expedicao-meta { font-size: 12px; color: #6B7280; }
+  .badge-red { background: #FEF2F2; color: #B91C1C; border: 1.5px solid #EF4444; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .badge-green { background: #F0FDF4; color: #15803D; border: 1.5px solid #22C55E; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+
+  .period-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+  .period-btn { padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; background: #F3F4F6; color: #6B7280; border: 1.5px solid #E5E7EB; cursor: pointer; }
+  .period-btn.active { background: #0A0A0A; color: #FFE600; border-color: #0A0A0A; }
+
+  .agencia-card {
+    background: white; border: 1.5px solid #E5E7EB; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .agencia-card-header { display: flex; align-items: center; gap: 12px; }
+  .agencia-icon { font-size: 24px; flex-shrink: 0; }
+  .agencia-info { flex: 1; }
+  .agencia-name { font-size: 14px; font-weight: 800; color: #0A0A0A; }
+  .agencia-stats { font-size: 12px; color: #6B7280; margin-top: 2px; }
+  .agencia-actions { display: flex; gap: 8px; align-items: center; }
+  .btn-sm { padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+  .btn-sm.blue { background: #EFF6FF; color: #1D4ED8; border: 1.5px solid #3B82F6; }
+  .btn-sm.green { background: #F0FDF4; color: #15803D; border: 1.5px solid #22C55E; }
+  .btn-sm.red { background: #FEF2F2; color: #B91C1C; border: 1.5px solid #EF4444; }
+
+  .motorista-card {
+    background: white; border: 1.5px solid #E5E7EB; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .motorista-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .motorista-avatar { width: 40px; height: 40px; background: #F3F4F6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .motorista-info { flex: 1; }
+  .motorista-name { font-size: 14px; font-weight: 800; color: #0A0A0A; }
+  .motorista-meta { font-size: 12px; color: #6B7280; }
+  .motorista-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+  .stat-pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .stat-pill.green { background: #F0FDF4; color: #15803D; }
+  .stat-pill.red { background: #FEF2F2; color: #B91C1C; }
+  .stat-pill.blue { background: #EFF6FF; color: #1D4ED8; }
+  .stat-pill.gray { background: #F3F4F6; color: #6B7280; }
+
+  .busca-box { background: #F3F4F6; border-radius: 12px; padding: 12px 16px; display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .busca-input { flex: 1; background: white; border: 1.5px solid #E5E7EB; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #374151; }
+  .busca-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; background: #0A0A0A; color: #FFE600; }
+  .timeline-item { display: flex; gap: 12px; margin-bottom: 14px; }
+  .timeline-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .timeline-dot.green { background: #22C55E; }
+  .timeline-dot.blue { background: #3B82F6; }
+  .timeline-dot.orange { background: #F97316; }
+  .timeline-dot.red { background: #EF4444; }
+  .timeline-body { flex: 1; }
+  .timeline-title { font-size: 13px; font-weight: 700; color: #0A0A0A; }
+  .timeline-meta { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+
+  .export-form { background: #F3F4F6; border-radius: 12px; padding: 16px; }
+  .export-label { font-size: 12px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .export-input { background: white; border: 1.5px solid #E5E7EB; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #374151; width: 100%; margin-bottom: 10px; }
+  .export-btn { width: 100%; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 800; background: #22C55E; color: white; text-align: center; }
+
+  .coord-editor {
+    background: white;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .coord-editor-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .coord-status { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .coord-status.ok { background: #F0FDF4; color: #15803D; }
+  .coord-status.missing { background: #FEF2F2; color: #B91C1C; }
+  .coord-fields { display: flex; gap: 8px; }
+  .coord-field { flex: 1; }
+  .coord-field label { font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 3px; }
+  .coord-field input { width: 100%; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 6px; padding: 6px 8px; font-size: 12px; font-family: monospace; }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav class="nav">
   <div class="nav-logo"><span>NEX</span> Inventory</div>
   <div class="nav-links">
     <a href="#visao-geral">Visão Geral</a>
     <a href="#arquitetura">Arquitetura</a>
     <a href="#fluxo">Fluxo</a>
-    <a href="#agencia">Agência</a>
-    <a href="#svc">SVC</a>
+    <a href="#consulta">Consulta</a>
     <a href="#nodos">NODOs</a>
-    <a href="#dados">Dados</a>
+    <a href="#dados">Banco</a>
     <a href="#deploy">Deploy</a>
     <a href="#suporte">Suporte</a>
   </div>
 </nav>
 
-<!-- COVER -->
 <div class="cover">
   <div class="cover-grid"></div>
   <div class="cover-glow"></div>
@@ -635,21 +400,20 @@
   <div class="cover-subtitle">Mercado Livre Logística</div>
   <div class="cover-title">Sistema de <span>Inventário</span><br>— Guia do Time MELI</div>
   <div class="cover-desc">
-    Documentação completa da plataforma NEX Inventory: arquitetura, fluxos operacionais, gestão de dados, deploy e suporte.
+    Documentação completa da plataforma NEX Inventory v2: arquitetura, fluxos operacionais, painel Consulta, gestão de NODOs, banco de dados e deploy.
   </div>
   <div class="cover-pills">
     <div class="cover-pill">🌐 React Native Web</div>
     <div class="cover-pill">🗄️ Supabase</div>
     <div class="cover-pill">🚀 GitHub Pages</div>
     <div class="cover-pill">📱 PWA Ready</div>
-    <div class="cover-pill">🗺️ Geocodificação</div>
+    <div class="cover-pill">📊 Painel Consulta</div>
+    <div class="cover-pill">🕐 BRT Timezone</div>
   </div>
 </div>
 
-<!-- CONTENT -->
 <div class="content">
 
-  <!-- TOC -->
   <div class="toc">
     <h2>📋 Índice</h2>
     <div class="toc-grid">
@@ -658,35 +422,22 @@
       <a href="#fluxo" class="toc-item"><div class="toc-num">3</div><div class="toc-text">Fluxo Operacional Completo</div></a>
       <a href="#agencia" class="toc-item"><div class="toc-num">4</div><div class="toc-text">Módulo Agência</div></a>
       <a href="#svc" class="toc-item"><div class="toc-num">5</div><div class="toc-text">Módulo SVC</div></a>
-      <a href="#nodos" class="toc-item"><div class="toc-num">6</div><div class="toc-text">Gestão de NODOs</div></a>
-      <a href="#dados" class="toc-item"><div class="toc-num">7</div><div class="toc-text">Banco de Dados e Estrutura</div></a>
-      <a href="#deploy" class="toc-item"><div class="toc-num">8</div><div class="toc-text">Deploy e Infraestrutura</div></a>
-      <a href="#csv" class="toc-item"><div class="toc-num">9</div><div class="toc-text">Importação de NODOs (CSV)</div></a>
+      <a href="#consulta" class="toc-item"><div class="toc-num">6</div><div class="toc-text">Painel de Consulta (5 abas)</div></a>
+      <a href="#nodos" class="toc-item"><div class="toc-num">7</div><div class="toc-text">Gestão de NODOs</div></a>
+      <a href="#dados" class="toc-item"><div class="toc-num">8</div><div class="toc-text">Banco de Dados e Estrutura</div></a>
+      <a href="#deploy" class="toc-item"><div class="toc-num">9</div><div class="toc-text">Deploy e Infraestrutura</div></a>
       <a href="#suporte" class="toc-item"><div class="toc-num">10</div><div class="toc-text">Suporte e Manutenção</div></a>
     </div>
   </div>
 
-  <!-- METRICS -->
   <div class="metrics">
-    <div class="metric">
-      <div class="metric-value">🌐</div>
-      <div class="metric-label">100% Web</div>
-    </div>
-    <div class="metric">
-      <div class="metric-value">0</div>
-      <div class="metric-label">Instalações necessárias</div>
-    </div>
-    <div class="metric">
-      <div class="metric-value">3</div>
-      <div class="metric-label">Métodos de leitura</div>
-    </div>
-    <div class="metric">
-      <div class="metric-value">24/7</div>
-      <div class="metric-label">Disponibilidade</div>
-    </div>
+    <div class="metric"><div class="metric-value">🌐</div><div class="metric-label">100% Web</div></div>
+    <div class="metric"><div class="metric-value">5</div><div class="metric-label">Abas no Consulta</div></div>
+    <div class="metric"><div class="metric-value">3</div><div class="metric-label">Perfis de uso</div></div>
+    <div class="metric"><div class="metric-value">24/7</div><div class="metric-label">Disponibilidade</div></div>
   </div>
 
-  <!-- SECTION 1 — VISÃO GERAL -->
+  <!-- SECTION 1 -->
   <div class="section" id="visao-geral">
     <div class="section-header">
       <div class="section-icon" style="background:#FFFDE7;">🎯</div>
@@ -704,24 +455,24 @@
       <div class="card">
         <span class="card-icon">🏪</span>
         <div class="card-title">Agências (NODOs)</div>
-        <div class="card-desc">Pontos de coleta parceiros. Fazem inventário físico de pacotes e sacas, e expedem para o SVC.</div>
+        <div class="card-desc">Pontos de coleta parceiros. Fazem inventário físico de pacotes e sacas, expedem para o SVC e acompanham pendências.</div>
       </div>
       <div class="card">
         <span class="card-icon">🏭</span>
         <div class="card-title">Hub SVC</div>
-        <div class="card-desc">Centro de distribuição. Recebe de todas as agências, valida volumes e registra saídas.</div>
+        <div class="card-desc">Centro de distribuição. Recebe de todas as agências, confirma volumes e acessa o painel Consulta.</div>
       </div>
       <div class="card">
         <span class="card-icon">👔</span>
         <div class="card-title">Time MELI</div>
-        <div class="card-desc">Administração central: cadastra NODOs, monitora operação e resolve divergências.</div>
+        <div class="card-desc">Administração central: cadastra NODOs, monitora operação via Consulta e resolve divergências de motoristas.</div>
       </div>
     </div>
 
     <div class="highlight-box">
-      <h3>🎯 Problema que o NEX resolve</h3>
-      <p>Antes do NEX, o controle de inventário era feito em planilhas e WhatsApp, sem rastreabilidade em tempo real e com alto risco de divergência de volumes entre agências e SVC.</p>
-      <p>Com o NEX, <strong>cada pacote é registrado digitalmente</strong> no momento da chegada ou expedição, com timestamp, operador e geolocalização — criando um trail auditável de toda a operação.</p>
+      <h3>🎯 O que o NEX resolve</h3>
+      <p>Antes do NEX, o controle de inventário era feito em planilhas e WhatsApp, sem rastreabilidade em tempo real e com alto risco de divergência entre agências e SVC.</p>
+      <p>Com o NEX, <strong>cada pacote é registrado digitalmente</strong> no momento da chegada ou expedição — com timestamp em BRT, operador e geolocalização. O painel <strong>Consulta</strong> permite cruzar dados de expedições vs recebimentos para identificar divergências de motoristas em tempo real.</p>
     </div>
 
     <div class="alert blue">
@@ -735,7 +486,7 @@
 
   <div class="divider"></div>
 
-  <!-- SECTION 2 — ARQUITETURA -->
+  <!-- SECTION 2 -->
   <div class="section" id="arquitetura">
     <div class="section-header">
       <div class="section-icon" style="background:#F5F3FF;">🏗️</div>
@@ -747,27 +498,21 @@
 
     <div class="arch">
       <div class="arch-row">
-        <div class="arch-box black">Usuário (Browser)</div>
+        <div class="arch-box black">Usuário (Browser / PWA)</div>
       </div>
       <div class="arch-row"><div class="arch-arrow">⬇️</div></div>
       <div class="arch-row">
         <div class="arch-box yellow">GitHub Pages<br><span style="font-size:11px;font-weight:500;color:#7B6B00;">luishenrique785.github.io/NEX</span></div>
       </div>
-      <div class="arch-row">
-        <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center;">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-            <div class="arch-arrow">⬇️</div>
-            <div class="arch-box blue">Supabase<br><span style="font-size:11px;font-weight:500;color:#1D4ED8;">PostgreSQL + Storage</span></div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-            <div class="arch-arrow">⬅️</div>
-            <div class="arch-box green">Nominatim<br><span style="font-size:11px;font-weight:500;color:#15803D;">Geocodificação</span></div>
-          </div>
-        </div>
+      <div class="arch-row"><div class="arch-arrow">⬇️</div></div>
+      <div class="arch-row" style="gap:32px;">
+        <div class="arch-box blue">Supabase<br><span style="font-size:11px;font-weight:500;color:#1D4ED8;">PostgreSQL + Storage</span></div>
+        <div class="arch-box green">Nominatim OSM<br><span style="font-size:11px;font-weight:500;color:#15803D;">Geocodificação</span></div>
+        <div class="arch-box red">@zxing/browser<br><span style="font-size:11px;font-weight:500;color:#B91C1C;">Scanner Web</span></div>
       </div>
       <div class="arch-row"><div class="arch-arrow">⬆️</div></div>
       <div class="arch-row">
-        <div class="arch-box purple">GitHub Actions<br><span style="font-size:11px;font-weight:500;color:#7C3AED;">Build automático no push</span></div>
+        <div class="arch-box purple">GitHub Actions<br><span style="font-size:11px;font-weight:500;color:#7C3AED;">Build automático no push main</span></div>
       </div>
       <div style="margin-top:16px;font-size:12px;color:var(--gray);">Arquitetura 100% serverless — nenhum servidor próprio necessário</div>
     </div>
@@ -775,45 +520,27 @@
     <div class="tech-grid">
       <div class="tech-item">
         <div class="tech-icon">⚛️</div>
-        <div>
-          <div class="tech-name">React Native Web</div>
-          <div class="tech-desc">Expo SDK 51 + expo-router v3</div>
-        </div>
+        <div><div class="tech-name">React Native Web</div><div class="tech-desc">Expo SDK 51 + expo-router v3</div></div>
       </div>
       <div class="tech-item">
         <div class="tech-icon">🗄️</div>
-        <div>
-          <div class="tech-name">Supabase</div>
-          <div class="tech-desc">PostgreSQL + Auth + Storage</div>
-        </div>
+        <div><div class="tech-name">Supabase</div><div class="tech-desc">PostgreSQL + Storage (fotos)</div></div>
       </div>
       <div class="tech-item">
         <div class="tech-icon">📦</div>
-        <div>
-          <div class="tech-name">GitHub Actions</div>
-          <div class="tech-desc">CI/CD automático a cada push</div>
-        </div>
+        <div><div class="tech-name">GitHub Actions</div><div class="tech-desc">CI/CD automático a cada push</div></div>
       </div>
       <div class="tech-item">
         <div class="tech-icon">🗺️</div>
-        <div>
-          <div class="tech-name">Nominatim OSM</div>
-          <div class="tech-desc">Geocodificação de endereços</div>
-        </div>
+        <div><div class="tech-name">Nominatim OSM</div><div class="tech-desc">Geocodificação de endereços</div></div>
       </div>
       <div class="tech-item">
         <div class="tech-icon">📷</div>
-        <div>
-          <div class="tech-name">expo-camera</div>
-          <div class="tech-desc">Scanner QR + código de barras</div>
-        </div>
+        <div><div class="tech-name">@zxing/browser</div><div class="tech-desc">Scanner QR + código de barras web</div></div>
       </div>
       <div class="tech-item">
-        <div class="tech-icon">📍</div>
-        <div>
-          <div class="tech-name">expo-location</div>
-          <div class="tech-desc">Geolocalização para NODOs próximos</div>
-        </div>
+        <div class="tech-icon">🕐</div>
+        <div><div class="tech-name">BRT Timezone</div><div class="tech-desc">Todos os timestamps em America/Sao_Paulo</div></div>
       </div>
     </div>
 
@@ -821,22 +548,22 @@
       <div class="alert-icon">⚙️</div>
       <div class="alert-content">
         <h4>Configuração central</h4>
-        <p>Todas as credenciais e parâmetros estão em <strong>src/config.ts</strong>: URL do Supabase, chave anônima, ID da planilha e PIN de admin.</p>
+        <p>Todas as credenciais e parâmetros estão em <strong>src/config.ts</strong>: URL do Supabase, chave anônima, ID da planilha e PIN de admin. PIN do painel Consulta também está em <strong>src/config.ts</strong>.</p>
       </div>
     </div>
 
     <table>
-      <thead>
-        <tr><th>Arquivo</th><th>Função</th></tr>
-      </thead>
+      <thead><tr><th>Arquivo</th><th>Função</th></tr></thead>
       <tbody>
-        <tr><td><code>src/config.ts</code></td><td>Credenciais Supabase, PIN admin, URL da planilha</td></tr>
+        <tr><td><code>src/config.ts</code></td><td>Credenciais Supabase, PIN admin, PIN consulta, URL da planilha</td></tr>
         <tr><td><code>src/lib/supabase.ts</code></td><td>Cliente Supabase inicializado</td></tr>
         <tr><td><code>src/lib/sheets.ts</code></td><td>Parser CSV e importador de NODOs</td></tr>
         <tr><td><code>src/lib/geocoding.ts</code></td><td>Geocodificação Nominatim + distância Haversine</td></tr>
-        <tr><td><code>src/lib/database.sql</code></td><td>Schema completo do banco de dados</td></tr>
+        <tr><td><code>src/lib/utils.ts</code></td><td>Funções de timezone BRT: formatTimeBRT, startOfTodayBRT</td></tr>
+        <tr><td><code>src/components/WebScanner.tsx</code></td><td>Scanner @zxing/browser com cooldown por código</td></tr>
+        <tr><td><code>app/admin/consulta.tsx</code></td><td>Painel de análise — 5 abas completas</td></tr>
+        <tr><td><code>app/tutorial.tsx</code></td><td>Tutorial in-app para 3 perfis</td></tr>
         <tr><td><code>app.json</code></td><td>Configuração Expo (bundle, output, baseUrl)</td></tr>
-        <tr><td><code>metro.config.js</code></td><td>Resolver de dependências opcionais do Supabase</td></tr>
         <tr><td><code>.github/workflows/deploy-pages.yml</code></td><td>Pipeline CI/CD automático</td></tr>
       </tbody>
     </table>
@@ -844,7 +571,7 @@
 
   <div class="divider"></div>
 
-  <!-- SECTION 3 — FLUXO -->
+  <!-- SECTION 3 -->
   <div class="section" id="fluxo">
     <div class="section-header">
       <div class="section-icon" style="background:#F0FDF4;">🔄</div>
@@ -854,51 +581,47 @@
       </div>
     </div>
 
-    <p style="font-size:15px;color:var(--gray);margin-bottom:24px;line-height:1.7;">
-      A operação NEX segue um ciclo diário com três atores principais: <strong style="color:var(--black);">Agência</strong> → <strong style="color:var(--black);">SVC</strong> → <strong style="color:var(--black);">MELI</strong>.
-    </p>
-
     <div class="steps">
       <div class="step">
         <div class="step-left"><div class="step-num black">1</div><div class="step-line"></div></div>
         <div class="step-body">
           <h3>Agência recebe pacotes (Inventário Físico)</h3>
-          <p>A agência escaneia cada pacote que chega. O sistema bloqueia duplicatas e mostra pendências do dia anterior.</p>
+          <p>A agência escaneia cada pacote com câmera (@zxing/browser), digitação manual ou foto. O sistema bloqueia duplicatas e exibe pendências de dias anteriores. Timestamps salvos em BRT.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num blue">2</div><div class="step-line"></div></div>
         <div class="step-body">
-          <h3>Agência faz o Inventário de Sacas</h3>
-          <p>Registra a chegada ou expedição de sacas com quantidade. Expedição exige placa + transportadora.</p>
+          <h3>Agência registra movimentação de Sacas</h3>
+          <p>Chegada ou expedição de sacas com quantidade, transportadora e placa. Histórico do dia exibido em BRT.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num orange">3</div><div class="step-line"></div></div>
         <div class="step-body">
-          <h3>Agência expede para o SVC</h3>
-          <p>Registra a expedição: escaneia cada pacote + informa motorista (CPF, nome, placa, transportadora). Pacotes saem do inventário ativo.</p>
+          <h3>Agência expede pacotes para o SVC</h3>
+          <p>Registra motorista (nome, CPF, placa, transportadora) + escaneia cada pacote. Modal de confirmação (não Alert.alert). Pacotes saem do inventário ativo da agência.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num green">4</div><div class="step-line"></div></div>
         <div class="step-body">
           <h3>SVC recebe os pacotes</h3>
-          <p>O operador SVC escaneia os pacotes que chegam. Confere totais com o manifesto físico antes de liberar o veículo.</p>
+          <p>Operador SVC toca em "Receber Pacotes", escaneia todos os pacotes do lote. Modal de confirmação. Após confirmar, app volta automaticamente ao painel SVC.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num teal">5</div><div class="step-line"></div></div>
         <div class="step-body">
-          <h3>SVC registra expedições</h3>
-          <p>Ao enviar pacotes para o destino final, registra com placa e transportadora. Ciclo completo do pacote fica no banco.</p>
+          <h3>Pacotes confirmados = pendências eliminadas</h3>
+          <p>Ao confirmar recebimento no SVC, o status dos pacotes na agência muda de "Aguardando SVC" para "Recebido". A seção "Não Recebidos no SVC" da agência é atualizada.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num purple">6</div></div>
         <div class="step-body">
-          <h3>MELI monitora e audita</h3>
-          <p>Acessa o Supabase Dashboard para ver todos os registros, histórico completo e identificar divergências entre agências e SVC.</p>
+          <h3>MELI monitora via painel Consulta</h3>
+          <p>Acessa o painel Consulta com senha. Analisa expedições, agrupa por agência, identifica divergências de motoristas e rastreia pacotes individuais. Exporta CSVs para análise.</p>
         </div>
       </div>
     </div>
@@ -907,14 +630,14 @@
       <div class="alert-icon">✅</div>
       <div class="alert-content">
         <h4>Rastreabilidade em tempo real</h4>
-        <p>Cada operação salva: <strong>timestamp, operador, NODO de origem, código do pacote</strong>. O Supabase mantém histórico completo com Row Level Security habilitado.</p>
+        <p>Cada operação salva: <strong>timestamp BRT, NODO de origem, código do pacote, dados do motorista</strong>. O painel Consulta cruza todas essas tabelas para mostrar o estado exato de cada pacote na operação.</p>
       </div>
     </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- SECTION 4 — AGÊNCIA -->
+  <!-- SECTION 4 -->
   <div class="section" id="agencia">
     <div class="section-header">
       <div class="section-icon" style="background:#FFFDE7;">🏪</div>
@@ -925,40 +648,14 @@
     </div>
 
     <table>
-      <thead>
-        <tr><th>Funcionalidade</th><th>Descrição</th><th>Dados capturados</th></tr>
-      </thead>
+      <thead><tr><th>Funcionalidade</th><th>Descrição</th><th>Dados capturados</th></tr></thead>
       <tbody>
-        <tr>
-          <td><strong>Seleção de NODO</strong></td>
-          <td>Filtra NODOs próximos (raio 1 km via GPS) ou permite busca manual</td>
-          <td>Geolocalização do dispositivo</td>
-        </tr>
-        <tr>
-          <td><strong>Inventário de Sacas — Chegada</strong></td>
-          <td>Registro de recebimento de sacas</td>
-          <td>Quantidade + timestamp</td>
-        </tr>
-        <tr>
-          <td><strong>Inventário de Sacas — Expedição</strong></td>
-          <td>Registro de envio de sacas</td>
-          <td>Quantidade + Placa + Transportadora</td>
-        </tr>
-        <tr>
-          <td><strong>Inventário de Pacotes — Físico</strong></td>
-          <td>Escaneamento de pacotes presentes na agência</td>
-          <td>Código do pacote + foto opcional</td>
-        </tr>
-        <tr>
-          <td><strong>Inventário de Pacotes — Expedição</strong></td>
-          <td>Registro de pacotes enviados ao SVC</td>
-          <td>Código + CPF/nome motorista + placa + transportadora</td>
-        </tr>
-        <tr>
-          <td><strong>Pendências</strong></td>
-          <td>Lista de pacotes do dia anterior não expedidos</td>
-          <td>Automático — sem ação do operador</td>
-        </tr>
+        <tr><td><strong>Seleção de NODO</strong></td><td>Filtra NODOs próximos (raio 1km via GPS) ou busca manual por nome/código</td><td>Geolocalização do dispositivo</td></tr>
+        <tr><td><strong>Sacas — Chegada</strong></td><td>Registro de recebimento de sacas com transportadora e placa</td><td>Quantidade + Transportadora + Placa + timestamp BRT</td></tr>
+        <tr><td><strong>Sacas — Expedição</strong></td><td>Registro de envio de sacas</td><td>Quantidade + Placa + Transportadora + timestamp BRT</td></tr>
+        <tr><td><strong>Inventário de Pacotes (Físico)</strong></td><td>Escaneamento de pacotes presentes na agência — câmera, digitação ou foto</td><td>codigo_pacote + nodo_id + timestamp BRT</td></tr>
+        <tr><td><strong>Expedição de Pacotes</strong></td><td>Registro de pacotes enviados ao SVC com dados completos do motorista</td><td>codigo_pacote + nome/CPF motorista + placa + transportadora</td></tr>
+        <tr><td><strong>Não Recebidos no SVC</strong></td><td>Lista automática de pacotes expedidos que o SVC ainda não confirmou</td><td>Calculado via JOIN — sem ação do operador</td></tr>
       </tbody>
     </table>
 
@@ -966,22 +663,22 @@
       <div class="alert-icon">📍</div>
       <div class="alert-content">
         <h4>Seleção de NODO por geolocalização</h4>
-        <p>Ao entrar como "Agência", o app solicita permissão de localização. NODOs com coordenadas cadastradas dentro de <strong>1 km</strong> aparecem automaticamente. Se nenhum for encontrado no raio, o operador pode buscar manualmente.</p>
+        <p>Ao entrar como "Agência", o app solicita permissão de localização. NODOs com coordenadas cadastradas dentro de <strong>1 km</strong> aparecem automaticamente no topo. Se nenhum for encontrado, busca manual está disponível. NODOs sem coordenadas precisam ser editados no painel admin (ver Seção 7).</p>
       </div>
     </div>
 
     <div class="alert blue">
-      <div class="alert-icon">🚫</div>
+      <div class="alert-icon">📷</div>
       <div class="alert-content">
-        <h4>Anti-duplicata automático</h4>
-        <p>O sistema impede que o mesmo código de pacote seja registrado duas vezes no inventário físico. Exibe alerta visual e sonoro ao detectar tentativa de duplicata.</p>
+        <h4>Scanner web com @zxing/browser</h4>
+        <p>Na web, o scanner usa a biblioteca <strong>@zxing/browser</strong> (BrowserMultiFormatReader) que acessa a câmera via API do browser. Lê QR Code, Code128, EAN e outros formatos. Sistema de cooldown: mesmo código bloqueado por 2s, código diferente aceito imediatamente. O botão 🔄 troca câmera frontal/traseira.</p>
       </div>
     </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- SECTION 5 — SVC -->
+  <!-- SECTION 5 -->
   <div class="section" id="svc">
     <div class="section-header">
       <div class="section-icon" style="background:#F0FDF4;">🏭</div>
@@ -992,89 +689,466 @@
     </div>
 
     <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
-      O SVC é o hub central que recebe de todas as agências. Não seleciona NODO — opera globalmente sobre toda a rede.
+      O SVC é o hub central que recebe de todas as agências. Não seleciona NODO — opera globalmente. Após confirmar recebimento, o app volta automaticamente ao painel SVC (via <code>router.replace('/svc')</code>).
     </p>
 
     <table>
-      <thead>
-        <tr><th>Operação</th><th>Dados obrigatórios</th><th>Resultado no banco</th></tr>
-      </thead>
+      <thead><tr><th>Operação</th><th>Dados obrigatórios</th><th>Resultado no banco</th></tr></thead>
       <tbody>
-        <tr>
-          <td><strong>Receber pacotes</strong></td>
-          <td>Código do pacote (scan/manual/foto)</td>
-          <td>Registro em <code>package_inventory</code> com status "recebido_svc"</td>
-        </tr>
-        <tr>
-          <td><strong>Expedir pacotes</strong></td>
-          <td>Código + Placa + Transportadora</td>
-          <td>Atualização para status "expedido_svc" com metadados</td>
-        </tr>
-        <tr>
-          <td><strong>Sacas — Chegada</strong></td>
-          <td>Quantidade</td>
-          <td>Registro em <code>bag_inventory</code> tipo "chegada"</td>
-        </tr>
-        <tr>
-          <td><strong>Sacas — Expedição</strong></td>
-          <td>Quantidade + Placa + Transportadora</td>
-          <td>Registro em <code>bag_inventory</code> tipo "expedicao"</td>
-        </tr>
+        <tr><td><strong>Receber pacotes</strong></td><td>Código do pacote (scan/manual/foto). Motorista/placa opcionais</td><td>Registro em <code>svc_recebimentos</code> + <code>svc_recebimentos_pacotes</code></td></tr>
+        <tr><td><strong>Sacas — Chegada</strong></td><td>Quantidade + Transportadora + Placa</td><td>Registro em <code>sacas_movimentos</code> tipo "chegada"</td></tr>
+        <tr><td><strong>Sacas — Expedição</strong></td><td>Quantidade + Placa + Transportadora</td><td>Registro em <code>sacas_movimentos</code> tipo "expedicao"</td></tr>
+        <tr><td><strong>Consulta</strong></td><td>Senha de acesso</td><td>Leitura das tabelas para análise (somente leitura)</td></tr>
       </tbody>
     </table>
+
+    <div class="alert green">
+      <div class="alert-icon">↩️</div>
+      <div class="alert-content">
+        <h4>Navegação após confirmar</h4>
+        <p>Ao confirmar o recebimento, o app usa <code>router.replace('/svc')</code> para voltar ao painel SVC imediatamente. Isso evita que o usuário fique preso na tela de recebimento após salvar.</p>
+      </div>
+    </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- SECTION 6 — NODOs -->
+  <!-- SECTION 6 — CONSULTA (MUITO DETALHADO) -->
+  <div class="section" id="consulta">
+    <div class="section-header">
+      <div class="section-icon" style="background:#EFF6FF;">🔍</div>
+      <div class="section-meta">
+        <div class="section-num">Seção 06</div>
+        <div class="section-title">Painel de Consulta — 5 Abas</div>
+      </div>
+    </div>
+
+    <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
+      O painel Consulta é a ferramenta de análise centralizada do NEX. Acessível pela tela inicial ou pelo menu SVC, protegido por senha. Contém 5 abas com análises distintas da operação.
+    </p>
+
+    <div class="alert yellow">
+      <div class="alert-icon">🔒</div>
+      <div class="alert-content">
+        <h4>Acesso por senha</h4>
+        <p>Na tela do Consulta, um campo de senha é exibido antes de mostrar os dados. A senha está configurada em <strong>src/config.ts</strong> na variável <code>CONSULTA_PIN</code>. Apenas o time MELI e responsáveis pelo SVC devem ter acesso.</p>
+      </div>
+    </div>
+
+    <!-- ABA 1: EXPEDIÇÕES -->
+    <h3 style="font-size:20px;font-weight:900;color:var(--black);margin:32px 0 16px;display:flex;align-items:center;gap:10px;">
+      <span style="background:#EFF6FF;border:1.5px solid var(--blue);border-radius:8px;padding:4px 10px;font-size:13px;color:var(--blue);">Aba 1</span>
+      📦 Expedições
+    </h3>
+
+    <p style="font-size:14px;color:var(--gray);margin-bottom:16px;line-height:1.7;">
+      Lista as <strong>últimas 60 expedições</strong> de pacotes registradas pelas agências. Para cada expedição, mostra: agência de origem, motorista, placa, total de pacotes enviados, quantos foram recebidos no SVC e quantos estão pendentes.
+    </p>
+
+    <div class="consulta-tab">
+      <div class="consulta-tab-header">
+        <div class="consulta-tab-title">🔍 Consulta</div>
+        <div class="consulta-tab-subtitle">Painel de análise operacional</div>
+      </div>
+      <div class="consulta-tab-nav">
+        <div class="c-tab active">📦 Expedições</div>
+        <div class="c-tab">🏪 Por Agência</div>
+        <div class="c-tab">🚛 Motoristas</div>
+        <div class="c-tab">🔍 Buscar</div>
+        <div class="c-tab">📥 Exportar</div>
+      </div>
+      <div class="consulta-tab-body">
+        <div class="expedicao-card">
+          <div class="expedicao-icon">🚚</div>
+          <div class="expedicao-info">
+            <div class="expedicao-title">AGC VILA MARIANA · João da Silva</div>
+            <div class="expedicao-meta">09/06 14:32 BRT · Placa ABC1234 · Total Express</div>
+            <div class="expedicao-meta" style="margin-top:4px;">
+              <span style="color:#22C55E;font-weight:700;">✅ 18 recebidos</span>
+              <span style="color:#EF4444;font-weight:700;margin-left:8px;">⚠️ 3 pendentes</span>
+              <span style="color:#9CA3AF;margin-left:8px;">/ 21 expedidos</span>
+            </div>
+          </div>
+          <div class="badge-red">3 pendentes</div>
+        </div>
+        <div class="expedicao-card">
+          <div class="expedicao-icon">🚚</div>
+          <div class="expedicao-info">
+            <div class="expedicao-title">AGC PINHEIROS · Maria Souza</div>
+            <div class="expedicao-meta">09/06 11:15 BRT · Placa XYZ9876 · Jadlog</div>
+            <div class="expedicao-meta" style="margin-top:4px;">
+              <span style="color:#22C55E;font-weight:700;">✅ 35 recebidos</span>
+              <span style="color:#9CA3AF;margin-left:8px;">/ 35 expedidos</span>
+            </div>
+          </div>
+          <div class="badge-green">✓ Completo</div>
+        </div>
+        <p style="font-size:12px;color:#9CA3AF;text-align:center;margin-top:8px;">Mostrando as últimas 60 expedições</p>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Campo</th><th>O que significa</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Agência</strong></td><td>NODO que expediu os pacotes</td></tr>
+        <tr><td><strong>Motorista / Placa</strong></td><td>Dados preenchidos na expedição pela agência</td></tr>
+        <tr><td><strong>Data/hora BRT</strong></td><td>Momento em que a agência confirmou a expedição</td></tr>
+        <tr><td><strong>Expedidos</strong></td><td>Total de códigos de pacote registrados naquela expedição</td></tr>
+        <tr><td><strong>Recebidos</strong></td><td>Quantos desses códigos o SVC já escaneou</td></tr>
+        <tr><td><strong>Pendentes</strong></td><td>Expedidos menos recebidos — estão "em trânsito" ou extraviados</td></tr>
+        <tr><td><span class="tag red">Badge vermelho</span></td><td>Expedição com pelo menos 1 pacote pendente no SVC</td></tr>
+        <tr><td><span class="tag green">✓ Completo</span></td><td>Todos os pacotes dessa expedição foram recebidos no SVC</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ABA 2: POR AGÊNCIA -->
+    <h3 style="font-size:20px;font-weight:900;color:var(--black);margin:40px 0 16px;display:flex;align-items:center;gap:10px;">
+      <span style="background:#F0FDF4;border:1.5px solid var(--green);border-radius:8px;padding:4px 10px;font-size:13px;color:#15803D;">Aba 2</span>
+      🏪 Por Agência
+    </h3>
+
+    <p style="font-size:14px;color:var(--gray);margin-bottom:16px;line-height:1.7;">
+      Agrupa todos os pacotes expedidos por NODO (agência) em um período selecionável. Mostra o total de pacotes expedidos, quantos foram recebidos no SVC e quantos estão pendentes. Agências com mais pendências aparecem no topo. Permite expandir para ver todos os códigos de pacote e fazer download CSV por agência.
+    </p>
+
+    <div class="consulta-tab">
+      <div class="consulta-tab-header">
+        <div class="consulta-tab-title">🔍 Consulta</div>
+      </div>
+      <div class="consulta-tab-nav">
+        <div class="c-tab">📦 Expedições</div>
+        <div class="c-tab active">🏪 Por Agência</div>
+        <div class="c-tab">🚛 Motoristas</div>
+        <div class="c-tab">🔍 Buscar</div>
+        <div class="c-tab">📥 Exportar</div>
+      </div>
+      <div class="consulta-tab-body">
+        <div class="period-selector">
+          <div class="period-btn">7 dias</div>
+          <div class="period-btn active">15 dias</div>
+          <div class="period-btn">30 dias</div>
+        </div>
+        <div class="agencia-card">
+          <div class="agencia-card-header">
+            <div class="agencia-icon">🏪</div>
+            <div class="agencia-info">
+              <div class="agencia-name">AGC VILA MARIANA</div>
+              <div class="agencia-stats">142 expedidos · <span style="color:#22C55E;font-weight:700;">128 recebidos</span> · <span style="color:#EF4444;font-weight:700;">14 pendentes</span></div>
+            </div>
+            <div class="agencia-actions">
+              <div class="btn-sm blue">Ver 142 IDs</div>
+              <div class="btn-sm green">📥 CSV</div>
+            </div>
+          </div>
+        </div>
+        <div class="agencia-card">
+          <div class="agencia-card-header">
+            <div class="agencia-icon">🏪</div>
+            <div class="agencia-info">
+              <div class="agencia-name">AGC PINHEIROS</div>
+              <div class="agencia-stats">98 expedidos · <span style="color:#22C55E;font-weight:700;">95 recebidos</span> · <span style="color:#EF4444;font-weight:700;">3 pendentes</span></div>
+            </div>
+            <div class="agencia-actions">
+              <div class="btn-sm blue">Ver 98 IDs</div>
+              <div class="btn-sm green">📥 CSV</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Recurso</th><th>Como funciona</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Seletor de período</strong></td><td>Botões 7 / 15 / 30 dias — recarrega os dados do período selecionado</td></tr>
+        <tr><td><strong>"Ver X IDs"</strong></td><td>Expande a card da agência e mostra todos os códigos de pacote com status individual (recebido ou pendente)</td></tr>
+        <tr><td><strong>📥 CSV (por agência)</strong></td><td>Faz download de um CSV com: código do pacote, data de expedição, data de recebimento SVC, status</td></tr>
+        <tr><td><strong>Ordenação</strong></td><td>Agências com mais pacotes pendentes aparecem no topo da lista</td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert blue">
+      <div class="alert-icon">📊</div>
+      <div class="alert-content">
+        <h4>Como usar na prática</h4>
+        <p>Use a aba <strong>Por Agência</strong> para reuniões de análise operacional. Selecione "30 dias" para ter uma visão mensal, identifique as agências com mais pendências e baixe os CSVs individuais para enviar para cada parceiro com os IDs específicos que precisam ser resolvidos.</p>
+      </div>
+    </div>
+
+    <!-- ABA 3: MOTORISTAS -->
+    <h3 style="font-size:20px;font-weight:900;color:var(--black);margin:40px 0 16px;display:flex;align-items:center;gap:10px;">
+      <span style="background:#FFF7ED;border:1.5px solid var(--orange);border-radius:8px;padding:4px 10px;font-size:13px;color:#C2410C;">Aba 3</span>
+      🚛 Motoristas
+    </h3>
+
+    <p style="font-size:14px;color:var(--gray);margin-bottom:16px;line-height:1.7;">
+      Análise de divergência por motorista: cruza os dados de expedição das agências com os recebimentos do SVC para identificar motoristas que pegaram mais pacotes do que entregaram. Mostra especificamente quais IDs não chegaram ao SVC — esses voltam como pendência das agências.
+    </p>
+
+    <div class="consulta-tab">
+      <div class="consulta-tab-header">
+        <div class="consulta-tab-title">🔍 Consulta</div>
+      </div>
+      <div class="consulta-tab-nav">
+        <div class="c-tab">📦 Expedições</div>
+        <div class="c-tab">🏪 Por Agência</div>
+        <div class="c-tab active">🚛 Motoristas</div>
+        <div class="c-tab">🔍 Buscar</div>
+        <div class="c-tab">📥 Exportar</div>
+      </div>
+      <div class="consulta-tab-body">
+        <div class="period-selector">
+          <div class="period-btn">7 dias</div>
+          <div class="period-btn active">15 dias</div>
+          <div class="period-btn">30 dias</div>
+        </div>
+        <div class="motorista-card">
+          <div class="motorista-header">
+            <div class="motorista-avatar">🚚</div>
+            <div class="motorista-info">
+              <div class="motorista-name">João da Silva</div>
+              <div class="motorista-meta">CPF 123.456.789-00 · Total Express</div>
+            </div>
+            <div class="btn-sm green">📥 CSV</div>
+          </div>
+          <div class="motorista-stats">
+            <div class="stat-pill blue">📦 56 coletados</div>
+            <div class="stat-pill green">✅ 42 entregues</div>
+            <div class="stat-pill red">⚠️ 14 faltando</div>
+          </div>
+          <div style="margin-top:10px;background:#FEF2F2;border-radius:8px;padding:10px;">
+            <div style="font-size:11px;font-weight:800;color:#B91C1C;margin-bottom:6px;">IDs não entregues ao SVC:</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              <span style="background:white;border:1px solid #FCA5A5;border-radius:4px;padding:2px 6px;font-size:10px;font-family:monospace;color:#7F1D1D;">MLM111222333BR</span>
+              <span style="background:white;border:1px solid #FCA5A5;border-radius:4px;padding:2px 6px;font-size:10px;font-family:monospace;color:#7F1D1D;">MLM444555666BR</span>
+              <span style="background:white;border:1px solid #FCA5A5;border-radius:4px;padding:2px 6px;font-size:10px;font-family:monospace;color:#7F1D1D;">MLM777888999BR</span>
+              <span style="color:#9CA3AF;font-size:10px;align-self:center;">+11 mais</span>
+            </div>
+          </div>
+        </div>
+        <div class="motorista-card">
+          <div class="motorista-header">
+            <div class="motorista-avatar">🚚</div>
+            <div class="motorista-info">
+              <div class="motorista-name">Maria Souza</div>
+              <div class="motorista-meta">CPF 987.654.321-00 · Jadlog</div>
+            </div>
+            <div class="btn-sm green">📥 CSV</div>
+          </div>
+          <div class="motorista-stats">
+            <div class="stat-pill blue">📦 35 coletados</div>
+            <div class="stat-pill green">✅ 35 entregues</div>
+            <div class="stat-pill gray">✓ Sem divergência</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Campo</th><th>O que significa</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Coletados</strong></td><td>Total de pacotes que constam nas expedições das agências com esse motorista no período</td></tr>
+        <tr><td><strong>Entregues</strong></td><td>Quantos desses pacotes o SVC escaneou e confirmou</td></tr>
+        <tr><td><strong>Faltando</strong></td><td>Diferença entre coletados e entregues — pacotes que o SVC não viu</td></tr>
+        <tr><td><strong>IDs específicos</strong></td><td>Lista expandida dos códigos exatos que não chegaram ao SVC — voltam como pendência das agências de origem</td></tr>
+        <tr><td><strong>📥 CSV por motorista</strong></td><td>Download com todos os pacotes do motorista: coletado de qual agência, data, se chegou ao SVC</td></tr>
+        <tr><td><strong>Ordenação</strong></td><td>Motoristas com mais pacotes faltando aparecem no topo</td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert red">
+      <div class="alert-icon">🚨</div>
+      <div class="alert-content">
+        <h4>Interpretando divergências</h4>
+        <p>Um motorista com "faltando" pode significar: <strong>(a)</strong> SVC ainda não escaneou (pacotes recentes em trânsito), <strong>(b)</strong> motorista devolveu à agência sem registro, <strong>(c)</strong> extravio real. Use esta aba para acionar o motorista ou a agência específica. Os IDs faltando são exatamente os que aparecem como "Não Recebidos no SVC" na tela de inventário das agências.</p>
+      </div>
+    </div>
+
+    <!-- ABA 4: BUSCAR PACOTE -->
+    <h3 style="font-size:20px;font-weight:900;color:var(--black);margin:40px 0 16px;display:flex;align-items:center;gap:10px;">
+      <span style="background:#F5F3FF;border:1.5px solid var(--purple);border-radius:8px;padding:4px 10px;font-size:13px;color:#7C3AED;">Aba 4</span>
+      🔍 Buscar Pacote
+    </h3>
+
+    <p style="font-size:14px;color:var(--gray);margin-bottom:16px;line-height:1.7;">
+      Rastreamento individual de qualquer pacote. Digite o código completo (ex: <code>MLM123456789BR</code>) e veja o histórico completo: quando foi inventariado na agência, quando foi expedido e quando chegou no SVC. Se ainda não chegou, mostra claramente o status pendente.
+    </p>
+
+    <div class="consulta-tab">
+      <div class="consulta-tab-header">
+        <div class="consulta-tab-title">🔍 Consulta</div>
+      </div>
+      <div class="consulta-tab-nav">
+        <div class="c-tab">📦 Expedições</div>
+        <div class="c-tab">🏪 Por Agência</div>
+        <div class="c-tab">🚛 Motoristas</div>
+        <div class="c-tab active">🔍 Buscar</div>
+        <div class="c-tab">📥 Exportar</div>
+      </div>
+      <div class="consulta-tab-body">
+        <div class="busca-box">
+          <input class="busca-input" value="MLM123456789BR" />
+          <div class="busca-btn">Buscar</div>
+        </div>
+        <div style="background:white;border:1.5px solid #E5E7EB;border-radius:12px;padding:16px;">
+          <div style="font-size:13px;font-weight:800;color:#0A0A0A;margin-bottom:4px;">📦 MLM123456789BR</div>
+          <div style="font-size:12px;color:#6B7280;margin-bottom:16px;">AGC VILA MARIANA</div>
+          <div class="timeline-item">
+            <div class="timeline-dot green"></div>
+            <div class="timeline-body">
+              <div class="timeline-title">✅ Recebido no SVC</div>
+              <div class="timeline-meta">09/06/2025 às 16:45 BRT</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot blue"></div>
+            <div class="timeline-body">
+              <div class="timeline-title">🚚 Expedido pela agência</div>
+              <div class="timeline-meta">09/06/2025 às 14:32 BRT · João da Silva · ABC1234</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot orange"></div>
+            <div class="timeline-body">
+              <div class="timeline-title">📦 Inventariado na agência</div>
+              <div class="timeline-meta">09/06/2025 às 09:15 BRT · AGC VILA MARIANA</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Status no resultado</th><th>Significado</th></tr></thead>
+      <tbody>
+        <tr><td>✅ <strong>Recebido no SVC</strong> (verde)</td><td>Ciclo completo — inventário → expedição → recebimento SVC</td></tr>
+        <tr><td>🚚 <strong>Expedido — aguardando SVC</strong> (laranja)</td><td>A agência expediu mas SVC ainda não escaneou</td></tr>
+        <tr><td>📦 <strong>Inventariado — não expedido</strong> (azul)</td><td>Está na agência, ainda não foi enviado</td></tr>
+        <tr><td>⚠️ <strong>Não encontrado</strong></td><td>Código nunca registrado no NEX</td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert blue">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <h4>Caso de uso: cliente pedindo rastreio</h4>
+        <p>Quando um cliente questiona onde está um pacote, use essa aba para ver instantaneamente se o pacote foi inventariado na agência, se foi expedido para o SVC e quando chegou. O histórico completo com timestamps BRT fica disponível.</p>
+      </div>
+    </div>
+
+    <!-- ABA 5: EXPORTAR CSV -->
+    <h3 style="font-size:20px;font-weight:900;color:var(--black);margin:40px 0 16px;display:flex;align-items:center;gap:10px;">
+      <span style="background:#F0FDF4;border:1.5px solid var(--green);border-radius:8px;padding:4px 10px;font-size:13px;color:#15803D;">Aba 5</span>
+      📥 Exportar CSV
+    </h3>
+
+    <p style="font-size:14px;color:var(--gray);margin-bottom:16px;line-height:1.7;">
+      Exporta o inventário completo de pacotes em um período customizado. Selecione data inicial e final — o sistema gera um CSV com todos os pacotes inventariados, status atual e timestamps de cada etapa. Ideal para análise em planilhas externas.
+    </p>
+
+    <div class="consulta-tab">
+      <div class="consulta-tab-header">
+        <div class="consulta-tab-title">🔍 Consulta</div>
+      </div>
+      <div class="consulta-tab-nav">
+        <div class="c-tab">📦 Expedições</div>
+        <div class="c-tab">🏪 Por Agência</div>
+        <div class="c-tab">🚛 Motoristas</div>
+        <div class="c-tab">🔍 Buscar</div>
+        <div class="c-tab active">📥 Exportar</div>
+      </div>
+      <div class="consulta-tab-body">
+        <div class="export-form">
+          <div class="export-label">Data inicial</div>
+          <input class="export-input" type="date" value="2025-06-01" />
+          <div class="export-label">Data final</div>
+          <input class="export-input" type="date" value="2025-06-09" />
+          <div class="export-btn">📥 Baixar CSV</div>
+        </div>
+        <div style="margin-top:12px;background:#F0FDF4;border:1.5px solid #22C55E;border-radius:10px;padding:12px;">
+          <div style="font-size:12px;color:#15803D;font-weight:700;">✅ Colunas do CSV:</div>
+          <div style="font-size:11px;color:#166534;margin-top:4px;line-height:1.8;">
+            Código · Agência · Status · Data Inventário (BRT) · Data Expedição (BRT) · Motorista · Placa · Data Recebimento SVC (BRT)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Coluna CSV</th><th>Descrição</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Código</strong></td><td>Código do pacote (ex: MLM123456789BR)</td></tr>
+        <tr><td><strong>Agência</strong></td><td>Nome do NODO onde foi inventariado</td></tr>
+        <tr><td><strong>Status</strong></td><td>"Recebido SVC", "Expedido", "Inventariado" ou "Não expedido"</td></tr>
+        <tr><td><strong>Data Inventário</strong></td><td>Timestamp BRT de quando foi escaneado na agência</td></tr>
+        <tr><td><strong>Data Expedição</strong></td><td>Timestamp BRT da expedição (vazio se ainda não expedido)</td></tr>
+        <tr><td><strong>Motorista / Placa</strong></td><td>Dados do motorista na expedição (se preenchido)</td></tr>
+        <tr><td><strong>Data Recebimento SVC</strong></td><td>Timestamp BRT do recebimento no SVC (vazio se pendente)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert orange">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-content">
+        <h4>Download disponível apenas na versão web</h4>
+        <p>O download de CSV usa a API do browser (<code>URL.createObjectURL</code>). No app nativo (se empacotado), o download não está disponível. <strong>Use a versão web pelo navegador</strong> para exportar CSVs. O arquivo inclui BOM (﻿) para compatibilidade com Excel.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 7 — NODOs -->
   <div class="section" id="nodos">
     <div class="section-header">
       <div class="section-icon" style="background:#EFF6FF;">🗺️</div>
       <div class="section-meta">
-        <div class="section-num">Seção 06</div>
+        <div class="section-num">Seção 07</div>
         <div class="section-title">Gestão de NODOs</div>
       </div>
     </div>
 
     <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
-      NODOs são as agências parceiras. Cada NODO tem um código único (ex: <code>BRNMG838</code>), nome, endereço e coordenadas geográficas para o filtro de proximidade.
+      NODOs são as agências parceiras. Cada NODO tem um código único (ex: <code>BRNMG838</code>), nome, endereço e coordenadas geográficas para o filtro de proximidade. O painel admin é protegido por PIN de administrador.
     </p>
 
     <div class="alert yellow">
       <div class="alert-icon">🔒</div>
       <div class="alert-content">
         <h4>Acesso restrito por PIN</h4>
-        <p>A tela de gerenciamento de NODOs é protegida por PIN de administrador (<strong>configurado em src/config.ts</strong>). Apenas o time MELI deve ter acesso.</p>
+        <p>A tela "Novos NODOS" na tela inicial pede PIN de administrador configurado em <strong>src/config.ts</strong>. Apenas o time MELI deve ter acesso a este painel.</p>
       </div>
     </div>
+
+    <h3 style="font-size:18px;font-weight:900;color:var(--black);margin:28px 0 16px;">Importar NODOs via CSV</h3>
 
     <div class="steps">
       <div class="step">
         <div class="step-left"><div class="step-num black">1</div><div class="step-line"></div></div>
         <div class="step-body">
-          <h3>Exportar CSV da planilha</h3>
-          <p>Na planilha Google Sheets (aba "BASE - Nodos"): <strong>Arquivo → Fazer download → CSV</strong>.</p>
+          <h3>Exportar CSV da planilha Google Sheets</h3>
+          <p>Planilha <strong>Controle NODOS</strong> → Aba <strong>BASE - Nodos</strong>: <code>Arquivo → Fazer download → CSV</code></p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num blue">2</div><div class="step-line"></div></div>
         <div class="step-body">
           <h3>Acessar painel admin</h3>
-          <p>Na tela inicial, toque em <strong>"NOVOS NODOS"</strong> e insira o PIN de administrador.</p>
+          <p>Tela inicial → <strong>⚙️ NOVOS NODOS</strong> → Digite o PIN de administrador</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num green">3</div><div class="step-line"></div></div>
         <div class="step-body">
           <h3>Upload do CSV</h3>
-          <p>Selecione o CSV exportado. O sistema parseia automaticamente as colunas corretas da planilha.</p>
+          <p>Toque em <strong>"Selecionar CSV"</strong> → selecione o arquivo. O sistema parseia automaticamente as colunas corretas da planilha.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num orange">4</div></div>
         <div class="step-body">
           <h3>Geocodificação automática</h3>
-          <p>Para cada NODO com endereço, o sistema consulta o Nominatim (OpenStreetMap) para obter lat/lng. Rate limit: 1 req/segundo. Um lote de 50 NODOs leva ~1 minuto.</p>
+          <p>Para cada NODO com endereço, o sistema consulta o <strong>Nominatim (OpenStreetMap)</strong> para obter lat/lng. Rate limit: 1 requisição/segundo. Um lote de 50 NODOs leva ~1 minuto.</p>
         </div>
       </div>
     </div>
@@ -1085,96 +1159,165 @@
         <h4>Formato do CSV da planilha</h4>
         <p>A planilha "Controle NODOS - BASE - Nodos" tem este formato de colunas:</p>
         <ul>
-          <li><strong>Coluna A:</strong> ETA (horário de chegada — ignorado)</li>
-          <li><strong>Coluna B:</strong> Nó origem (sempre "NEX" — ignorado)</li>
+          <li><strong>Coluna A:</strong> ETA (ignorado)</li>
+          <li><strong>Coluna B:</strong> Nó origem (ignorado)</li>
           <li><strong>Coluna C:</strong> Facility NEx = <strong>Código do NODO</strong> (ex: BRNMG838)</li>
-          <li><strong>Coluna D:</strong> Modal Veículo — ignorado</li>
+          <li><strong>Coluna D:</strong> Modal Veículo (ignorado)</li>
           <li><strong>Coluna E:</strong> Nome Place = <strong>Nome do NODO</strong></li>
           <li><strong>Coluna F:</strong> Endereço = <strong>Endereço completo</strong> para geocodificação</li>
         </ul>
       </div>
     </div>
+
+    <div class="alert green">
+      <div class="alert-icon">♻️</div>
+      <div class="alert-content">
+        <h4>Idempotente — seguro para re-importar</h4>
+        <p>O sistema verifica se o código do NODO já existe antes de inserir. Re-importar o mesmo CSV <strong>só adiciona os NODOs novos</strong>, sem duplicar os existentes.</p>
+      </div>
+    </div>
+
+    <h3 style="font-size:18px;font-weight:900;color:var(--black);margin:32px 0 16px;">Edição Manual de Coordenadas</h3>
+
+    <p style="font-size:14px;color:var(--gray);margin-bottom:16px;line-height:1.7;">
+      NODOs que não foram geocodificados automaticamente (endereço ambíguo ou falha no Nominatim) aparecem com um badge vermelho "Sem coord." no painel admin. É possível editar as coordenadas manualmente clicando no botão 📍.
+    </p>
+
+    <div style="background:white;border:1.5px solid #E5E7EB;border-radius:16px;overflow:hidden;margin:20px 0;">
+      <div style="background:#0A0A0A;padding:12px 16px;">
+        <div style="color:#FFE600;font-size:13px;font-weight:800;">⚙️ Painel Admin — Gerenciar NODOs</div>
+      </div>
+      <div style="padding:16px;">
+        <div class="coord-editor">
+          <div class="coord-editor-header">
+            <div style="font-size:14px;font-weight:800;color:#0A0A0A;flex:1;">AGC CENTRO HISTÓRICO</div>
+            <span class="coord-status missing">Sem coord.</span>
+            <div style="background:#EFF6FF;color:#1D4ED8;border:1.5px solid #3B82F6;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;margin-left:8px;">📍 Editar</div>
+          </div>
+          <div style="margin-top:10px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:10px;padding:12px;">
+            <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Coordenadas GPS</div>
+            <div class="coord-fields">
+              <div class="coord-field">
+                <label>Latitude</label>
+                <input value="-23.546789" />
+              </div>
+              <div class="coord-field">
+                <label>Longitude</label>
+                <input value="-46.638012" />
+              </div>
+            </div>
+            <div style="background:#FFFDE7;border-radius:8px;padding:8px;margin-top:8px;font-size:11px;color:#7A6500;">
+              💡 Google Maps: segure o ponto no mapa → toque nas coordenadas → copiar
+            </div>
+          </div>
+        </div>
+        <div class="coord-editor">
+          <div class="coord-editor-header">
+            <div style="font-size:14px;font-weight:800;color:#0A0A0A;flex:1;">AGC VILA MARIANA</div>
+            <span class="coord-status ok">-23.58 / -46.63</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Recurso</th><th>Como usar</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Badge "Sem coord."</strong></td><td>NODO importado mas geocodificação falhou ou endereço não encontrado</td></tr>
+        <tr><td><strong>Botão 📍 Editar</strong></td><td>Abre painel de edição inline com campos lat/lng</td></tr>
+        <tr><td><strong>Google Maps (dica)</strong></td><td>Abra o Maps → localize o endereço → segure o ponto → clique nas coordenadas → copie no formato decimal</td></tr>
+        <tr><td><strong>Validação</strong></td><td>O sistema valida que lat está entre -90/90 e lng entre -180/180. Aceita formato decimal (ex: -23.5461) e vírgula como separador</td></tr>
+        <tr><td><strong>Salvar</strong></td><td>Atualiza diretamente no Supabase via <code>.update({ lat, lng }).eq('id', nodo.id)</code></td></tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="divider"></div>
 
-  <!-- SECTION 7 — DADOS -->
+  <!-- SECTION 8 — BANCO DE DADOS -->
   <div class="section" id="dados">
     <div class="section-header">
       <div class="section-icon" style="background:#F5F3FF;">🗄️</div>
       <div class="section-meta">
-        <div class="section-num">Seção 07</div>
+        <div class="section-num">Seção 08</div>
         <div class="section-title">Banco de Dados — Estrutura</div>
       </div>
     </div>
 
     <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
-      O banco está no Supabase (PostgreSQL). Todas as tabelas têm Row Level Security (RLS) habilitado com políticas de leitura/escrita via chave anônima.
+      O banco está no Supabase (PostgreSQL). Todas as tabelas têm Row Level Security (RLS) habilitado com políticas de leitura/escrita via chave anônima. Timestamps salvos em UTC e exibidos em BRT (UTC-3) pela camada de apresentação.
     </p>
 
     <table>
-      <thead>
-        <tr><th>Tabela</th><th>Descrição</th><th>Colunas principais</th></tr>
-      </thead>
+      <thead><tr><th>Tabela</th><th>Descrição</th><th>Colunas principais</th></tr></thead>
       <tbody>
         <tr>
           <td><strong>nodos</strong></td>
           <td>Cadastro de agências parceiras</td>
-          <td>id, codigo, nome, endereco, cidade, estado, lat, lng</td>
+          <td>id, codigo, nome, endereco, cidade, estado, lat, lng, created_at</td>
         </tr>
         <tr>
-          <td><strong>bag_inventory</strong></td>
-          <td>Movimentação de sacas</td>
-          <td>id, nodo_id, tipo (chegada/expedicao), quantidade, placa, transportadora, created_at</td>
+          <td><strong>sacas_movimentos</strong></td>
+          <td>Movimentação de sacas (chegada e expedição)</td>
+          <td>id, nodo_id, tipo ('chegada'/'expedicao'), quantidade, transportadora, placa, created_at</td>
         </tr>
         <tr>
-          <td><strong>package_inventory</strong></td>
+          <td><strong>pacotes_inventario</strong></td>
           <td>Inventário físico de pacotes por agência</td>
-          <td>id, nodo_id, codigo_pacote, foto_url, status, created_at</td>
+          <td>id, nodo_id, codigo_pacote, foto_url, created_at</td>
         </tr>
         <tr>
-          <td><strong>package_expeditions</strong></td>
-          <td>Expedições de pacotes da agência para SVC</td>
-          <td>id, nodo_id, codigo_pacote, motorista_nome, motorista_cpf, placa, transportadora, created_at</td>
+          <td><strong>pacotes_expedicoes</strong></td>
+          <td>Expedições de pacotes da agência para o SVC</td>
+          <td>id, nodo_id, codigo_pacote, nome_motorista, cpf_motorista, placa, transportadora, expedicao_id, created_at</td>
         </tr>
         <tr>
-          <td><strong>svc_receipts</strong></td>
-          <td>Recebimentos no SVC</td>
-          <td>id, codigo_pacote, operador, created_at</td>
+          <td><strong>svc_recebimentos</strong></td>
+          <td>Sessões de recebimento no SVC (cabeçalho)</td>
+          <td>id, nome_motorista, cpf_motorista, placa, transportadora, created_at</td>
         </tr>
         <tr>
-          <td><strong>svc_expeditions</strong></td>
-          <td>Expedições do SVC para destino final</td>
-          <td>id, codigo_pacote, placa, transportadora, created_at</td>
+          <td><strong>svc_recebimentos_pacotes</strong></td>
+          <td>Pacotes individuais de cada sessão de recebimento SVC</td>
+          <td>id, recebimento_id, codigo_pacote, created_at</td>
         </tr>
       </tbody>
     </table>
+
+    <div class="highlight-box">
+      <h3>🔗 Como as tabelas se relacionam</h3>
+      <p><strong>pacotes_inventario</strong> → pacote inventariado na agência</p>
+      <p><strong>pacotes_expedicoes</strong> → mesmo código ligado a um <code>expedicao_id</code> e motorista → saiu da agência</p>
+      <p><strong>svc_recebimentos_pacotes</strong> → mesmo código escaneado no SVC → ciclo completo</p>
+      <p>O painel Consulta faz JOINs entre essas três tabelas para calcular status de cada pacote e divergências de motoristas.</p>
+    </div>
 
     <div class="alert green">
       <div class="alert-icon">📸</div>
       <div class="alert-content">
         <h4>Storage de fotos</h4>
-        <p>Fotos de pacotes ficam no Supabase Storage no bucket <strong>"package-photos"</strong>. URLs públicas são salvas na coluna <code>foto_url</code> da tabela <code>package_inventory</code>.</p>
+        <p>Fotos de pacotes ficam no Supabase Storage no bucket <strong>"package-photos"</strong>. URLs públicas são salvas na coluna <code>foto_url</code> da tabela <code>pacotes_inventario</code>.</p>
       </div>
     </div>
 
     <div class="alert blue">
       <div class="alert-icon">🔧</div>
       <div class="alert-content">
-        <h4>Como acessar o banco</h4>
-        <p>Acesse <strong>supabase.com → Project: gjjwcpdkdqvfgephwulk → Table Editor</strong> para ver e filtrar todos os registros. Use o <strong>SQL Editor</strong> para queries avançadas e relatórios.</p>
+        <h4>Como acessar o banco diretamente</h4>
+        <p>Acesse <strong>app.supabase.com → Projeto gjjwcpdkdqvfgephwulk → Table Editor</strong> para ver e filtrar todos os registros. Use o <strong>SQL Editor</strong> para queries avançadas. Exemplo de query para ver pendências:</p>
+        <p style="font-family:monospace;font-size:12px;background:rgba(255,255,255,0.1);padding:8px;border-radius:6px;margin-top:8px;">SELECT codigo_pacote FROM pacotes_expedicoes<br>WHERE codigo_pacote NOT IN (SELECT codigo_pacote FROM svc_recebimentos_pacotes)</p>
       </div>
     </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- SECTION 8 — DEPLOY -->
+  <!-- SECTION 9 — DEPLOY -->
   <div class="section" id="deploy">
     <div class="section-header">
       <div class="section-icon" style="background:#F0FDF4;">🚀</div>
       <div class="section-meta">
-        <div class="section-num">Seção 08</div>
+        <div class="section-num">Seção 09</div>
         <div class="section-title">Deploy e Infraestrutura</div>
       </div>
     </div>
@@ -1195,7 +1338,7 @@
         <div class="step-left"><div class="step-num blue">2</div><div class="step-line"></div></div>
         <div class="step-body">
           <h3>GitHub Actions executa o build</h3>
-          <p>Instala dependências e roda <code>npx expo export --platform web</code>. Gera a pasta <code>dist/</code> com HTML/JS/CSS estático.</p>
+          <p>Instala dependências e roda <code>npx expo export --platform web</code>. Gera a pasta <code>dist/</code>. O workflow também copia <code>docs/</code> para <code>dist/docs/</code> (guias HTML ficam disponíveis em produção).</p>
         </div>
       </div>
       <div class="step">
@@ -1236,85 +1379,12 @@
     </div>
 
     <table>
-      <thead>
-        <tr><th>Branch</th><th>Conteúdo</th><th>Função</th></tr>
-      </thead>
+      <thead><tr><th>Branch</th><th>Conteúdo</th><th>Função</th></tr></thead>
       <tbody>
-        <tr>
-          <td><code>main</code></td>
-          <td>Código-fonte completo</td>
-          <td>Desenvolvimento — edite aqui</td>
-        </tr>
-        <tr>
-          <td><code>gh-pages</code></td>
-          <td>Build compilado (dist/)</td>
-          <td>Produção — gerado automaticamente, NÃO edite</td>
-        </tr>
+        <tr><td><code>main</code></td><td>Código-fonte completo</td><td>Desenvolvimento — edite aqui</td></tr>
+        <tr><td><code>gh-pages</code></td><td>Build compilado (dist/)</td><td>Produção — gerado automaticamente, NÃO edite</td></tr>
       </tbody>
     </table>
-  </div>
-
-  <div class="divider"></div>
-
-  <!-- SECTION 9 — CSV -->
-  <div class="section" id="csv">
-    <div class="section-header">
-      <div class="section-icon" style="background:#FFF7ED;">📊</div>
-      <div class="section-meta">
-        <div class="section-num">Seção 09</div>
-        <div class="section-title">Importação de NODOs via CSV</div>
-      </div>
-    </div>
-
-    <p style="font-size:15px;color:var(--gray);margin-bottom:20px;line-height:1.7;">
-      A importação via Google Sheets direto pode falhar por restrições de CORS no browser. O método recomendado é fazer download do CSV e fazer upload no app.
-    </p>
-
-    <div class="steps">
-      <div class="step">
-        <div class="step-left"><div class="step-num black">1</div><div class="step-line"></div></div>
-        <div class="step-body">
-          <h3>Abra a planilha Google Sheets</h3>
-          <p>Planilha: <strong>Controle NODOS</strong> → Aba: <strong>BASE - Nodos</strong></p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-left"><div class="step-num blue">2</div><div class="step-line"></div></div>
-        <div class="step-body">
-          <h3>Exporte como CSV</h3>
-          <p><strong>Arquivo → Fazer download → Valores separados por vírgula (.csv)</strong>. Salve no celular ou computador.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-left"><div class="step-num green">3</div><div class="step-line"></div></div>
-        <div class="step-body">
-          <h3>Abra o painel admin no NEX</h3>
-          <p>Na tela inicial → <strong>NOVOS NODOS</strong> → Digite o PIN de administrador.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-left"><div class="step-num orange">4</div><div class="step-line"></div></div>
-        <div class="step-body">
-          <h3>Upload do CSV</h3>
-          <p>Clique em <strong>"Selecionar arquivo CSV"</strong> → Selecione o arquivo baixado. O sistema parseia e inicia a importação automaticamente.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-left"><div class="step-num teal">5</div></div>
-        <div class="step-body">
-          <h3>Aguarde geocodificação</h3>
-          <p>Para cada NODO com endereço, o sistema consulta o Nominatim com throttle de 1s entre requests. Acompanhe o progresso na tela.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="alert green">
-      <div class="alert-icon">♻️</div>
-      <div class="alert-content">
-        <h4>Idempotente — seguro para re-importar</h4>
-        <p>O sistema verifica se o código do NODO já existe antes de inserir. Re-importar o mesmo CSV só adiciona os NODOs <strong>novos</strong>, sem duplicar os existentes.</p>
-      </div>
-    </div>
   </div>
 
   <div class="divider"></div>
@@ -1330,56 +1400,29 @@
     </div>
 
     <table>
-      <thead>
-        <tr><th>Problema</th><th>Diagnóstico</th><th>Solução</th></tr>
-      </thead>
+      <thead><tr><th>Problema</th><th>Diagnóstico</th><th>Solução</th></tr></thead>
       <tbody>
-        <tr>
-          <td>Site fora do ar</td>
-          <td>Verificar aba Actions no GitHub</td>
-          <td>Se build falhou: ver logs de erro → corrigir código → novo push</td>
-        </tr>
-        <tr>
-          <td>Câmera não funciona</td>
-          <td>Permissão negada no browser</td>
-          <td>Configurações do browser → Permissões → Câmera → Permitir</td>
-        </tr>
-        <tr>
-          <td>NODO não aparece na lista</td>
-          <td>Coordenadas não cadastradas ou fora do raio</td>
-          <td>Re-importar CSV com endereço correto; verificar geocodificação no Supabase</td>
-        </tr>
-        <tr>
-          <td>CSV não importa nada</td>
-          <td>Formato de colunas diferente do esperado</td>
-          <td>Confirmar que é a aba "BASE - Nodos" da planilha correta</td>
-        </tr>
-        <tr>
-          <td>Dados não aparecem</td>
-          <td>Problema de RLS no Supabase</td>
-          <td>Verificar políticas RLS no Supabase → Authentication → Policies</td>
-        </tr>
-        <tr>
-          <td>Mudar PIN de admin</td>
-          <td>—</td>
-          <td>Editar <code>ADMIN_PIN</code> em <code>src/config.ts</code> → push → aguardar build</td>
-        </tr>
-        <tr>
-          <td>Atualizar credenciais Supabase</td>
-          <td>—</td>
-          <td>Editar <code>src/config.ts</code> → novas keys do Supabase Dashboard</td>
-        </tr>
+        <tr><td>Site fora do ar</td><td>Verificar aba Actions no GitHub</td><td>Se build falhou: ver logs → corrigir código → novo push</td></tr>
+        <tr><td>Câmera não funciona</td><td>Permissão negada no browser</td><td>Configurações do browser → Permissões → Câmera → Permitir</td></tr>
+        <tr><td>NODO não aparece na lista</td><td>Coordenadas não cadastradas ou fora do raio 1km</td><td>Editar coordenadas manualmente no painel admin (📍)</td></tr>
+        <tr><td>CSV não importa nada</td><td>Formato de colunas diferente do esperado</td><td>Confirmar que é a aba "BASE - Nodos" da planilha correta</td></tr>
+        <tr><td>Dados não aparecem no Consulta</td><td>Problema de RLS no Supabase ou senha incorreta</td><td>Verificar políticas RLS no Supabase → Authentication → Policies</td></tr>
+        <tr><td>Mudar PIN de admin ou Consulta</td><td>—</td><td>Editar <code>ADMIN_PIN</code> ou <code>CONSULTA_PIN</code> em <code>src/config.ts</code> → push</td></tr>
+        <tr><td>Atualizar credenciais Supabase</td><td>—</td><td>Editar <code>src/config.ts</code> → novas keys do Supabase Dashboard</td></tr>
+        <tr><td>Expedição não confirma (web)</td><td>Alert.alert não funciona em PWA</td><td>Já corrigido — usa Modal nativo. Se persistir: recarregar a página (F5)</td></tr>
+        <tr><td>Timestamps com horário errado</td><td>Fuso do dispositivo diferente de BRT</td><td>Já corrigido — sistema usa <code>America/Sao_Paulo</code> via Intl. Verificar src/lib/utils.ts</td></tr>
+        <tr><td>Scanner lento ou não lê</td><td>Câmera de baixa resolução ou código danificado</td><td>Tentar digitar manualmente ou foto. Verificar luz ambiente</td></tr>
       </tbody>
     </table>
 
     <div class="highlight-box">
-      <h3>📊 Monitoramento</h3>
+      <h3>📊 Monitoramento via Supabase Dashboard</h3>
       <p>Use o <strong>Supabase Dashboard</strong> para monitoramento operacional:</p>
       <p>• <strong>Table Editor:</strong> Veja todos os registros de inventário em tempo real<br>
       • <strong>SQL Editor:</strong> Escreva queries para relatórios personalizados<br>
       • <strong>Storage:</strong> Veja as fotos de pacotes armazenadas<br>
       • <strong>Logs:</strong> Veja erros e queries lentas</p>
-      <p>URL: <strong style="color:var(--yellow);">app.supabase.com → Projeto gjjwcpdkdqvfgephwulk</strong></p>
+      <p>URL: <strong>app.supabase.com → Projeto gjjwcpdkdqvfgephwulk</strong></p>
     </div>
 
     <div class="alert blue">
@@ -1398,18 +1441,19 @@
         <ul>
           <li>A <strong>chave anônima do Supabase</strong> (anon key) é pública por design — exposta no frontend. Isso é normal e seguro.</li>
           <li>As políticas de <strong>Row Level Security (RLS)</strong> garantem que dados só são acessíveis com a chave correta.</li>
-          <li>O <strong>PIN de admin</strong> é verificado client-side — não é uma medida de segurança crítica, apenas um bloqueio operacional.</li>
+          <li>O <strong>PIN de admin</strong> e o <strong>PIN do Consulta</strong> são verificados client-side — são bloqueios operacionais, não de segurança crítica.</li>
           <li>Para segurança real, considere adicionar autenticação Supabase Auth em versões futuras.</li>
         </ul>
       </div>
     </div>
+
   </div>
 
 </div>
 
 <footer>
   <strong>NEX Inventory</strong> — Mercado Livre Logística<br>
-  Documentação Técnica Completa · Time MELI · v1.0
+  Documentação Técnica Completa · Time MELI · v2.0
   <div class="footer-links">
     <a href="https://luishenrique785.github.io/NEX">🌐 Sistema ao vivo</a>
     <a href="https://github.com/luishenrique785/NEX">📦 Repositório GitHub</a>
