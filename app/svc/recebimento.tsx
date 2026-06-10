@@ -68,7 +68,6 @@ export default function SVCRecebimentoScreen() {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flashEnabled, setFlashEnabled] = useState(false);
-  const [facing, setFacing] = useState<'back' | 'front'>('back');
   const scanCooldown = useRef(false);
   const [manualCode, setManualCode] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -144,54 +143,30 @@ export default function SVCRecebimentoScreen() {
     setConfirmModal(true);
   }
 
-    Alert.alert(
-      'Confirmar Recebimento',
-      `Registrar recebimento de ${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            if (isDemo) {
-              Alert.alert(
-                '✅ [DEMO] Recebimento Registrado!',
-                `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`,
-                [{ text: 'OK', onPress: () => router.back() }]
-              );
-              return;
-            }
-            setSaving(true);
-
-            const { data: recData, error: recError } = await supabase
-              .from('svc_recebimentos')
-              .insert({
-                placa: placa.trim() || null,
-                transportadora: transportadora.trim() || null,
-                total_pacotes: pacotes.length,
-              })
-              .select()
-              .single();
-
-    if (recError) {
-      setSaving(false);
-      Alert.alert('Erro', recError.message);
+  async function doSave() {
+    setConfirmModal(false);
+    if (isDemo) {
+      Alert.alert('✅ [DEMO] Recebimento Registrado!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`, [{ text: 'OK', onPress: () => router.replace('/svc') }]);
       return;
     }
-
+    setSaving(true);
+    const { data: recData, error: recError } = await supabase
+      .from('svc_recebimentos')
+      .insert({ placa: placa.trim() || null, transportadora: transportadora.trim() || null, total_pacotes: pacotes.length })
+      .select().single();
+    if (recError) { setSaving(false); Alert.alert('Erro', recError.message); return; }
     const items: any[] = [];
     for (const p of pacotes) {
       let fotoUrl: string | null = null;
       if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
       items.push({ recebimento_id: recData.id, codigo: p.codigo, tipo_entrada: p.tipo_entrada, foto_url: fotoUrl });
     }
-
     await supabase.from('svc_recebimentos_pacotes').insert(items);
-
     setSaving(false);
     router.replace('/svc');
   }
 
-  const typeIcon = (t: string) => t === 'scanner' ? '📷' : t === 'manual' ? '⌨️' : '📸';
+  const typeIcon = (t: string) => t === 'scanner' ? '📷' : t === 'manual' ? '[teclado]' : '📸';
 
   // Scanner
   if (inputMode === 'scanner') {

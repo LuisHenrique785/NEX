@@ -69,7 +69,6 @@ export default function ExpedicaoPacotesScreen() {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flashEnabled, setFlashEnabled] = useState(false);
-  const [facing, setFacing] = useState<'back' | 'front'>('back');
   const scanCooldown = useRef(false);
 
   // Manual
@@ -153,85 +152,40 @@ export default function ExpedicaoPacotesScreen() {
     } catch { return null; }
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!placa.trim()) { Alert.alert('Atenção', 'Informe a placa.'); return; }
     if (!transportadora.trim()) { Alert.alert('Atenção', 'Informe a transportadora.'); return; }
     if (pacotes.length === 0) { Alert.alert('Atenção', 'Adicione pelo menos um pacote.'); return; }
     setConfirmModal(true);
   }
 
-    Alert.alert(
-      'Confirmar Expedição',
-      `Expedir ${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} — ${transportadora.trim()} (${placa.trim()})?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            if (isDemo) {
-              Alert.alert(
-                '✅ [DEMO] Expedição Registrada!',
-                `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`,
-                [{ text: 'OK', onPress: () => router.back() }]
-              );
-              return;
-            }
-            setSaving(true);
-
-            // Create expedition
-            const { data: expData, error: expError } = await supabase
-              .from('pacotes_expedicoes')
-              .insert({
-                nodo_id: nodoId,
-                placa: placa.trim(),
-                transportadora: transportadora.trim(),
-                total_pacotes: pacotes.length,
-              })
-              .select()
-              .single();
-
-    if (expError) {
-      setSaving(false);
-      Alert.alert('Erro', expError.message);
+  async function doSave() {
+    setConfirmModal(false);
+    if (isDemo) {
+      Alert.alert('✅ [DEMO] Expedição Registrada!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
       return;
     }
-
+    setSaving(true);
+    const { data: expData, error: expError } = await supabase
+      .from('pacotes_expedicoes')
+      .insert({ nodo_id: nodoId, placa: placa.trim(), transportadora: transportadora.trim(), total_pacotes: pacotes.length })
+      .select().single();
+    if (expError) { setSaving(false); Alert.alert('Erro', expError.message); return; }
     for (const p of pacotes) {
       let fotoUrl: string | null = null;
       if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
-
-      const { data: existing } = await supabase
-        .from('pacotes_inventario')
-        .select('id')
-        .eq('nodo_id', nodoId)
-        .eq('codigo', p.codigo)
-        .eq('status', 'inventoried')
-        .single();
-
+      const { data: existing } = await supabase.from('pacotes_inventario').select('id').eq('nodo_id', nodoId).eq('codigo', p.codigo).eq('status', 'inventoried').single();
       if (existing) {
-        await supabase
-          .from('pacotes_inventario')
-          .update({ status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() })
-          .eq('id', existing.id);
+        await supabase.from('pacotes_inventario').update({ status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() }).eq('id', existing.id);
       } else {
-        await supabase.from('pacotes_inventario').insert({
-          nodo_id: nodoId,
-          codigo: p.codigo,
-          tipo_entrada: p.tipo_entrada,
-          foto_url: fotoUrl,
-          status: 'expedited',
-          expedicao_id: expData.id,
-          expedited_at: new Date().toISOString(),
-        });
+        await supabase.from('pacotes_inventario').insert({ nodo_id: nodoId, codigo: p.codigo, tipo_entrada: p.tipo_entrada, foto_url: fotoUrl, status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() });
       }
     }
-
     setSaving(false);
     router.replace(`/agencia/${nodoId}/pacotes`);
   }
 
-  const typeIcon = (tipo: string) =>
-    tipo === 'scanner' ? '📷' : tipo === 'manual' ? '⌨️' : '📸';
+  const typeIcon = (tipo: string) => tipo === 'scanner' ? '📷' : tipo === 'manual' ? '[teclado]' : '📸';
 
   // ─── SCANNER MODAL ────────────────────────────────────────────
   if (inputMode === 'scanner') {
@@ -439,7 +393,7 @@ export default function ExpedicaoPacotesScreen() {
               Confirmar Expedição
             </Text>
             <Text style={{ fontSize: 15, color: theme.textSec, lineHeight: 22, marginBottom: 20 }}>
-              Expedir {pacotes.length} pacote{pacotes.length !== 1 ? 's' : ''} com {nomeMotorista.trim()} ({placa.trim()})?
+              Expedir {pacotes.length} pacote{pacotes.length !== 1 ? 's' : ''} — {transportadora.trim()} ({placa.trim()})?
             </Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="Cancelar" onPress={() => setConfirmModal(false)} variant="outline" style={{ flex: 1 }} />
