@@ -172,18 +172,27 @@ export default function ExpedicaoPacotesScreen() {
       .insert({ nodo_id: nodoId, placa: placa.trim(), transportadora: transportadora.trim(), total_pacotes: pacotes.length })
       .select().single();
     if (expError) { setSaving(false); Alert.alert('Erro', expError.message); return; }
+
+    let erros = 0;
     for (const p of pacotes) {
       let fotoUrl: string | null = null;
       if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
       const { data: existing } = await supabase.from('pacotes_inventario').select('id').eq('nodo_id', nodoId).eq('codigo', p.codigo).eq('status', 'inventoried').single();
       if (existing) {
-        await supabase.from('pacotes_inventario').update({ status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() }).eq('id', existing.id);
+        const { error } = await supabase.from('pacotes_inventario').update({ status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() }).eq('id', existing.id);
+        if (error) erros++;
       } else {
-        await supabase.from('pacotes_inventario').insert({ nodo_id: nodoId, codigo: p.codigo, tipo_entrada: p.tipo_entrada, foto_url: fotoUrl, status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() });
+        const { error } = await supabase.from('pacotes_inventario').insert({ nodo_id: nodoId, codigo: p.codigo, tipo_entrada: p.tipo_entrada, foto_url: fotoUrl, status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() });
+        if (error) erros++;
       }
     }
+
     setSaving(false);
-    router.replace(`/agencia/${nodoId}/pacotes`);
+    if (erros > 0) {
+      Alert.alert('Atenção', `Expedição salva, mas ${erros} pacote${erros !== 1 ? 's' : ''} tiv${erros !== 1 ? 'eram' : 'e'} erro ao registrar. Verifique na Consulta.`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
+    } else {
+      Alert.alert('✅ Expedição Registrada!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso.`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
+    }
   }
 
   const typeIcon = (tipo: string) => tipo === 'scanner' ? '📷' : tipo === 'manual' ? '[teclado]' : '📸';

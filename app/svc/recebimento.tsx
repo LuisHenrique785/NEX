@@ -162,9 +162,13 @@ export default function SVCRecebimentoScreen() {
       if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
       items.push({ recebimento_id: recData.id, codigo: p.codigo, tipo_entrada: p.tipo_entrada, foto_url: fotoUrl });
     }
-    await supabase.from('svc_recebimentos_pacotes').insert(items);
+    const { error: itemsError } = await supabase.from('svc_recebimentos_pacotes').insert(items);
     setSaving(false);
-    router.replace('/svc');
+    if (itemsError) {
+      Alert.alert('Atenção', `Recebimento salvo, mas houve erro ao registrar os pacotes individualmente: ${itemsError.message}`, [{ text: 'OK', onPress: () => router.replace('/svc') }]);
+    } else {
+      Alert.alert('✅ Recebimento Registrado!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} recebido${pacotes.length !== 1 ? 's' : ''} com sucesso.`, [{ text: 'OK', onPress: () => router.replace('/svc') }]);
+    }
   }
 
   const typeIcon = (t: string) => t === 'scanner' ? '📷' : t === 'manual' ? '[teclado]' : '📸';
