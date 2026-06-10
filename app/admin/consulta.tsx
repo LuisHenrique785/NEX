@@ -10,7 +10,7 @@ import { COLORS, Card, Badge, Button } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
 import type { Theme } from '../../src/lib/theme';
 import { CONSULTA_PASSWORD } from '../../src/config';
-import { formatDateTimeBRT } from '../../src/lib/utils';
+import { formatDateTimeBRT, startOfTodayBRT } from '../../src/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────
 interface Expedicao {
@@ -35,8 +35,55 @@ interface PackageHistory {
   status: 'inventoried' | 'expedited' | 'received_svc';
 }
 
-type MainTab = 'expedicoes' | 'pendencias' | 'busca';
+type MainTab = 'expedicoes' | 'pendencias' | 'busca' | 'exportar';
 type StatusFilter = 'all' | 'pending' | 'complete';
+
+const EXPORT_PERIODS = [
+  { label: 'Hoje',    days: 1  },
+  { label: '7 dias',  days: 7  },
+  { label: '15 dias', days: 15 },
+  { label: '30 dias', days: 30 },
+] as const;
+
+function getStartDate(days: number): Date {
+  const today = startOfTodayBRT();
+  return new Date(today.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+}
+
+function buildCSV(rows: any[]): string {
+  const headers = [
+    'Data/Hora (BRT)', 'NODO', 'Código', 'Placa', 'Transportadora',
+    'Total Declarado', 'Enviados', 'Recebidos SVC', 'Pendentes',
+  ];
+  const escape = (v: any) => {
+    const s = String(v ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n')
+      ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(',')];
+  for (const r of rows) {
+    lines.push([
+      r.created_at_brt, r.nodo_nome, r.nodo_codigo,
+      r.placa, r.transportadora,
+      r.total_pacotes, r.enviados, r.recebidos, r.pendentes,
+    ].map(escape).join(','));
+  }
+  return '﻿' + lines.join('\r\n');
+}
+
+function downloadCSV(csv: string, filename: string) {
+  if (Platform.OS !== 'web') {
+    Alert.alert('Não disponível', 'O download de CSV só está disponível no navegador web.');
+    return;
+  }
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ─── Styles ──────────────────────────────────────────────────────
 function makeStyles(t: Theme) {
@@ -200,6 +247,10 @@ export default function ConsultaScreen() {
   const [searching, setSearching] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
+  // Export tab state
+  const [exportPeriod, setExportPeriod] = useState<1 | 7 | 15 | 30>(7);
+  const [exportLoading, setExportLoading] = useState(false);
+
   function handleLogin() {
     if (password === CONSULTA_PASSWORD) {
       setUnlocked(true);
@@ -318,6 +369,70 @@ export default function ConsultaScreen() {
       });
     } finally {
       setSearching(false);
+    }
+  }
+
+  // ─── Export CSV ───────────────────────────────────────────────────
+  async function handleExport() {
+    setExportLoading(true);
+    try {
+      const since = getStartDate(exportPeriod).toISOString();
+      const { data: exps } = await supabase
+        .from('pacotes_expedicoes')
+        .select('id, created_at, placa, transportadora, total_pacotes, nodo_id, nodos(nome, codigo)')
+        .gte('created_at', since)
+        .order('created_at', { ascending: false });
+
+      if (!exps || exps.length === 0) {
+        Alert.alert('Sem dados', `Nenhuma expedição encontrada nos últimos ${exportPeriod === 1 ? 'hoje' : exportPeriod + ' dias'}.`);
+        return;
+      }
+
+      const expIds = exps.map((e: any) => e.id);
+      const { data: packages } = await supabase
+        .from('pacotes_inventario')
+        .select('codigo, expedicao_id')
+        .in('expedicao_id', expIds)
+        .eq('status', 'expedited');
+
+      const pkgByExp = new Map<string, string[]>();
+      (packages || []).forEach((p: any) => {
+        if (!pkgByExp.has(p.expedicao_id)) pkgByExp.set(p.expedicao_id, []);
+        pkgByExp.get(p.expedicao_id)!.push(p.codigo);
+      });
+
+      const allCodes = (packages || []).map((p: any) => p.codigo);
+      let receivedSet = new Set<string>();
+      if (allCodes.length > 0) {
+        const { data: received } = await supabase
+          .from('svc_recebimentos_pacotes')
+          .select('codigo')
+          .in('codigo', allCodes);
+        receivedSet = new Set((received || []).map((r: any) => r.codigo));
+      }
+
+      const rows = exps.map((e: any) => {
+        const codes = pkgByExp.get(e.id) || [];
+        const recebidos = codes.filter((c: string) => receivedSet.has(c)).length;
+        const enviados = codes.length || e.total_pacotes;
+        return {
+          created_at_brt: formatDateTimeBRT(e.created_at),
+          nodo_nome: e.nodos?.nome || '—',
+          nodo_codigo: e.nodos?.codigo || '—',
+          placa: e.placa || '',
+          transportadora: e.transportadora || '',
+          total_pacotes: e.total_pacotes,
+          enviados,
+          recebidos,
+          pendentes: enviados - recebidos,
+        };
+      });
+
+      const label = exportPeriod === 1 ? 'hoje' : `${exportPeriod}dias`;
+      const date = new Date().toISOString().slice(0, 10);
+      downloadCSV(buildCSV(rows), `nex-expedicoes-${label}-${date}.csv`);
+    } finally {
+      setExportLoading(false);
     }
   }
 
@@ -472,6 +587,14 @@ export default function ConsultaScreen() {
           >
             <Text style={[styles.tabLabel, tab === 'busca' && styles.tabLabelActive]}>
               🔍 Buscar
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, tab === 'exportar' && styles.tabActive]}
+            onPress={() => setTab('exportar')}
+          >
+            <Text style={[styles.tabLabel, tab === 'exportar' && styles.tabLabelActive]}>
+              📥 CSV
             </Text>
           </TouchableOpacity>
         </View>
@@ -648,6 +771,81 @@ export default function ConsultaScreen() {
                 )}
               </Card>
             )}
+          </>
+        )}
+
+        {/* ── ABA: EXPORTAR CSV ── */}
+        {tab === 'exportar' && (
+          <>
+            <Text style={styles.sectionLabel}>EXPORTAR EXPEDIÇÕES EM CSV</Text>
+
+            <Card style={{ padding: 16, marginBottom: 16 }}>
+              <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 20 }}>
+                Selecione o período e baixe uma planilha com todas as expedições registradas, incluindo NODO, transportadora, placa e status de recebimento no SVC.
+              </Text>
+            </Card>
+
+            <Text style={[styles.sectionLabel, { marginTop: 4 }]}>PERÍODO</Text>
+            <View style={[styles.filterRow, { flexWrap: 'wrap' }]}>
+              {EXPORT_PERIODS.map(p => (
+                <TouchableOpacity
+                  key={p.days}
+                  style={[
+                    styles.filterChip,
+                    { paddingVertical: 10, paddingHorizontal: 20 },
+                    exportPeriod === p.days && styles.filterChipActive,
+                  ]}
+                  onPress={() => setExportPeriod(p.days as 1 | 7 | 15 | 30)}
+                >
+                  <Text style={[styles.filterChipText, exportPeriod === p.days && styles.filterChipTextActive]}>
+                    {p.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Card style={{ padding: 14, marginBottom: 20, backgroundColor: COLORS.blue + '15' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={{ fontSize: 24 }}>📋</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text }}>
+                    {exportPeriod === 1 ? 'Expedições de hoje' : `Expedições dos últimos ${exportPeriod} dias`}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: theme.textSec, marginTop: 2 }}>
+                    Colunas: Data/Hora · NODO · Código · Placa · Transportadora · Total · Enviados · Recebidos · Pendentes
+                  </Text>
+                </View>
+              </View>
+            </Card>
+
+            <TouchableOpacity
+              style={{
+                backgroundColor: exportLoading ? theme.surface : COLORS.black,
+                borderRadius: 14, padding: 18,
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+                borderWidth: exportLoading ? 1.5 : 0,
+                borderColor: theme.border,
+              }}
+              onPress={handleExport}
+              disabled={exportLoading}
+              activeOpacity={0.85}
+            >
+              {exportLoading
+                ? <ActivityIndicator color={COLORS.yellow} size="small" />
+                : <Text style={{ fontSize: 20 }}>📥</Text>
+              }
+              <Text style={{
+                fontSize: 16, fontWeight: '900',
+                color: exportLoading ? theme.textSec : COLORS.yellow,
+              }}>
+                {exportLoading ? 'Gerando CSV...' : 'Baixar CSV'}
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={{ fontSize: 11, color: theme.textTer, textAlign: 'center', marginTop: 12, lineHeight: 16 }}>
+              O download é iniciado automaticamente no navegador.{'\n'}
+              Abra o arquivo no Excel ou Google Sheets.
+            </Text>
           </>
         )}
 
