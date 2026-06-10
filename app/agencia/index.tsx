@@ -168,6 +168,7 @@ export default function SelectNodoScreen() {
       setNodos(processed);
       setFiltered(processed);
     } catch (e: any) {
+      setLocationError(true);
       Alert.alert('Erro', e.message || 'Não foi possível carregar os NODOS.');
     } finally {
       setLoading(false);
@@ -321,8 +322,8 @@ export default function SelectNodoScreen() {
     );
   }
 
-  // ─── Blocked: location denied, no address entered ──────────────
-  if (locationError && !userLocation) {
+  // ─── Blocked: no location and not in demo mode ────────────────
+  if (!userLocation && !isDemo) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
@@ -361,6 +362,8 @@ export default function SelectNodoScreen() {
   }
 
   // ─── Main screen ───────────────────────────────────────────────
+  const demoNoLocation = isDemo && !userLocation;
+
   const renderItem = ({ item }: { item: Nodo }) => {
     const isNearby = item.distance !== undefined && item.distance <= MAX_DISTANCE_KM;
     const noCoords = !item.lat || !item.lng;
@@ -401,6 +404,18 @@ export default function SelectNodoScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
+        {demoNoLocation && (
+          <View style={{
+            backgroundColor: '#FF6B0022', borderWidth: 1, borderColor: '#FF6B0055',
+            borderRadius: 12, padding: 12, margin: 12, marginBottom: 0,
+            flexDirection: 'row', alignItems: 'center', gap: 8,
+          }}>
+            <Text style={{ fontSize: 16 }}>⚠️</Text>
+            <Text style={{ flex: 1, fontSize: 12, color: '#FF6B00', fontWeight: '700', lineHeight: 17 }}>
+              MODO DEMO: Localização não detectada. No modo real o acesso seria bloqueado.
+            </Text>
+          </View>
+        )}
         <View style={styles.searchBox}>
           <TextInput
             style={styles.searchInput}
