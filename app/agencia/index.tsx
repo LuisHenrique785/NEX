@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, Alert, SafeAreaView, TextInput, Modal,
@@ -7,7 +7,7 @@ import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { supabase } from '../../src/lib/supabase';
 import { haversineDistance, geocodeAddress } from '../../src/lib/geocoding';
-import { COLORS, Card, Badge } from '../../src/components/ui';
+import { COLORS, Badge } from '../../src/components/ui';
 import { MAX_DISTANCE_KM } from '../../src/config';
 import { useTheme } from '../../src/lib/theme';
 
@@ -29,15 +29,6 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     container: { flex: 1 },
     loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
     loadingText: { marginTop: 12, color: theme.textSec, fontSize: 14 },
-    locationWarning: {
-      backgroundColor: '#FFF3CD',
-      padding: 12,
-      margin: 16,
-      borderRadius: 10,
-      borderLeftWidth: 4,
-      borderLeftColor: COLORS.orange,
-    },
-    locationWarningText: { color: '#856404', fontSize: 13, fontWeight: '500' },
     searchBox: {
       paddingHorizontal: 16,
       paddingVertical: 10,
@@ -119,6 +110,7 @@ export default function SelectNodoScreen() {
   const [geocoding, setGeocoding] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
   const [confirmNodo, setConfirmNodo] = useState<Nodo | null>(null);
+  const [confirmMessage, setConfirmMessage] = useState('');
 
   useEffect(() => {
     loadNodosWithLocation();
@@ -130,6 +122,7 @@ export default function SelectNodoScreen() {
 
   async function loadNodosWithLocation() {
     setLoading(true);
+    setLocationError(false);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       let userLat: number | null = null;
@@ -160,14 +153,13 @@ export default function SelectNodoScreen() {
         return { ...n, distance: dist ?? undefined };
       });
 
-      // Sort: nearby first (within MAX_DISTANCE_KM), then rest alphabetically
       if (userLat && userLng) {
         const nearby = processed
           .filter((n) => n.distance !== undefined && n.distance <= MAX_DISTANCE_KM)
           .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
-        const far = processed.filter(
-          (n) => n.distance === undefined || n.distance > MAX_DISTANCE_KM
-        ).sort((a, b) => a.nome.localeCompare(b.nome));
+        const far = processed
+          .filter((n) => n.distance === undefined || n.distance > MAX_DISTANCE_KM)
+          .sort((a, b) => a.nome.localeCompare(b.nome));
         processed = [...nearby, ...far];
       }
 
@@ -198,18 +190,21 @@ export default function SelectNodoScreen() {
   }
 
   function handleSelectNodo(nodo: Nodo) {
-    if (
-      userLocation &&
-      nodo.lat &&
-      nodo.lng &&
-      nodo.distance !== undefined &&
-      nodo.distance > MAX_DISTANCE_KM + 5
-    ) {
+    // NODO sem coordenadas: exige confirmação
+    if (!nodo.lat || !nodo.lng) {
       setConfirmNodo(nodo);
+      setConfirmMessage(`O NODO "${nodo.nome}" não possui coordenadas cadastradas e não foi possível verificar a distância. Confirme que este é realmente o seu NODO.`);
       setConfirmModal(true);
-    } else {
-      router.push(`/agencia/${nodo.id}`);
+      return;
     }
+    // NODO com coordenadas muito distante: exige confirmação
+    if (userLocation && nodo.distance !== undefined && nodo.distance > MAX_DISTANCE_KM + 5) {
+      setConfirmNodo(nodo);
+      setConfirmMessage(`O NODO "${nodo.nome}" está a ${nodo.distance.toFixed(1)}km de você. Tem certeza que é o NODO correto?`);
+      setConfirmModal(true);
+      return;
+    }
+    router.push(`/agencia/${nodo.id}`);
   }
 
   async function handleAddressSearch() {
@@ -223,15 +218,19 @@ export default function SelectNodoScreen() {
         return;
       }
       setUserLocation(coords);
+      setLocationError(false);
       setAddressModal(false);
       setAddressInput('');
-      // Re-sort nodos with new coords
       const withDist = nodos.map((n) => ({
         ...n,
         distance: n.lat && n.lng ? haversineDistance(coords.lat, coords.lng, n.lat, n.lng) : undefined,
       }));
-      const nearby = withDist.filter((n) => n.distance !== undefined && n.distance <= MAX_DISTANCE_KM).sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
-      const far = withDist.filter((n) => n.distance === undefined || n.distance > MAX_DISTANCE_KM).sort((a, b) => a.nome.localeCompare(b.nome));
+      const nearby = withDist
+        .filter((n) => n.distance !== undefined && n.distance <= MAX_DISTANCE_KM)
+        .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
+      const far = withDist
+        .filter((n) => n.distance === undefined || n.distance > MAX_DISTANCE_KM)
+        .sort((a, b) => a.nome.localeCompare(b.nome));
       setNodos([...nearby, ...far]);
     } catch {
       Alert.alert('Erro', 'Não foi possível buscar o endereço. Verifique sua conexão.');
@@ -240,41 +239,51 @@ export default function SelectNodoScreen() {
     }
   }
 
-  const renderItem = ({ item }: { item: Nodo }) => {
-    const isNearby = item.distance !== undefined && item.distance <= MAX_DISTANCE_KM;
-    return (
-      <TouchableOpacity
-        style={[styles.nodoCard, isNearby && styles.nodoCardNearby]}
-        onPress={() => handleSelectNodo(item)}
-        activeOpacity={0.8}
-      >
-        <View style={styles.nodoCardLeft}>
-          <View style={[styles.nodoIcon, { backgroundColor: isNearby ? COLORS.yellow : '#F0F0F0' }]}>
-            <Text style={styles.nodoIconText}>{isNearby ? '📍' : '🏪'}</Text>
+  const AddressModal = () => (
+    <Modal visible={addressModal} transparent animationType="fade" onRequestClose={() => setAddressModal(false)}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 400 }}>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>📍 Digitar Endereço</Text>
+          <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 20, marginBottom: 20 }}>
+            Digite o endereço da sua agência para encontrar os NODOs mais próximos.{'\n'}Ex: "Rua das Flores 123, São Paulo SP"
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 2, borderColor: theme.inputBorder, borderRadius: 12,
+              padding: 14, fontSize: 15, color: theme.text,
+              backgroundColor: theme.input, marginBottom: 20,
+            }}
+            placeholder="Endereço completo com cidade e estado"
+            placeholderTextColor={theme.textTer}
+            value={addressInput}
+            onChangeText={setAddressInput}
+            autoFocus
+            onSubmitEditing={handleAddressSearch}
+          />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity
+              style={{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: theme.border, alignItems: 'center' }}
+              onPress={() => { setAddressModal(false); setAddressInput(''); }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: '700', color: theme.textSec }}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: COLORS.yellow, alignItems: 'center', opacity: geocoding ? 0.6 : 1 }}
+              onPress={handleAddressSearch}
+              disabled={geocoding}
+            >
+              {geocoding
+                ? <ActivityIndicator size="small" color="#000" />
+                : <Text style={{ fontSize: 14, fontWeight: '800', color: '#000' }}>Buscar</Text>
+              }
+            </TouchableOpacity>
           </View>
         </View>
-        <View style={styles.nodoCardContent}>
-          <View style={styles.nodoCardHeader}>
-            <Text style={styles.nodoName} numberOfLines={1}>{item.nome}</Text>
-            {isNearby && <Badge label="Próximo" color={COLORS.green} />}
-          </View>
-          {item.codigo && <Text style={styles.nodoCode}>{item.codigo}</Text>}
-          {item.endereco ? (
-            <Text style={styles.nodoAddress} numberOfLines={2}>
-              📌 {item.endereco}{item.cidade ? `, ${item.cidade}` : ''}
-            </Text>
-          ) : null}
-          {item.distance !== undefined && (
-            <Text style={[styles.nodoDistance, { color: isNearby ? COLORS.green : theme.textSec }]}>
-              📏 {item.distance < 1 ? `${(item.distance * 1000).toFixed(0)}m` : `${item.distance.toFixed(1)}km`} de você
-            </Text>
-          )}
-        </View>
-        <Text style={styles.arrow}>›</Text>
-      </TouchableOpacity>
-    );
-  };
+      </View>
+    </Modal>
+  );
 
+  // ─── Loading ───────────────────────────────────────────────────
   if (loading) {
     return (
       <View style={styles.loading}>
@@ -284,7 +293,7 @@ export default function SelectNodoScreen() {
     );
   }
 
-  // Blocked: location denied and no address entered yet
+  // ─── Blocked: location denied, no address entered ──────────────
   if (locationError && !userLocation) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -310,8 +319,7 @@ export default function SelectNodoScreen() {
           <TouchableOpacity
             style={{
               borderWidth: 1.5, borderColor: theme.border, borderRadius: 14, padding: 16,
-              width: '100%', alignItems: 'center',
-              backgroundColor: theme.surface,
+              width: '100%', alignItems: 'center', backgroundColor: theme.surface,
             }}
             onPress={() => setAddressModal(true)}
             activeOpacity={0.85}
@@ -319,62 +327,52 @@ export default function SelectNodoScreen() {
             <Text style={{ fontWeight: '800', fontSize: 15, color: theme.text }}>📍 Digitar meu endereço</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Address Modal */}
-        <Modal visible={addressModal} transparent animationType="fade" onRequestClose={() => setAddressModal(false)}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-            <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 400 }}>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>📍 Digitar Endereço</Text>
-              <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 20, marginBottom: 20 }}>
-                Digite o endereço da sua agência para encontrar os NODOs mais próximos.{'\n'}Ex: "Rua das Flores 123, São Paulo SP"
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 2, borderColor: theme.inputBorder, borderRadius: 12,
-                  padding: 14, fontSize: 15, color: theme.text,
-                  backgroundColor: theme.input, marginBottom: 20,
-                }}
-                placeholder="Endereço completo com cidade e estado"
-                placeholderTextColor={theme.textTer}
-                value={addressInput}
-                onChangeText={setAddressInput}
-                autoFocus
-                onSubmitEditing={handleAddressSearch}
-              />
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <TouchableOpacity
-                  style={{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: theme.border, alignItems: 'center' }}
-                  onPress={() => { setAddressModal(false); setAddressInput(''); }}
-                >
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: theme.textSec }}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: COLORS.yellow, alignItems: 'center', opacity: geocoding ? 0.6 : 1 }}
-                  onPress={handleAddressSearch}
-                  disabled={geocoding}
-                >
-                  {geocoding
-                    ? <ActivityIndicator size="small" color="#000" />
-                    : <Text style={{ fontSize: 14, fontWeight: '800', color: '#000' }}>Buscar</Text>
-                  }
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        <AddressModal />
       </SafeAreaView>
     );
   }
+
+  // ─── Main screen ───────────────────────────────────────────────
+  const renderItem = ({ item }: { item: Nodo }) => {
+    const isNearby = item.distance !== undefined && item.distance <= MAX_DISTANCE_KM;
+    const noCoords = !item.lat || !item.lng;
+    return (
+      <TouchableOpacity
+        style={[styles.nodoCard, isNearby && styles.nodoCardNearby]}
+        onPress={() => handleSelectNodo(item)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.nodoCardLeft}>
+          <View style={[styles.nodoIcon, { backgroundColor: isNearby ? COLORS.yellow : '#F0F0F0' }]}>
+            <Text style={styles.nodoIconText}>{isNearby ? '📍' : '🏪'}</Text>
+          </View>
+        </View>
+        <View style={styles.nodoCardContent}>
+          <View style={styles.nodoCardHeader}>
+            <Text style={styles.nodoName} numberOfLines={1}>{item.nome}</Text>
+            {isNearby && <Badge label="Próximo" color={COLORS.green} />}
+            {noCoords && <Badge label="⚠️ Sem coords" color={COLORS.orange} />}
+          </View>
+          {item.codigo && <Text style={styles.nodoCode}>{item.codigo}</Text>}
+          {item.endereco ? (
+            <Text style={styles.nodoAddress} numberOfLines={2}>
+              📌 {item.endereco}{item.cidade ? `, ${item.cidade}` : ''}
+            </Text>
+          ) : null}
+          {item.distance !== undefined && (
+            <Text style={[styles.nodoDistance, { color: isNearby ? COLORS.green : theme.textSec }]}>
+              📏 {item.distance < 1 ? `${(item.distance * 1000).toFixed(0)}m` : `${item.distance.toFixed(1)}km`} de você
+            </Text>
+          )}
+        </View>
+        <Text style={styles.arrow}>›</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        {locationError && (
-          <View style={styles.locationWarning}>
-            <Text style={styles.locationWarningText}>
-              ⚠️ Localização não disponível. Todos os NODOS são exibidos.
-            </Text>
-          </View>
-        )}
-
         <View style={styles.searchBox}>
           <TextInput
             style={styles.searchInput}
@@ -416,58 +414,15 @@ export default function SelectNodoScreen() {
         )}
       </View>
 
-      {/* Address Modal */}
-      <Modal visible={addressModal} transparent animationType="fade" onRequestClose={() => setAddressModal(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 400 }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>📍 Digitar Endereço</Text>
-            <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 20, marginBottom: 20 }}>
-              Digite o endereço da sua agência para encontrar os NODOs mais próximos.{'\n'}Ex: "Rua das Flores 123, São Paulo SP"
-            </Text>
-            <TextInput
-              style={{
-                borderWidth: 2, borderColor: theme.inputBorder, borderRadius: 12,
-                padding: 14, fontSize: 15, color: theme.text,
-                backgroundColor: theme.input, marginBottom: 20,
-              }}
-              placeholder="Endereço completo com cidade e estado"
-              placeholderTextColor={theme.textTer}
-              value={addressInput}
-              onChangeText={setAddressInput}
-              autoFocus
-              onSubmitEditing={handleAddressSearch}
-            />
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity
-                style={{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: theme.border, alignItems: 'center' }}
-                onPress={() => { setAddressModal(false); setAddressInput(''); }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: '700', color: theme.textSec }}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: COLORS.yellow, alignItems: 'center', opacity: geocoding ? 0.6 : 1 }}
-                onPress={handleAddressSearch}
-                disabled={geocoding}
-              >
-                {geocoding
-                  ? <ActivityIndicator size="small" color="#000" />
-                  : <Text style={{ fontSize: 14, fontWeight: '800', color: '#000' }}>Buscar</Text>
-                }
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <AddressModal />
 
-      {/* Confirm far NODO Modal */}
+      {/* Confirm NODO Modal */}
       <Modal visible={confirmModal} transparent animationType="fade" onRequestClose={() => setConfirmModal(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>⚠️ Confirmar seleção</Text>
             <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 20, marginBottom: 20 }}>
-              {confirmNodo
-                ? `O NODO "${confirmNodo.nome}" está a ${confirmNodo.distance?.toFixed(1)}km de você. Tem certeza que é o NODO correto?`
-                : ''}
+              {confirmMessage}
             </Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <TouchableOpacity
