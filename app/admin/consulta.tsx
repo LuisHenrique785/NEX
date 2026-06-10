@@ -10,7 +10,7 @@ import { COLORS, Card, Badge, Button } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
 import type { Theme } from '../../src/lib/theme';
 import { CONSULTA_PASSWORD } from '../../src/config';
-import { formatDateTimeBRT, startOfTodayBRT } from '../../src/lib/utils';
+import { formatDateTimeBRT } from '../../src/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────
 interface Expedicao {
@@ -44,11 +44,6 @@ const EXPORT_PERIODS = [
   { label: '15 dias', days: 15 },
   { label: '30 dias', days: 30 },
 ] as const;
-
-function getStartDate(days: number): Date {
-  const today = startOfTodayBRT();
-  return new Date(today.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
-}
 
 function buildCSV(rows: any[]): string {
   const headers = [
@@ -248,8 +243,21 @@ export default function ConsultaScreen() {
   const [notFound, setNotFound] = useState(false);
 
   // Export tab state
-  const [exportPeriod, setExportPeriod] = useState<1 | 7 | 15 | 30>(7);
+  const [exportPeriod, setExportPeriod] = useState<1 | 7 | 15 | 30 | null>(7);
+  const [exportDateFrom, setExportDateFrom] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().slice(0, 10);
+  });
+  const [exportDateTo, setExportDateTo] = useState(() => new Date().toISOString().slice(0, 10));
   const [exportLoading, setExportLoading] = useState(false);
+
+  function selectExportPeriod(days: 1 | 7 | 15 | 30) {
+    setExportPeriod(days);
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - (days - 1));
+    setExportDateTo(to.toISOString().slice(0, 10));
+    setExportDateFrom(from.toISOString().slice(0, 10));
+  }
 
   function handleLogin() {
     if (password === CONSULTA_PASSWORD) {
@@ -374,17 +382,27 @@ export default function ConsultaScreen() {
 
   // ─── Export CSV ───────────────────────────────────────────────────
   async function handleExport() {
+    if (!exportDateFrom || !exportDateTo) {
+      Alert.alert('Datas inválidas', 'Preencha as datas de início e fim.');
+      return;
+    }
+    if (exportDateFrom > exportDateTo) {
+      Alert.alert('Datas inválidas', 'A data de início deve ser anterior ou igual à data de fim.');
+      return;
+    }
     setExportLoading(true);
     try {
-      const since = getStartDate(exportPeriod).toISOString();
+      const since = new Date(exportDateFrom + 'T00:00:00-03:00').toISOString();
+      const until = new Date(exportDateTo + 'T23:59:59-03:00').toISOString();
       const { data: exps } = await supabase
         .from('pacotes_expedicoes')
         .select('id, created_at, placa, transportadora, total_pacotes, nodo_id, nodos(nome, codigo)')
         .gte('created_at', since)
+        .lte('created_at', until)
         .order('created_at', { ascending: false });
 
       if (!exps || exps.length === 0) {
-        Alert.alert('Sem dados', `Nenhuma expedição encontrada nos últimos ${exportPeriod === 1 ? 'hoje' : exportPeriod + ' dias'}.`);
+        Alert.alert('Sem dados', `Nenhuma expedição encontrada de ${exportDateFrom} até ${exportDateTo}.`);
         return;
       }
 
@@ -428,9 +446,7 @@ export default function ConsultaScreen() {
         };
       });
 
-      const label = exportPeriod === 1 ? 'hoje' : `${exportPeriod}dias`;
-      const date = new Date().toISOString().slice(0, 10);
-      downloadCSV(buildCSV(rows), `nex-expedicoes-${label}-${date}.csv`);
+      downloadCSV(buildCSV(rows), `nex-expedicoes-${exportDateFrom}-ate-${exportDateTo}.csv`);
     } finally {
       setExportLoading(false);
     }
@@ -779,23 +795,18 @@ export default function ConsultaScreen() {
           <>
             <Text style={styles.sectionLabel}>EXPORTAR EXPEDIÇÕES EM CSV</Text>
 
-            <Card style={{ padding: 16, marginBottom: 16 }}>
-              <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 20 }}>
-                Selecione o período e baixe uma planilha com todas as expedições registradas, incluindo NODO, transportadora, placa e status de recebimento no SVC.
-              </Text>
-            </Card>
-
-            <Text style={[styles.sectionLabel, { marginTop: 4 }]}>PERÍODO</Text>
+            {/* Atalhos de período */}
+            <Text style={[styles.sectionLabel, { marginTop: 4 }]}>ATALHOS DE PERÍODO</Text>
             <View style={[styles.filterRow, { flexWrap: 'wrap' }]}>
               {EXPORT_PERIODS.map(p => (
                 <TouchableOpacity
                   key={p.days}
                   style={[
                     styles.filterChip,
-                    { paddingVertical: 10, paddingHorizontal: 20 },
+                    { paddingVertical: 10, paddingHorizontal: 16 },
                     exportPeriod === p.days && styles.filterChipActive,
                   ]}
-                  onPress={() => setExportPeriod(p.days as 1 | 7 | 15 | 30)}
+                  onPress={() => selectExportPeriod(p.days as 1 | 7 | 15 | 30)}
                 >
                   <Text style={[styles.filterChipText, exportPeriod === p.days && styles.filterChipTextActive]}>
                     {p.label}
@@ -804,15 +815,88 @@ export default function ConsultaScreen() {
               ))}
             </View>
 
+            {/* Seleção de datas */}
+            <Text style={[styles.sectionLabel, { marginTop: 8 }]}>PERÍODO PERSONALIZADO</Text>
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: theme.textSec, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  De
+                </Text>
+                {Platform.OS === 'web' ? (
+                  // @ts-ignore
+                  <input
+                    type="date"
+                    value={exportDateFrom}
+                    onChange={(e: any) => { setExportDateFrom(e.target.value); setExportPeriod(null); }}
+                    style={{
+                      backgroundColor: theme.input,
+                      border: `1.5px solid ${theme.inputBorder}`,
+                      borderRadius: 12,
+                      padding: '12px',
+                      fontSize: 14,
+                      color: theme.text,
+                      width: '100%',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                ) : (
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="AAAA-MM-DD"
+                    placeholderTextColor={theme.textTer}
+                    value={exportDateFrom}
+                    onChangeText={(v) => { setExportDateFrom(v); setExportPeriod(null); }}
+                    keyboardType="numbers-and-punctuation"
+                    maxLength={10}
+                  />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: theme.textSec, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Até
+                </Text>
+                {Platform.OS === 'web' ? (
+                  // @ts-ignore
+                  <input
+                    type="date"
+                    value={exportDateTo}
+                    onChange={(e: any) => { setExportDateTo(e.target.value); setExportPeriod(null); }}
+                    style={{
+                      backgroundColor: theme.input,
+                      border: `1.5px solid ${theme.inputBorder}`,
+                      borderRadius: 12,
+                      padding: '12px',
+                      fontSize: 14,
+                      color: theme.text,
+                      width: '100%',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                ) : (
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="AAAA-MM-DD"
+                    placeholderTextColor={theme.textTer}
+                    value={exportDateTo}
+                    onChangeText={(v) => { setExportDateTo(v); setExportPeriod(null); }}
+                    keyboardType="numbers-and-punctuation"
+                    maxLength={10}
+                  />
+                )}
+              </View>
+            </View>
+
             <Card style={{ padding: 14, marginBottom: 20, backgroundColor: COLORS.blue + '15' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ fontSize: 24 }}>📋</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text }}>
-                    {exportPeriod === 1 ? 'Expedições de hoje' : `Expedições dos últimos ${exportPeriod} dias`}
+                    {exportDateFrom} → {exportDateTo}
                   </Text>
                   <Text style={{ fontSize: 12, color: theme.textSec, marginTop: 2 }}>
-                    Colunas: Data/Hora · NODO · Código · Placa · Transportadora · Total · Enviados · Recebidos · Pendentes
+                    Colunas: Data/Hora · NODO · Placa · Transportadora · Total · Enviados · Recebidos · Pendentes
                   </Text>
                 </View>
               </View>
