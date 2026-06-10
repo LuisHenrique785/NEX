@@ -3,11 +3,11 @@ import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
   TextInput, Alert, KeyboardAvoidingView, Platform, Modal, TouchableOpacity,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { supabase } from '../../../../src/lib/supabase';
-import { COLORS, Button, Card } from '../../../../src/components/ui';
-import { useTheme } from '../../../../src/lib/theme';
-import { useDemo } from '../../../../src/lib/demo';
+import { router } from 'expo-router';
+import { supabase } from '../../src/lib/supabase';
+import { COLORS, Button, Card } from '../../src/components/ui';
+import { useTheme } from '../../src/lib/theme';
+import { useDemo } from '../../src/lib/demo';
 
 function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
   return StyleSheet.create({
@@ -18,9 +18,9 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
       alignItems: 'center',
       paddingVertical: 28,
       marginBottom: 12,
-      backgroundColor: theme.isDark ? theme.surfaceAlt : '#F0FFF4',
+      backgroundColor: theme.isDark ? theme.surfaceAlt : '#FFF7ED',
       borderWidth: 1.5,
-      borderColor: COLORS.green + '44',
+      borderColor: '#FF9500' + '44',
     },
     infoIcon: { fontSize: 48, marginBottom: 10 },
     infoTitle: { fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 6 },
@@ -40,13 +40,12 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
       borderWidth: 1.5,
       borderColor: theme.inputBorder,
       padding: 14,
-      fontSize: 18,
+      fontSize: 16,
       color: theme.text,
       fontWeight: '600',
     },
-    textArea: { fontSize: 15, fontWeight: '400', minHeight: 80, textAlignVertical: 'top' },
+    textArea: { minHeight: 80, textAlignVertical: 'top', fontWeight: '400' },
     saveBtn: { marginTop: 28 },
-    // Modal
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
     modalBox: { backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 },
     modalTitle: { fontSize: 18, fontWeight: '900', color: theme.text, marginBottom: 8 },
@@ -56,19 +55,32 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
   });
 }
 
-export default function SacasChegadaScreen() {
+export default function SVCSacasRetornoScreen() {
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { isDemo } = useDemo();
-  const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
 
+  const [placa, setPlaca] = useState('');
+  const [transportadora, setTransportadora] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [observacao, setObservacao] = useState('');
   const [loading, setLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
 
+  function formatPlaca(text: string) {
+    return text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+  }
+
   function handleSave() {
     const qtd = parseInt(quantidade);
+    if (!placa.trim()) {
+      Alert.alert('Atenção', 'Informe a placa do veículo.');
+      return;
+    }
+    if (!transportadora.trim()) {
+      Alert.alert('Atenção', 'Informe a transportadora.');
+      return;
+    }
     if (!quantidade || isNaN(qtd) || qtd <= 0) {
       Alert.alert('Atenção', 'Informe uma quantidade válida de sacas.');
       return;
@@ -82,17 +94,17 @@ export default function SacasChegadaScreen() {
 
     if (isDemo) {
       Alert.alert(
-        '✅ [DEMO] Registrado!',
-        `Chegada de ${qtd} saca${qtd !== 1 ? 's' : ''} registrada (modo demonstração).`,
+        '✅ [DEMO] Retorno Registrado!',
+        `${qtd} saca${qtd !== 1 ? 's' : ''} de retorno registrada${qtd !== 1 ? 's' : ''} (modo demonstração).`,
         [{ text: 'OK', onPress: () => router.back() }]
       );
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase.from('sacas_movimentos').insert({
-      nodo_id: nodoId,
-      tipo: 'chegada',
+    const { error } = await supabase.from('svc_sacas_retornos').insert({
+      placa: placa.trim(),
+      transportadora: transportadora.trim(),
       quantidade: qtd,
       observacao: observacao.trim() || null,
     });
@@ -104,8 +116,8 @@ export default function SacasChegadaScreen() {
     }
 
     Alert.alert(
-      '✅ Registrado!',
-      `Chegada de ${qtd} saca${qtd !== 1 ? 's' : ''} registrada com sucesso.`,
+      '✅ Retorno Registrado!',
+      `${qtd} saca${qtd !== 1 ? 's' : ''} de retorno registrada${qtd !== 1 ? 's' : ''} com sucesso.\n${transportadora.trim()} · ${placa.trim()}`,
       [{ text: 'OK', onPress: () => router.back() }]
     );
   }
@@ -117,38 +129,60 @@ export default function SacasChegadaScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.container}>
           <Card style={styles.infoCard}>
-            <Text style={styles.infoIcon}>📥</Text>
-            <Text style={styles.infoTitle}>Chegada de Sacas</Text>
+            <Text style={styles.infoIcon}>↩️</Text>
+            <Text style={styles.infoTitle}>Retorno de Sacas</Text>
             <Text style={styles.infoText}>
-              Informe a quantidade de sacas que chegaram neste NODO.
+              Registre as sacas que retornaram ao SVC via transportadora.
             </Text>
           </Card>
+
+          <Text style={styles.label}>Placa do Veículo *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: ABC1234"
+            placeholderTextColor={theme.textTer}
+            value={placa}
+            onChangeText={(t) => setPlaca(formatPlaca(t))}
+            autoCapitalize="characters"
+            maxLength={7}
+            returnKeyType="next"
+          />
+
+          <Text style={styles.label}>Transportadora *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: Total Express"
+            placeholderTextColor={theme.textTer}
+            value={transportadora}
+            onChangeText={setTransportadora}
+            returnKeyType="next"
+            autoCapitalize="words"
+          />
 
           <Text style={styles.label}>Quantidade de Sacas *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ex: 25"
+            placeholder="Ex: 15"
             placeholderTextColor={theme.textTer}
             value={quantidade}
             onChangeText={(t) => setQuantidade(t.replace(/[^0-9]/g, ''))}
             keyboardType="number-pad"
-            returnKeyType="done"
+            returnKeyType="next"
           />
 
           <Text style={styles.label}>Observação (opcional)</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder="Ex: Carga do turno da manhã..."
+            placeholder="Observações adicionais..."
             placeholderTextColor={theme.textTer}
             value={observacao}
             onChangeText={setObservacao}
             multiline
             numberOfLines={3}
-            returnKeyType="done"
           />
 
           <Button
-            label="Registrar Chegada"
+            label="Registrar Retorno"
             onPress={handleSave}
             loading={loading}
             style={styles.saveBtn}
@@ -159,9 +193,10 @@ export default function SacasChegadaScreen() {
       <Modal visible={confirmModal} transparent animationType="fade" onRequestClose={() => setConfirmModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Confirmar chegada</Text>
+            <Text style={styles.modalTitle}>Confirmar retorno</Text>
             <Text style={styles.modalText}>
-              Registrar chegada de {qtd} saca{qtd !== 1 ? 's' : ''} neste NODO?
+              Registrar retorno de {qtd} saca{qtd !== 1 ? 's' : ''}?{'\n'}
+              {transportadora.trim()} · {placa.trim()}
             </Text>
             <View style={styles.modalBtns}>
               <TouchableOpacity
@@ -171,7 +206,7 @@ export default function SacasChegadaScreen() {
                 <Text style={{ fontWeight: '700', color: theme.text }}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: COLORS.green }]}
+                style={[styles.modalBtn, { backgroundColor: '#FF9500' }]}
                 onPress={doSave}
               >
                 <Text style={{ fontWeight: '800', color: '#fff' }}>Confirmar</Text>

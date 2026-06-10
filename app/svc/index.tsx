@@ -212,6 +212,14 @@ export default function SVCHomeScreen() {
         />
 
         <MenuCard
+          icon="↩️"
+          title="Retorno de Sacas"
+          subtitle="Registrar sacas que retornaram ao SVC"
+          color="#FF9500"
+          onPress={() => router.push('/svc/sacas-retorno')}
+        />
+
+        <MenuCard
           icon="🔍"
           title="Consulta"
           subtitle="Expedições, pendências e rastreio de pacotes"
