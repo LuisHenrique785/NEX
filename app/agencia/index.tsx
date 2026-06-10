@@ -10,6 +10,7 @@ import { haversineDistance, geocodeAddress } from '../../src/lib/geocoding';
 import { COLORS, Badge } from '../../src/components/ui';
 import { MAX_DISTANCE_KM } from '../../src/config';
 import { useTheme } from '../../src/lib/theme';
+import { useDemo } from '../../src/lib/demo';
 
 interface Nodo {
   id: string;
@@ -98,6 +99,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
 export default function SelectNodoScreen() {
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const { isDemo } = useDemo();
 
   const [nodos, setNodos] = useState<Nodo[]>([]);
   const [filtered, setFiltered] = useState<Nodo[]>([]);
@@ -154,18 +156,17 @@ export default function SelectNodoScreen() {
       });
 
       if (userLat && userLng) {
-        const nearby = processed
-          .filter((n) => n.distance !== undefined && n.distance <= MAX_DISTANCE_KM)
-          .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
-        const far = processed
-          .filter((n) => n.distance === undefined || n.distance > MAX_DISTANCE_KM)
-          .sort((a, b) => a.nome.localeCompare(b.nome));
-        processed = [...nearby, ...far];
+        processed = processed.sort((a, b) => {
+          const da = a.distance ?? 99999;
+          const db = b.distance ?? 99999;
+          return da - db;
+        });
       }
 
       setNodos(processed);
       setFiltered(processed);
     } catch (e: any) {
+      setLocationError(true);
       Alert.alert('Erro', e.message || 'Não foi possível carregar os NODOS.');
     } finally {
       setLoading(false);
@@ -190,20 +191,41 @@ export default function SelectNodoScreen() {
   }
 
   function handleSelectNodo(nodo: Nodo) {
-    // NODO sem coordenadas: exige confirmação
-    if (!nodo.lat || !nodo.lng) {
+    const isFar = userLocation && nodo.distance !== undefined && nodo.distance > MAX_DISTANCE_KM;
+    const noCoords = !nodo.lat || !nodo.lng;
+
+    // Modo demo: acesso direto sem bloqueio (banner laranja já avisa)
+    if (isDemo) {
+      router.push(`/agencia/${nodo.id}`);
+      return;
+    }
+
+    // NODO sem coordenadas: exige confirmação (não conseguimos verificar distância)
+    if (noCoords) {
       setConfirmNodo(nodo);
-      setConfirmMessage(`O NODO "${nodo.nome}" não possui coordenadas cadastradas e não foi possível verificar a distância. Confirme que este é realmente o seu NODO.`);
+      setConfirmMessage(`O NODO "${nodo.nome}" não possui coordenadas cadastradas e não foi possível verificar a distância.\n\nConfirme que este é realmente o seu NODO.`);
       setConfirmModal(true);
       return;
     }
-    // NODO com coordenadas muito distante: exige confirmação
+
+    // Muito distante (> MAX + 5km): bloqueio total
     if (userLocation && nodo.distance !== undefined && nodo.distance > MAX_DISTANCE_KM + 5) {
+      Alert.alert(
+        '🚫 Acesso negado',
+        `O NODO "${nodo.nome}" está a ${nodo.distance.toFixed(1)}km de você.\n\nVocê precisa estar a menos de ${MAX_DISTANCE_KM}km do NODO para acessá-lo.`,
+        [{ text: 'Entendi', style: 'cancel' }]
+      );
+      return;
+    }
+
+    // Entre MAX e MAX+5km: confirmação suave
+    if (userLocation && nodo.distance !== undefined && nodo.distance > MAX_DISTANCE_KM) {
       setConfirmNodo(nodo);
       setConfirmMessage(`O NODO "${nodo.nome}" está a ${nodo.distance.toFixed(1)}km de você. Tem certeza que é o NODO correto?`);
       setConfirmModal(true);
       return;
     }
+
     router.push(`/agencia/${nodo.id}`);
   }
 
@@ -225,13 +247,18 @@ export default function SelectNodoScreen() {
         ...n,
         distance: n.lat && n.lng ? haversineDistance(coords.lat, coords.lng, n.lat, n.lng) : undefined,
       }));
+      // Exibe APENAS NODOs dentro do raio — endereço manual não libera lista completa
       const nearby = withDist
         .filter((n) => n.distance !== undefined && n.distance <= MAX_DISTANCE_KM)
         .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
-      const far = withDist
-        .filter((n) => n.distance === undefined || n.distance > MAX_DISTANCE_KM)
-        .sort((a, b) => a.nome.localeCompare(b.nome));
-      setNodos([...nearby, ...far]);
+      if (nearby.length === 0) {
+        Alert.alert(
+          'Nenhum NODO próximo',
+          `Não encontramos nenhum NODO a menos de ${MAX_DISTANCE_KM}km desse endereço.\n\nVerifique se o endereço está correto e inclui cidade e estado.`
+        );
+        return;
+      }
+      setNodos(nearby);
     } catch {
       Alert.alert('Erro', 'Não foi possível buscar o endereço. Verifique sua conexão.');
     } finally {
@@ -293,8 +320,8 @@ export default function SelectNodoScreen() {
     );
   }
 
-  // ─── Blocked: location denied, no address entered ──────────────
-  if (locationError && !userLocation) {
+  // ─── Blocked: no location and not in demo mode ────────────────
+  if (!userLocation && !isDemo) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
@@ -333,6 +360,8 @@ export default function SelectNodoScreen() {
   }
 
   // ─── Main screen ───────────────────────────────────────────────
+  const demoNoLocation = isDemo && !userLocation;
+
   const renderItem = ({ item }: { item: Nodo }) => {
     const isNearby = item.distance !== undefined && item.distance <= MAX_DISTANCE_KM;
     const noCoords = !item.lat || !item.lng;
@@ -373,6 +402,18 @@ export default function SelectNodoScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
+        {demoNoLocation && (
+          <View style={{
+            backgroundColor: '#FF6B0022', borderWidth: 1, borderColor: '#FF6B0055',
+            borderRadius: 12, padding: 12, margin: 12, marginBottom: 0,
+            flexDirection: 'row', alignItems: 'center', gap: 8,
+          }}>
+            <Text style={{ fontSize: 16 }}>⚠️</Text>
+            <Text style={{ flex: 1, fontSize: 12, color: '#FF6B00', fontWeight: '700', lineHeight: 17 }}>
+              MODO DEMO: Localização não detectada. No modo real o acesso seria bloqueado.
+            </Text>
+          </View>
+        )}
         <View style={styles.searchBox}>
           <TextInput
             style={styles.searchInput}

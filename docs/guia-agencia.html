@@ -463,9 +463,9 @@
         </div>
       </div>
 
-      <div class="alert yellow">
-        <div class="alert-icon">💡</div>
-        <div><strong>Dica: Localização</strong>O sistema mostra primeiro os NODOs que estão a menos de 1km de você. Se o seu NODO não aparecer no topo, use a busca para encontrá-lo pelo nome ou código.</div>
+      <div class="alert orange">
+        <div class="alert-icon">📍</div>
+        <div><strong>Localização obrigatória</strong>O sistema exige sua localização para garantir que você acessa apenas o seu NODO. Se a permissão de localização for negada, você verá uma tela de bloqueio com duas opções: ativar o GPS ou digitar o endereço da sua agência. Ao digitar um endereço, apenas os NODOs dentro de 1km são exibidos — a lista completa não é liberada por segurança.</div>
       </div>
     </div>
 
@@ -653,7 +653,7 @@
                 <div style="font-size:12px">⚠️</div>
                 <div>
                   <div style="font-weight:700;font-size:9px">MLM111222333BR</div>
-                  <div style="font-size:9px;color:#999">Expedido 13/06 · João Silva</div>
+                  <div style="font-size:9px;color:#999">Expedido 13/06 · ABC1234</div>
                 </div>
                 <span class="phone-tag red">Pendente</span>
               </div>
@@ -661,7 +661,7 @@
                 <div style="font-size:12px">⚠️</div>
                 <div>
                   <div style="font-weight:700;font-size:9px">MLM444555666BR</div>
-                  <div style="font-size:9px;color:#999">Expedido 13/06 · João Silva</div>
+                  <div style="font-size:9px;color:#999">Expedido 13/06 · Total Express</div>
                 </div>
                 <span class="phone-tag red">Pendente</span>
               </div>
@@ -722,18 +722,16 @@
       <div class="step">
         <div class="step-number orange">2</div>
         <div class="step-body">
-          <div class="step-title">Preencha os dados do motorista</div>
-          <div class="step-desc">Todos os campos abaixo são obrigatórios. O botão de confirmar fica bloqueado enquanto algum campo estiver vazio.</div>
+          <div class="step-title">Preencha os dados do veículo</div>
+          <div class="step-desc">Placa e Transportadora são obrigatórios. O botão de confirmar fica bloqueado enquanto algum campo estiver vazio.</div>
         </div>
       </div>
 
       <table class="table">
         <thead><tr><th>Campo</th><th>Exemplo</th><th>Observação</th></tr></thead>
         <tbody>
-          <tr><td>👤 Nome do Motorista</td><td>João da Silva</td><td>Nome completo</td></tr>
-          <tr><td>🪪 CPF do Motorista</td><td>123.456.789-00</td><td>Somente números aceitos</td></tr>
-          <tr><td>🚛 Placa do Veículo</td><td>ABC1234</td><td>Formato antigo ou Mercosul</td></tr>
-          <tr><td>🏢 Transportadora</td><td>Total Express</td><td>Nome da empresa de transporte</td></tr>
+          <tr><td>🚛 Placa do Veículo</td><td>ABC1234</td><td>Formato antigo ou Mercosul — obrigatório</td></tr>
+          <tr><td>🏢 Transportadora</td><td>Total Express</td><td>Nome da empresa de transporte — obrigatório</td></tr>
         </tbody>
       </table>
 
@@ -759,10 +757,9 @@
           <div class="phone-screen">
             <div class="phone-header">🚚 Expedição de Pacotes</div>
             <div class="phone-body">
-              <div class="phone-label">Motorista</div>
-              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:6px">João da Silva</div>
-              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:6px">123.456.789-00</div>
-              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:8px">ABC1234 · Total Express</div>
+              <div class="phone-label">Dados do Veículo</div>
+              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:6px">ABC1234</div>
+              <div style="border:1.5px solid #E0E0E0;border-radius:8px;padding:7px;font-size:10px;margin-bottom:8px">Total Express</div>
               <div class="phone-label">Pacotes adicionados: 5</div>
               <div class="phone-btn" style="background:#F39C12;color:white;font-size:10px;margin-bottom:6px">+ Escanear pacote</div>
               <div class="phone-btn green">Confirmar Expedição</div>
@@ -779,7 +776,7 @@
               <div style="text-align:center;padding:10px 0">
                 <div style="font-size:28px;margin-bottom:8px">🚚</div>
                 <div style="font-size:11px;font-weight:800;margin-bottom:4px">Expedir 5 pacotes</div>
-                <div style="font-size:10px;color:#666;margin-bottom:4px">Motorista: João da Silva</div>
+                <div style="font-size:10px;color:#666;margin-bottom:4px">Total Express</div>
                 <div style="font-size:10px;color:#666;margin-bottom:12px">Placa: ABC1234</div>
                 <div style="font-size:10px;color:#B71C1C;background:#FFEBEE;padding:6px;border-radius:8px;margin-bottom:10px">Esta ação não pode ser desfeita</div>
               </div>
@@ -871,12 +868,48 @@
       </div>
     </div>
 
+    <div class="divider"></div>
+
+    <!-- MODO DEMO -->
+    <div class="section">
+      <div class="section-label">Modo Demonstração</div>
+
+      <div class="step">
+        <div class="step-number" style="background:#FF6B00;color:white">🎭</div>
+        <div class="step-body">
+          <div class="step-title">O que é o Modo Demo?</div>
+          <div class="step-desc">O Modo Demo permite apresentar o sistema sem salvar nenhum dado real no banco. Ideal para treinamentos e demonstrações. Todos os fluxos funcionam normalmente, mas nenhum registro é gravado.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number" style="background:#FF6B00;color:white">2</div>
+        <div class="step-body">
+          <div class="step-title">Como ativar</div>
+          <div class="step-desc">Na tela inicial, role até o final e toque em <strong>🎭 Modo Demo</strong>. Insira a senha fornecida pelo responsável do sistema. Um banner laranja aparece no topo confirmando que o modo está ativo.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number" style="background:#FF6B00;color:white">3</div>
+        <div class="step-body">
+          <div class="step-title">Liberações do Modo Demo</div>
+          <div class="step-desc">Em modo demo, a restrição de geolocalização é desativada — qualquer NODO pode ser acessado. Isso é intencional para demonstrações. No modo normal, apenas NODOs próximos (menos de 1km) são acessíveis.</div>
+        </div>
+      </div>
+
+      <div class="alert orange">
+        <div class="alert-icon">⚠️</div>
+        <div><strong>Atenção: dados não são salvos no modo demo</strong>Qualquer expedição, inventário ou movimentação feita em modo demo não é gravada no banco de dados. Para registros reais, saia do modo demo tocando em "Sair ✕" no banner laranja ou tocando em "Sair do Demo" na tela inicial.</div>
+      </div>
+    </div>
+
   </div>
 
   <!-- FOOTER -->
   <div class="footer">
     <div class="footer-logo">NEX Inventory</div>
-    <div class="footer-text">Mercado Livre Logística · v2.0 · Para imprimir: Ctrl+P → Salvar como PDF</div>
+    <div class="footer-text">Mercado Livre Logística · v2.1 · Para imprimir: Ctrl+P → Salvar como PDF</div>
   </div>
 
 </div>

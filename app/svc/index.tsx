@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { supabase } from '../../src/lib/supabase';
 import { COLORS, MenuCard, Card } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
+import { useDemo } from '../../src/lib/demo';
+import { haversineDistance } from '../../src/lib/geocoding';
 import { formatTimeBRT, startOfTodayBRT } from '../../src/lib/utils';
+import { SVC_LAT, SVC_LNG, SVC_MAX_KM } from '../../src/config';
 
 interface RecentRecebimento {
   id: string;
@@ -62,14 +67,44 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
 export default function SVCHomeScreen() {
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const { isDemo } = useDemo();
 
+  const [locationChecking, setLocationChecking] = useState(true);
+  const [locationBlocked, setLocationBlocked] = useState(false);
   const [recentes, setRecentes] = useState<RecentRecebimento[]>([]);
   const [totalHoje, setTotalHoje] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
+    checkSVCLocation();
   }, []);
+
+  async function checkSVCLocation() {
+    setLocationChecking(true);
+    setLocationBlocked(false);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationBlocked(true);
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const dist = haversineDistance(loc.coords.latitude, loc.coords.longitude, SVC_LAT, SVC_LNG);
+      if (dist > SVC_MAX_KM) {
+        setLocationBlocked(true);
+      }
+    } catch {
+      setLocationBlocked(true);
+    } finally {
+      setLocationChecking(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!locationChecking && (!locationBlocked || isDemo)) {
+      loadStats();
+    }
+  }, [locationChecking, locationBlocked, isDemo]);
 
   async function loadStats() {
     const { data } = await supabase
@@ -85,11 +120,72 @@ export default function SVCHomeScreen() {
     setLoading(false);
   }
 
-  function formatTime(dateStr: string) { return formatTimeBRT(dateStr); }
+  // ─── Verificando localização ───────────────────────────────────
+  if (locationChecking) {
+    return (
+      <SafeAreaView style={[styles.safe, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.yellow} />
+        <Text style={{ color: theme.textSec, marginTop: 12, fontSize: 14 }}>Verificando localização...</Text>
+      </SafeAreaView>
+    );
+  }
 
+  // ─── Bloqueado (não está no SVC) ───────────────────────────────
+  if (locationBlocked && !isDemo) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+          <Text style={{ fontSize: 52, marginBottom: 16 }}>🚫</Text>
+          <Text style={{ fontSize: 20, fontWeight: '900', color: theme.text, marginBottom: 10, textAlign: 'center' }}>
+            Acesso restrito ao SVC
+          </Text>
+          <Text style={{ fontSize: 14, color: theme.textSec, textAlign: 'center', lineHeight: 22, marginBottom: 32 }}>
+            Você precisa estar no Centro de Serviços (SVC) para acessar esta área.{'\n\n'}
+            Raio permitido: {SVC_MAX_KM}km. Aproxime-se do SVC e tente novamente.
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: COLORS.yellow, borderRadius: 14, padding: 16,
+              width: '100%', alignItems: 'center', marginBottom: 12,
+            }}
+            onPress={checkSVCLocation}
+            activeOpacity={0.85}
+          >
+            <Text style={{ fontWeight: '800', fontSize: 15, color: '#000' }}>🔄 Tentar novamente</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              borderWidth: 1.5, borderColor: theme.border, borderRadius: 14, padding: 16,
+              width: '100%', alignItems: 'center', backgroundColor: theme.surface,
+            }}
+            onPress={() => router.back()}
+            activeOpacity={0.85}
+          >
+            <Text style={{ fontWeight: '700', fontSize: 15, color: theme.text }}>← Voltar</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── SVC normal (ou demo com aviso) ───────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
+        {/* Aviso demo */}
+        {isDemo && locationBlocked && (
+          <View style={{
+            backgroundColor: '#FF6B0022', borderRadius: 12, padding: 12,
+            marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10,
+            borderWidth: 1, borderColor: '#FF6B0055',
+          }}>
+            <Text style={{ fontSize: 18 }}>⚠️</Text>
+            <Text style={{ flex: 1, fontSize: 12, color: '#FF6B00', fontWeight: '700', lineHeight: 17 }}>
+              MODO DEMO: No modo real, você precisaria estar a menos de {SVC_MAX_KM}km do SVC para acessar esta área.
+            </Text>
+          </View>
+        )}
+
         {/* SVC Banner */}
         <View style={styles.banner}>
           <Text style={styles.bannerIcon}>🏭</Text>
@@ -116,6 +212,14 @@ export default function SVCHomeScreen() {
         />
 
         <MenuCard
+          icon="↩️"
+          title="Retorno de Sacas"
+          subtitle="Registrar sacas que retornaram ao SVC"
+          color="#FF9500"
+          onPress={() => router.push('/svc/sacas-retorno')}
+        />
+
+        <MenuCard
           icon="🔍"
           title="Consulta"
           subtitle="Expedições, pendências e rastreio de pacotes"
@@ -137,7 +241,7 @@ export default function SVCHomeScreen() {
                       <Text style={styles.recDetail}>🚛 {r.transportadora} · {r.placa}</Text>
                     )}
                   </View>
-                  <Text style={styles.recTime}>{formatTime(r.created_at)}</Text>
+                  <Text style={styles.recTime}>{formatTimeBRT(r.created_at)}</Text>
                 </View>
               </Card>
             ))}

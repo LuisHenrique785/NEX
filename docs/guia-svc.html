@@ -594,7 +594,8 @@
     <div class="alert-content">
       <h4>Acesso ao sistema</h4>
       <p>Acesse pelo navegador: <strong>luishenrique785.github.io/NEX</strong><br>
-      Salve nos Favoritos. Funciona em celular e computador.</p>
+      Salve nos Favoritos. Funciona em celular e computador.<br>
+      <strong>Importante:</strong> o acesso ao SVC exige que você esteja a menos de <strong>3km do Centro de Serviços</strong>.</p>
     </div>
   </div>
 
@@ -623,7 +624,14 @@
       </div>
     </div>
     <div class="step">
-      <div class="step-num green">3</div>
+      <div class="step-num orange">3</div>
+      <div class="step-content">
+        <h3>Confirme sua localização</h3>
+        <p>O sistema verifica automaticamente se você está dentro do raio de <strong>3km do SVC</strong>. Se estiver fora, uma tela de bloqueio aparece. Aproxime-se do SVC e toque em "Tentar novamente".</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num green">4</div>
       <div class="step-content">
         <h3>Pronto para operar</h3>
         <p>O painel SVC carrega automaticamente. Não é necessário selecionar NODO — o SVC recebe de todas as agências.</p>
@@ -662,8 +670,8 @@
         <div class="phone-screen-wrap">
           <div class="ph-header">📥 Recebimento de Pacotes</div>
           <div class="ph-body">
-            <div style="font-size:9px;color:#9CA3AF;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Dados do motorista (opcional)</div>
-            <div style="border:1px solid #E5E7EB;border-radius:6px;padding:5px 7px;font-size:9px;margin-bottom:4px;color:#9CA3AF">Nome do motorista</div>
+            <div style="font-size:9px;color:#9CA3AF;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Dados do veículo (opcional)</div>
+            <div style="border:1px solid #E5E7EB;border-radius:6px;padding:5px 7px;font-size:9px;margin-bottom:4px;color:#9CA3AF">Transportadora</div>
             <div style="border:1px solid #E5E7EB;border-radius:6px;padding:5px 7px;font-size:9px;margin-bottom:8px;color:#9CA3AF">Placa do veículo</div>
             <div style="font-size:9px;color:#9CA3AF;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Pacotes: <span style="color:#22C55E;font-weight:900">12</span></div>
             <div class="ph-btn black" style="font-size:9px">📷 Escanear</div>
@@ -685,7 +693,7 @@
               <div style="font-size:24px;margin-bottom:6px">📦</div>
               <div style="font-size:11px;font-weight:800;margin-bottom:4px">Confirmar recebimento</div>
               <div style="font-size:9px;color:#6B7280;margin-bottom:4px">12 pacotes</div>
-              <div style="font-size:9px;color:#6B7280;margin-bottom:10px">Motorista: João Silva</div>
+              <div style="font-size:9px;color:#6B7280;margin-bottom:10px">Total Express · ABC1234</div>
             </div>
             <div class="ph-row">
               <div class="ph-btn gray" style="flex:1;margin-bottom:0">Cancelar</div>
@@ -771,8 +779,8 @@
     <div class="step">
       <div class="step-num blue">3</div>
       <div class="step-content">
-        <h3>Preencha os dados do motorista (opcional)</h3>
-        <p>Nome e placa são opcionais mas ajudam no rastreamento. Preencha se possível para facilitar análise de divergências no painel Consulta.</p>
+        <h3>Preencha os dados do veículo (opcional)</h3>
+        <p>Transportadora e placa são opcionais mas ajudam no rastreamento. Preencha se possível para facilitar a consulta de expedições no painel.</p>
       </div>
     </div>
     <div class="step">
@@ -867,7 +875,7 @@
   </div>
 
   <p style="font-size: 15px; color: var(--gray); margin-bottom: 20px; line-height: 1.7;">
-    O painel <strong>Consulta</strong> oferece análise completa da operação: expedições, status por agência, análise de motoristas, busca de pacotes e exportação de dados. Acessível diretamente do menu SVC.
+    O painel <strong>Consulta</strong> oferece análise completa da operação: expedições com status de recebimento, pendências em aberto e rastreio individual de pacotes. Acessível diretamente do menu SVC ou da tela inicial.
   </p>
 
   <div class="steps">
@@ -888,8 +896,8 @@
     <div class="step">
       <div class="step-num green">3</div>
       <div class="step-content">
-        <h3>Navegue pelas 5 abas</h3>
-        <p>O painel tem 5 abas de análise. Cada aba mostra um aspecto diferente da operação.</p>
+        <h3>Navegue pelas 3 abas</h3>
+        <p>O painel tem 3 abas de análise, mais um dashboard de totais (Expedições, Enviados, Recebidos, Pendentes) no topo.</p>
       </div>
     </div>
   </div>
@@ -899,19 +907,15 @@
       <div class="tab-demo-title">🔍 Consulta — Painel de Análise</div>
     </div>
     <div class="tab-demo-body">
-      <div class="tab-pills">
-        <div class="tab-pill active">📦 Expedições</div>
-        <div class="tab-pill">🏪 Por Agência</div>
-        <div class="tab-pill">🚛 Motoristas</div>
-        <div class="tab-pill">🔍 Buscar</div>
-        <div class="tab-pill">📥 Exportar</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="background:#EFF6FF;border:1.5px solid #3B82F6;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;color:#1D4ED8">📦 Expedições</div>
+        <div style="background:#FEF2F2;border:1.5px solid #EF4444;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;color:#B91C1C">⚠️ Pendências</div>
+        <div style="background:#F3F4F6;border:1.5px solid #E5E7EB;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;color:#374151">🔍 Buscar</div>
       </div>
       <p style="font-size: 13px; color: var(--gray); line-height: 1.6;">
-        <strong style="color: var(--black);">📦 Expedições:</strong> Lista as últimas 60 expedições com resumo — quantos pacotes foram enviados, quantos chegaram no SVC e quantos estão pendentes.<br><br>
-        <strong style="color: var(--black);">🏪 Por Agência:</strong> Agrupa pacotes por agência, período de 7, 15 ou 30 dias. Mostra IDs e permite download CSV por agência.<br><br>
-        <strong style="color: var(--black);">🚛 Motoristas:</strong> Análise de divergência por motorista — quantos pacotes pegou vs entregou no SVC.<br><br>
-        <strong style="color: var(--black);">🔍 Buscar Pacote:</strong> Rastreie qualquer código — inventário, expedição, recebimento SVC.<br><br>
-        <strong style="color: var(--black);">📥 Exportar CSV:</strong> Exporta inventário completo por período com todas as colunas.
+        <strong style="color: var(--black);">📦 Expedições:</strong> Lista as últimas 100 expedições. Filtre por status (Todas / Pendentes / Completas) ou busque por NODO, placa ou transportadora. Cards mostram enviados, recebidos e pendentes por expedição.<br><br>
+        <strong style="color: var(--black);">⚠️ Pendências:</strong> Exibe <em>somente</em> expedições com pacotes ainda não recebidos no SVC, ordenadas da mais antiga para a mais recente (mais urgente primeiro). Badge vermelho com contador no topo da aba.<br><br>
+        <strong style="color: var(--black);">🔍 Buscar Pacote:</strong> Rastreie qualquer código — veja o histórico completo: quando foi inventariado na agência, quando foi expedido e quando chegou ao SVC.
       </p>
     </div>
   </div>
@@ -977,25 +981,25 @@
   <div class="highlight-box">
     <h3>Rotina recomendada</h3>
     <p><strong>Início do turno:</strong> Verifique o painel Consulta — aba Expedições — para ver se há pacotes expedidos pelas agências que ainda estão aguardando recebimento no SVC.</p>
-    <p><strong>Durante o turno:</strong> A cada chegada de veículo, toque em "Receber Pacotes", preencha os dados do motorista (opcional mas recomendado) e escaneie todos os pacotes antes de liberar o veículo.</p>
+    <p><strong>Durante o turno:</strong> A cada chegada de veículo, toque em "Receber Pacotes", preencha transportadora e placa se disponíveis (opcional) e escaneie todos os pacotes antes de liberar o veículo.</p>
     <p><strong>Confirmar:</strong> Sempre confirme via o botão "Confirmar Recebimento" — o app mostrará um modal de confirmação e depois voltará automaticamente ao painel SVC.</p>
-    <p><strong>Final do turno:</strong> Consulte a aba Motoristas para verificar se há divergências — motoristas que pegaram mais pacotes do que entregaram.</p>
+    <p><strong>Final do turno:</strong> Consulte a aba Pendências para verificar se há expedições de agências ainda aguardando recebimento. Resolva todas as pendências do dia.</p>
   </div>
 
   <ul class="checklist">
     <li><strong>Verificar painel Consulta</strong> ao iniciar o turno</li>
     <li><strong>Registrar cada chegada</strong> antes de liberar o veículo</li>
-    <li><strong>Preencher dados do motorista</strong> quando possível</li>
+    <li><strong>Preencher transportadora e placa</strong> quando possível</li>
     <li><strong>Confirmar totais</strong> com o manifesto físico</li>
     <li><strong>Não liberar veículos</strong> com divergência de volume</li>
-    <li><strong>Checar aba Motoristas</strong> ao final do turno</li>
+    <li><strong>Checar aba Pendências</strong> ao final do turno</li>
   </ul>
 
   <div class="alert green">
     <div class="alert-icon">🏆</div>
     <div class="alert-content">
       <h4>Operação zero pendências</h4>
-      <p>O objetivo é que todo pacote expedido pelas agências seja confirmado pelo SVC no mesmo dia. Use o painel Consulta → aba <strong>Por Agência</strong> para acompanhar a situação de cada NODO.</p>
+      <p>O objetivo é que todo pacote expedido pelas agências seja confirmado pelo SVC no mesmo dia. Use o painel Consulta → aba <strong>Pendências</strong> para monitorar expedições ainda em aberto.</p>
     </div>
   </div>
 
@@ -1019,6 +1023,11 @@
       </tr>
     </thead>
     <tbody>
+      <tr>
+        <td>Tela "Acesso restrito ao SVC"</td>
+        <td>Localização fora do raio de 3km do SVC</td>
+        <td>Aproxime-se do SVC e toque em "Tentar novamente". Certifique-se de que o GPS está ativo.</td>
+      </tr>
       <tr>
         <td>Câmera não abre</td>
         <td>Permissão negada no browser</td>
@@ -1065,11 +1074,58 @@
     </div>
   </div>
 
+  <div class="divider"></div>
+
+  <!-- DEMO MODE -->
+  <div class="section-header">
+    <div class="section-icon" style="background: #FFF7ED;">🎭</div>
+    <div>
+      <div class="section-number">Seção 09</div>
+      <div class="section-title">Modo Demonstração</div>
+    </div>
+  </div>
+
+  <p style="font-size: 15px; color: var(--gray); margin-bottom: 24px; line-height: 1.7;">
+    O <strong style="color: var(--black);">Modo Demo</strong> permite apresentar e testar o sistema sem gravar nenhum dado real. Ideal para treinamentos e apresentações.
+  </p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num" style="background:#FF6B00">🎭</div>
+      <div class="step-content">
+        <h3>Ativando o Modo Demo</h3>
+        <p>Na tela inicial, role até o final e toque em <strong>🎭 Modo Demo</strong>. Insira a senha fornecida pelo responsável do sistema. Um <strong>banner laranja</strong> aparece no topo confirmando que o modo está ativo.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#FF6B00">2</div>
+      <div class="step-content">
+        <h3>O que é liberado no modo demo</h3>
+        <p>A restrição de geolocalização do SVC (3km) é desativada — você pode acessar o SVC de qualquer localização. Todos os fluxos funcionam normalmente, mas <strong>nenhum dado é salvo</strong> no banco.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#FF6B00">3</div>
+      <div class="step-content">
+        <h3>Saindo do Modo Demo</h3>
+        <p>Toque em <strong>Sair ✕</strong> no banner laranja, ou volte à tela inicial e toque em <strong>Sair do Demo</strong>. O modo normal é restaurado imediatamente.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert orange">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-content">
+      <h4>Dados não são salvos no modo demo</h4>
+      <p>Qualquer recebimento confirmado em modo demo <strong>não é gravado</strong> no banco. Saia do modo demo antes de iniciar operações reais.</p>
+    </div>
+  </div>
+
 </div>
 
 <footer>
   <strong>NEX Inventory</strong> — Mercado Livre Logística<br>
-  Sistema de Gestão de Inventário · Guia do Log SVC · v2.0
+  Sistema de Gestão de Inventário · Guia do Log SVC · v2.1
 </footer>
 
 </body>

@@ -113,6 +113,20 @@ CREATE INDEX IF NOT EXISTS idx_svc_pacotes_recebimento ON svc_recebimentos_pacot
 CREATE INDEX IF NOT EXISTS idx_svc_pacotes_codigo ON svc_recebimentos_pacotes(codigo);
 
 -- ============================================================
+-- TABELA: svc_sacas_retornos (Retorno de sacas ao SVC)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS svc_sacas_retornos (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  placa TEXT NOT NULL,
+  transportadora TEXT NOT NULL,
+  quantidade INTEGER NOT NULL CHECK (quantidade > 0),
+  observacao TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_svc_sacas_retornos_created ON svc_sacas_retornos(created_at DESC);
+
+-- ============================================================
 -- Storage bucket para fotos de pacotes
 -- ============================================================
 INSERT INTO storage.buckets (id, name, public)
@@ -125,6 +139,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 ALTER TABLE nodos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sacas_movimentos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE svc_sacas_retornos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pacotes_expedicoes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pacotes_inventario ENABLE ROW LEVEL SECURITY;
 ALTER TABLE svc_recebimentos ENABLE ROW LEVEL SECURITY;
@@ -137,6 +152,7 @@ DROP POLICY IF EXISTS "Allow all" ON pacotes_expedicoes;
 DROP POLICY IF EXISTS "Allow all" ON pacotes_inventario;
 DROP POLICY IF EXISTS "Allow all" ON svc_recebimentos;
 DROP POLICY IF EXISTS "Allow all" ON svc_recebimentos_pacotes;
+DROP POLICY IF EXISTS "Allow all" ON svc_sacas_retornos;
 DROP POLICY IF EXISTS "Allow all storage" ON storage.objects;
 
 CREATE POLICY "Allow all" ON nodos FOR ALL USING (true) WITH CHECK (true);
@@ -145,6 +161,7 @@ CREATE POLICY "Allow all" ON pacotes_expedicoes FOR ALL USING (true) WITH CHECK 
 CREATE POLICY "Allow all" ON pacotes_inventario FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON svc_recebimentos FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON svc_recebimentos_pacotes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON svc_sacas_retornos FOR ALL USING (true) WITH CHECK (true);
 
 CREATE POLICY "Allow all storage" ON storage.objects
   FOR ALL USING (bucket_id = 'pacotes-fotos') WITH CHECK (bucket_id = 'pacotes-fotos');

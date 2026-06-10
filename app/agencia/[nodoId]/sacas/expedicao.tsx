@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  TextInput, Alert, KeyboardAvoidingView, Platform,
+  TextInput, Alert, KeyboardAvoidingView, Platform, Modal, TouchableOpacity,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../../../src/lib/supabase';
@@ -18,7 +18,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
       alignItems: 'center',
       paddingVertical: 28,
       marginBottom: 12,
-      backgroundColor: '#EFF6FF',
+      backgroundColor: theme.isDark ? theme.surfaceAlt : '#EFF6FF',
       borderWidth: 1.5,
       borderColor: COLORS.blue + '44',
     },
@@ -46,6 +46,13 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     },
     textArea: { minHeight: 80, textAlignVertical: 'top', fontWeight: '400' },
     saveBtn: { marginTop: 28 },
+    // Modal
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    modalBox: { backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 },
+    modalTitle: { fontSize: 18, fontWeight: '900', color: theme.text, marginBottom: 8 },
+    modalText: { fontSize: 14, color: theme.textSec, lineHeight: 20, marginBottom: 24 },
+    modalBtns: { flexDirection: 'row', gap: 10 },
+    modalBtn: { flex: 1, borderRadius: 14, padding: 14, alignItems: 'center' },
   });
 }
 
@@ -53,19 +60,20 @@ export default function SacasExpedicaoScreen() {
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { isDemo } = useDemo();
-
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
+
   const [quantidade, setQuantidade] = useState('');
   const [placa, setPlaca] = useState('');
   const [transportadora, setTransportadora] = useState('');
   const [observacao, setObservacao] = useState('');
   const [loading, setLoading] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false);
 
   function formatPlaca(text: string) {
     return text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
   }
 
-  async function handleSave() {
+  function handleSave() {
     const qtd = parseInt(quantidade);
     if (!quantidade || isNaN(qtd) || qtd <= 0) {
       Alert.alert('Atenção', 'Informe uma quantidade válida de sacas.');
@@ -79,56 +87,50 @@ export default function SacasExpedicaoScreen() {
       Alert.alert('Atenção', 'Informe a transportadora.');
       return;
     }
+    setConfirmModal(true);
+  }
+
+  async function doSave() {
+    const qtd = parseInt(quantidade);
+    setConfirmModal(false);
+
+    if (isDemo) {
+      Alert.alert(
+        '✅ [DEMO] Expedição Registrada!',
+        `${qtd} saca${qtd !== 1 ? 's' : ''} expedida${qtd !== 1 ? 's' : ''} (modo demonstração).`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.from('sacas_movimentos').insert({
+      nodo_id: nodoId,
+      tipo: 'expedicao',
+      quantidade: qtd,
+      placa: placa.trim(),
+      transportadora: transportadora.trim(),
+      observacao: observacao.trim() || null,
+    });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Erro', error.message);
+      return;
+    }
 
     Alert.alert(
-      'Confirmar expedição',
-      `Registrar expedição de ${qtd} saca${qtd !== 1 ? 's' : ''} para ${transportadora.trim()} (${placa.trim()})?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            if (isDemo) {
-              Alert.alert(
-                '✅ [DEMO] Expedição Registrada!',
-                `${qtd} saca${qtd !== 1 ? 's' : ''} expedida${qtd !== 1 ? 's' : ''} (modo demonstração).`,
-                [{ text: 'OK', onPress: () => router.back() }]
-              );
-              return;
-            }
-            setLoading(true);
-            const { error } = await supabase.from('sacas_movimentos').insert({
-              nodo_id: nodoId,
-              tipo: 'expedicao',
-              quantidade: qtd,
-              placa: placa.trim(),
-              transportadora: transportadora.trim(),
-              observacao: observacao.trim() || null,
-            });
-            setLoading(false);
-
-            if (error) {
-              Alert.alert('Erro', error.message);
-              return;
-            }
-
-            Alert.alert(
-              '✅ Expedição Registrada!',
-              `${qtd} saca${qtd !== 1 ? 's' : ''} expedida${qtd !== 1 ? 's' : ''} com sucesso.`,
-              [{ text: 'OK', onPress: () => router.back() }]
-            );
-          },
-        },
-      ]
+      '✅ Expedição Registrada!',
+      `${qtd} saca${qtd !== 1 ? 's' : ''} expedida${qtd !== 1 ? 's' : ''} com sucesso.`,
+      [{ text: 'OK', onPress: () => router.back() }]
     );
   }
 
+  const qtd = parseInt(quantidade) || 0;
+
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.container}>
           <Card style={styles.infoCard}>
             <Text style={styles.infoIcon}>📤</Text>
@@ -144,7 +146,7 @@ export default function SacasExpedicaoScreen() {
             placeholder="Ex: 30"
             placeholderTextColor={theme.textTer}
             value={quantidade}
-            onChangeText={setQuantidade}
+            onChangeText={(t) => setQuantidade(t.replace(/[^0-9]/g, ''))}
             keyboardType="number-pad"
             returnKeyType="next"
           />
@@ -187,11 +189,35 @@ export default function SacasExpedicaoScreen() {
             label="Registrar Expedição"
             onPress={handleSave}
             loading={loading}
-            variant="secondary"
             style={styles.saveBtn}
           />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={confirmModal} transparent animationType="fade" onRequestClose={() => setConfirmModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Confirmar expedição</Text>
+            <Text style={styles.modalText}>
+              Registrar expedição de {qtd} saca{qtd !== 1 ? 's' : ''} para {transportadora.trim()} ({placa.trim()})?
+            </Text>
+            <View style={styles.modalBtns}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: theme.surface, borderWidth: 1.5, borderColor: theme.border }]}
+                onPress={() => setConfirmModal(false)}
+              >
+                <Text style={{ fontWeight: '700', color: theme.text }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: COLORS.blue }]}
+                onPress={doSave}
+              >
+                <Text style={{ fontWeight: '800', color: '#fff' }}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

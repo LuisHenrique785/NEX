@@ -54,6 +54,8 @@ function InnerLayout() {
         <Stack.Screen name="svc/index" options={{ title: 'SVC' }} />
         <Stack.Screen name="svc/recebimento" options={{ title: 'Recebimento de Pacotes', headerShown: false }} />
         <Stack.Screen name="admin/novos-nodos" options={{ title: 'Novos NODOS' }} />
+        <Stack.Screen name="admin/consulta" options={{ title: 'Consulta', headerShown: false }} />
+        <Stack.Screen name="tutorial" options={{ headerShown: false }} />
       </Stack>
     </>
   );

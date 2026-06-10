@@ -224,6 +224,30 @@ export default function HomeScreen() {
               borderRadius: 16,
               borderWidth: 1.5,
               borderColor: theme.border,
+              padding: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              backgroundColor: theme.surface,
+            }}
+            onPress={() => router.push('/tutorial')}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 22 }}>📖</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text }}>Tutorial de uso</Text>
+              <Text style={{ fontSize: 12, color: theme.textTer, marginTop: 2 }}>Agência · SVC · Meli</Text>
+            </View>
+            <Text style={{ fontSize: 18, color: theme.textTer }}>›</Text>
+          </TouchableOpacity>
+
+          {/* Admin button */}
+          <TouchableOpacity
+            style={{
+              marginTop: 14,
+              borderRadius: 16,
+              borderWidth: 1.5,
+              borderColor: theme.border,
               borderStyle: 'dashed',
               padding: 20,
               alignItems: 'center',

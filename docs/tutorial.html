@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial NEX — Sistema de Inventário</title>
+  <style>
+    :root {
+      --yellow: #FFE600;
+      --black: #1A1A1A;
+      --blue: #1565C0;
+      --blue-dark: #0D3875;
+      --green: #2E7D32;
+      --red: #C62828;
+      --orange: #E65100;
+      --bg: #F5F5F7;
+      --surface: #FFFFFF;
+      --border: #E0E0E0;
+      --text: #1A1A1A;
+      --text-sec: #555;
+      --text-ter: #999;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── Hero ─────────────────────────────────────── */
+    .hero {
+      background: var(--black);
+      padding: 60px 24px 48px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--yellow); color: var(--black);
+      font-weight: 900; font-size: 13px; letter-spacing: 1px;
+      text-transform: uppercase; padding: 6px 16px; border-radius: 100px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 6vw, 56px); font-weight: 900;
+      color: #fff; letter-spacing: -1px; line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--yellow); }
+    .hero p {
+      font-size: 17px; color: #AAA; max-width: 520px;
+      margin: 0 auto 36px;
+    }
+    .profile-pills {
+      display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px; border-radius: 100px;
+      font-weight: 700; font-size: 14px; cursor: pointer;
+      transition: transform .15s, opacity .15s;
+      text-decoration: none; border: none;
+    }
+    .pill:hover { transform: translateY(-2px); opacity: .9; }
+    .pill-agencia { background: var(--yellow); color: var(--black); }
+    .pill-svc     { background: #fff; color: var(--black); }
+    .pill-meli    { background: #1A3A5C; color: #64B4FF; }
+
+    /* ── Nav ──────────────────────────────────────── */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(26,26,26,.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #333;
+      display: flex; justify-content: center; gap: 4px;
+      padding: 10px 16px;
+    }
+    .nav-btn {
+      padding: 8px 20px; border-radius: 10px; cursor: pointer;
+      font-size: 13px; font-weight: 700; transition: all .15s;
+      background: transparent; color: #AAA; border: none;
+    }
+    .nav-btn.active, .nav-btn:hover { background: #2C2C2E; color: #fff; }
+    .nav-btn.active { color: var(--yellow); }
+
+    /* ── Section ──────────────────────────────────── */
+    .section {
+      display: none; max-width: 820px; margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    .section.visible { display: block; }
+
+    /* ── Profile header ───────────────────────────── */
+    .profile-header {
+      border-radius: 20px; padding: 28px 28px 24px;
+      margin-bottom: 36px; position: relative; overflow: hidden;
+    }
+    .profile-header-agencia { background: var(--yellow); }
+    .profile-header-svc     { background: var(--black); }
+    .profile-header-meli    { background: #0D3875; }
+
+    .profile-header-icon {
+      font-size: 52px; margin-bottom: 12px; display: block;
+    }
+    .profile-header h2 {
+      font-size: 28px; font-weight: 900; margin-bottom: 6px;
+    }
+    .profile-header-agencia h2 { color: var(--black); }
+    .profile-header-svc h2     { color: var(--yellow); }
+    .profile-header-meli h2    { color: #64B4FF; }
+
+    .profile-header p {
+      font-size: 14px;
+    }
+    .profile-header-agencia p { color: rgba(0,0,0,.6); }
+    .profile-header-svc p     { color: #AAA; }
+    .profile-header-meli p    { color: rgba(255,255,255,.65); }
+
+    /* ── Steps ────────────────────────────────────── */
+    .steps { display: flex; flex-direction: column; gap: 16px; }
+
+    .step {
+      background: var(--surface); border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      overflow: hidden;
+    }
+
+    .step-header {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 20px 20px 0;
+    }
+    .step-num {
+      min-width: 28px; height: 28px; border-radius: 8px;
+      background: var(--yellow); color: var(--black);
+      font-weight: 900; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 2px; flex-shrink: 0;
+    }
+    .step-icon { font-size: 30px; flex-shrink: 0; margin-top: -2px; }
+    .step-title {
+      font-size: 16px; font-weight: 800; color: var(--text);
+      padding-top: 4px;
+    }
+
+    .step-body {
+      padding: 10px 20px 20px 64px;
+    }
+    .step-desc {
+      font-size: 14px; color: var(--text-sec); line-height: 1.7;
+      margin-bottom: 0;
+    }
+
+    .tip {
+      background: #FFFDE7; border-radius: 10px;
+      padding: 10px 14px; margin-top: 12px;
+      display: flex; gap: 10px; align-items: flex-start;
+      border-left: 3px solid var(--yellow);
+    }
+    .tip-icon { font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+    .tip-text { font-size: 12px; color: #5D4037; line-height: 1.7; }
+
+    /* ── Mock screens ─────────────────────────────── */
+    .mock {
+      background: var(--black); border-radius: 16px;
+      padding: 14px 16px; margin-top: 14px;
+      font-size: 12px; font-family: monospace;
+      color: #EEE; line-height: 1.8;
+    }
+    .mock-title {
+      color: var(--yellow); font-weight: 700;
+      font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .mock-row { display: flex; justify-content: space-between; gap: 8px; }
+    .mock-stat { text-align: center; flex: 1; }
+    .mock-val { font-size: 22px; font-weight: 900; color: var(--yellow); display: block; }
+    .mock-lbl { font-size: 10px; color: #AAA; text-transform: uppercase; }
+    .mock-chip {
+      display: inline-block; background: rgba(255,255,255,.12);
+      border-radius: 6px; padding: 3px 8px; margin: 2px 4px 2px 0;
+      font-size: 11px; color: #ddd;
+    }
+    .mock-chip.green { background: rgba(46,125,50,.35); color: #81C784; }
+    .mock-chip.red   { background: rgba(198,40,40,.35); color: #EF9A9A; }
+    .mock-chip.orange { background: rgba(230,81,0,.35); color: #FFCC80; }
+    .mock-chip.blue  { background: rgba(21,101,192,.35); color: #90CAF9; }
+
+    .badge {
+      display: inline-block; border-radius: 100px;
+      padding: 3px 10px; font-size: 11px; font-weight: 700;
+    }
+    .badge-red { background: rgba(198,40,40,.15); color: var(--red); }
+    .badge-green { background: rgba(46,125,50,.15); color: var(--green); }
+    .badge-blue { background: rgba(21,101,192,.15); color: var(--blue); }
+    .badge-orange { background: rgba(230,81,0,.15); color: var(--orange); }
+
+    /* ── Summary cards ────────────────────────────── */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px; margin-top: 14px;
+    }
+    .summary-card {
+      background: var(--surface); border-radius: 12px; padding: 16px;
+      border: 1px solid var(--border);
+    }
+    .summary-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .summary-card p  { font-size: 12px; color: var(--text-sec); line-height: 1.6; }
+
+    /* ── Footer ───────────────────────────────────── */
+    footer {
+      background: var(--black); color: #777;
+      text-align: center; padding: 32px 24px;
+      font-size: 13px;
+    }
+    footer strong { color: var(--yellow); }
+
+    @media (max-width: 600px) {
+      .step-body { padding-left: 20px; }
+      .hero h1 { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Hero ─────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-badge">📦 Sistema de Inventário</div>
+  <h1>Tutorial <span>NEX</span></h1>
+  <p>Guia completo de uso para cada perfil do sistema de rastreamento de pacotes.</p>
+  <div class="profile-pills">
+    <button class="pill pill-agencia" onclick="showSection('agencia')">🏪 Agência</button>
+    <button class="pill pill-svc"     onclick="showSection('svc')">🏭 SVC</button>
+    <button class="pill pill-meli"    onclick="showSection('meli')">🔍 Meli</button>
+  </div>
+</section>
+
+<!-- ── Nav ──────────────────────────────────────── -->
+<nav class="nav">
+  <button class="nav-btn active" id="nav-agencia" onclick="showSection('agencia')">🏪 Agência</button>
+  <button class="nav-btn"        id="nav-svc"     onclick="showSection('svc')">🏭 SVC</button>
+  <button class="nav-btn"        id="nav-meli"    onclick="showSection('meli')">🔍 Meli</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- AGÊNCIA                                        -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section visible" id="section-agencia">
+
+  <div class="profile-header profile-header-agencia">
+    <span class="profile-header-icon">🏪</span>
+    <h2>Perfil Agência</h2>
+    <p>Inventário de pacotes, registro de chegada de sacas e expedição para o SVC.</p>
+  </div>
+
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <span class="step-icon">📍</span>
+        <div class="step-title">Selecione sua Agência</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Na tela inicial toque em <strong>"Agência"</strong>. O app usa sua localização para listar as unidades próximas em ordem de distância. Toque na sua agência para entrar.
+        </p>
+        <div class="mock">
+          <div class="mock-title">🏪 Agências próximas</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="background:rgba(255,230,0,.15);border-radius:8px;padding:8px 12px;border-left:3px solid #FFE600">
+              <strong style="color:#FFE600">AG-001 — Agência Centro</strong>
+              <span style="color:#888;font-size:11px;margin-left:8px">0.3 km</span>
+            </div>
+            <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px 12px">
+              AG-002 — Agência Norte <span style="color:#888;font-size:11px;margin-left:8px">1.1 km</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <span class="step-icon">📦</span>
+        <div class="step-title">Inventário de Pacotes</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Acesse <strong>Pacotes → Inventário</strong>. Use o scanner de câmera, digitação manual ou foto para registrar cada pacote. O sistema detecta duplicatas automaticamente e exibe um alerta.
+        </p>
+        <div class="mock">
+          <div class="mock-title">📦 Inventário — 3 métodos</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="mock-chip">📷 Scanner</span>
+            <span class="mock-chip">⌨️ Digitar</span>
+            <span class="mock-chip">📸 Foto</span>
+          </div>
+          <div style="margin-top:10px;border-top:1px solid #333;padding-top:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="color:#81C784">✅ MLM001234567BR</span>
+              <span style="color:#777;font-size:11px">09:14</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="color:#81C784">✅ MLM001234568BR</span>
+              <span style="color:#777;font-size:11px">09:15</span>
+            </div>
+            <div style="color:#EF9A9A">⚠️ Repetido: MLM001234567BR</div>
+          </div>
+        </div>
+        <div class="tip">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">A câmera traseira é selecionada automaticamente para melhor leitura. Toque em 🔄 para trocar para a câmera frontal se necessário. Você pode escanear continuamente sem precisar apertar nada.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <span class="step-icon">📥</span>
+        <div class="step-title">Chegada de Sacas</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Acesse <strong>Sacas → Chegada</strong>. Informe a quantidade de sacas recebidas, a transportadora e a placa do veículo. Confirme para registrar o movimento.
+        </p>
+        <div class="mock">
+          <div class="mock-title">📥 Registrar Chegada</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div>Quantidade: <strong style="color:#FFE600">42 sacas</strong></div>
+            <div>Transportadora: <strong style="color:#eee">Total Express</strong></div>
+            <div>Placa: <strong style="color:#eee">ABC1D23</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <span class="step-icon">🚚</span>
+        <div class="step-title">Expedição de Pacotes</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Acesse <strong>Pacotes → Expedição</strong>. Preencha os dados do motorista (nome, CPF, placa, transportadora) e escaneie todos os pacotes que serão enviados. Toque em <strong>"Confirmar Expedição"</strong> e confirme no modal.
+        </p>
+        <div class="mock">
+          <div class="mock-title">🚚 Expedição</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
+            <div>Motorista: <strong style="color:#eee">João Silva</strong></div>
+            <div>CPF: <strong style="color:#eee">123.456.789-00</strong></div>
+            <div>Placa: <strong style="color:#eee">XYZ5678</strong></div>
+            <div>Transportadora: <strong style="color:#eee">Rápido Log</strong></div>
+          </div>
+          <div style="border-top:1px solid #333;padding-top:8px">
+            Pacotes na expedição: <strong style="color:#FFE600">15</strong>
+          </div>
+        </div>
+        <div class="tip">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">Todos os campos do motorista são obrigatórios antes de confirmar. O CPF é validado automaticamente (11 dígitos). Após confirmar, você é redirecionado para o menu de pacotes.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <span class="step-icon">🚨</span>
+        <div class="step-title">Pendências — Pacotes Não Recebidos no SVC</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          No Inventário, a seção <strong>"🚨 Não Recebidos no SVC"</strong> mostra pacotes que foram expedidos mas o SVC ainda não confirmou o recebimento. Esses permanecem pendentes na sua agência até o SVC escanear.
+        </p>
+        <div class="mock">
+          <div style="border-left:3px solid #EF9A9A;background:rgba(198,40,40,.18);border-radius:8px;padding:12px">
+            <div style="font-weight:700;color:#EF9A9A;margin-bottom:6px">🚨 Não Recebidos no SVC <span style="background:rgba(198,40,40,.4);border-radius:100px;padding:2px 8px;font-size:11px">3</span></div>
+            <div style="color:#EF9A9A;font-size:12px;margin-bottom:6px">Expedidos mas não confirmados pelo SVC:</div>
+            <div style="color:#EF9A9A;font-size:12px">• MLM001230000BR</div>
+            <div style="color:#EF9A9A;font-size:12px">• MLM001230001BR</div>
+            <div style="color:#EF9A9A;font-size:12px">• MLM001230002BR</div>
+          </div>
+        </div>
+        <div class="tip">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">Se o motorista devolveu pacotes sem entregar no SVC, eles continuam pendentes aqui. O SVC usa o código para confirmar quando a carga chegar.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SVC                                            -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="section-svc">
+
+  <div class="profile-header profile-header-svc">
+    <span class="profile-header-icon">🏭</span>
+    <h2>Perfil SVC</h2>
+    <p>Centro de Serviços — recebimento, conferência e consulta de cargas.</p>
+  </div>
+
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <span class="step-icon">🏭</span>
+        <div class="step-title">Acesse o SVC</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Na tela inicial toque em <strong>"SVC"</strong>. A tela principal mostra o total de pacotes recebidos hoje e o histórico dos últimos recebimentos do dia (horário em BRT, UTC-3).
+        </p>
+        <div class="mock">
+          <div class="mock-title">🏭 SVC — Centro de Serviços</div>
+          <div class="mock-row" style="margin-bottom:10px">
+            <div class="mock-stat">
+              <span class="mock-val">127</span>
+              <span class="mock-lbl">pacotes hoje</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;background:rgba(255,255,255,.06);border-radius:8px;padding:8px 10px">
+              <span>📦 45 pacotes — Total Express</span>
+              <span style="color:#888">14:32</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;background:rgba(255,255,255,.06);border-radius:8px;padding:8px 10px">
+              <span>📦 38 pacotes — Rápido Log</span>
+              <span style="color:#888">11:15</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <span class="step-icon">📥</span>
+        <div class="step-title">Recebimento de Pacotes</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Toque em <strong>"Recebimento de Pacotes"</strong>. Os dados do motorista são opcionais. Escaneie todos os pacotes da carga usando scanner (câmera), digitação manual ou foto. O sistema avisa automaticamente se um código for duplicado.
+        </p>
+        <div class="mock">
+          <div class="mock-title">📥 Adicionar Pacotes</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <span class="mock-chip">📷 Scanner</span>
+            <span class="mock-chip">⌨️ Digitar</span>
+            <span class="mock-chip">📸 Foto</span>
+          </div>
+          <div>
+            <span class="mock-chip green">✅ MLM009900001BR</span>
+            <span class="mock-chip green">✅ MLM009900002BR</span>
+            <span class="mock-chip red">⚠️ Repetido</span>
+          </div>
+        </div>
+        <div class="tip">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">Você pode escanear centenas de pacotes em sequência sem pausas. Diferentes códigos são escaneados imediatamente; o mesmo código é bloqueado por 2 segundos para evitar leitura dupla.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <span class="step-icon">✅</span>
+        <div class="step-title">Confirmar Recebimento</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Após adicionar todos os pacotes, toque em <strong>"Confirmar Recebimento (N)"</strong>. Um modal de confirmação aparece — toque em <strong>"Confirmar"</strong> para gravar. O sistema volta automaticamente à tela inicial do SVC.
+        </p>
+        <div class="mock">
+          <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#eee;margin-bottom:8px">Confirmar Recebimento</div>
+            <div style="color:#AAA;font-size:13px;margin-bottom:16px">Registrar recebimento de <strong style="color:#FFE600">52 pacotes</strong>?</div>
+            <div style="display:flex;gap:8px;justify-content:center">
+              <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:8px 20px;color:#AAA;font-size:13px">Cancelar</span>
+              <span style="background:#FFE600;border-radius:8px;padding:8px 20px;color:#000;font-size:13px;font-weight:700">Confirmar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <span class="step-icon">🔍</span>
+        <div class="step-title">Consulta (acesso direto do SVC)</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          No menu SVC toque em <strong>"🔍 Consulta"</strong>. Insira a senha para acessar o painel completo de análise. Veja expedições por agência, analise motoristas com divergências e rastreie pacotes individuais.
+        </p>
+        <div class="tip">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">A Consulta também está disponível na tela inicial do app para acesso de qualquer perfil.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MELI                                           -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="section-meli">
+
+  <div class="profile-header profile-header-meli">
+    <span class="profile-header-icon">🔍</span>
+    <h2>Perfil Meli / Consulta</h2>
+    <p>Análise gerencial, rastreamento de pacotes e exportação de dados.</p>
+  </div>
+
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <span class="step-icon">🔒</span>
+        <div class="step-title">Acesso ao Painel Consulta</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Na tela inicial toque em <strong>"🔍 Consulta"</strong> (também acessível pelo menu SVC). Insira a senha para entrar. O painel abre automaticamente na aba Expedições.
+        </p>
+        <div class="mock">
+          <div style="text-align:center;padding:10px 0">
+            <div style="font-size:32px;margin-bottom:8px">🔍</div>
+            <div style="font-weight:700;color:#eee;margin-bottom:4px">Consulta NEX</div>
+            <div style="color:#888;font-size:12px;margin-bottom:12px">Digite a senha para acessar</div>
+            <div style="background:rgba(255,255,255,.08);border-radius:8px;padding:10px;letter-spacing:8px;color:#FFE600;font-size:18px;font-weight:700">••••••••</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <span class="step-icon">📦</span>
+        <div class="step-title">Aba Expedições</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Lista as últimas 60 expedições de todas as agências. Cada card mostra a agência, motorista, data e os contadores de <strong>Enviados / Recebidos no SVC / Pendentes</strong>. Badge vermelho indica pendências em aberto.
+        </p>
+        <div class="mock">
+          <div style="border-radius:10px;background:rgba(255,255,255,.07);padding:12px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <strong style="color:#eee">AG-001 — Agência Centro</strong>
+              <span style="background:rgba(198,40,40,.4);color:#EF9A9A;border-radius:100px;padding:2px 10px;font-size:11px;font-weight:700">2 pendentes</span>
+            </div>
+            <div style="color:#888;font-size:12px;margin-bottom:10px">🚛 João Silva · XYZ5678 · 09/06 14:22</div>
+            <div style="display:flex;gap:6px">
+              <div style="flex:1;background:rgba(21,101,192,.25);border-radius:8px;padding:8px;text-align:center">
+                <div style="font-size:18px;font-weight:900;color:#90CAF9">15</div>
+                <div style="font-size:10px;color:#90CAF9;text-transform:uppercase">Enviados</div>
+              </div>
+              <div style="flex:1;background:rgba(46,125,50,.25);border-radius:8px;padding:8px;text-align:center">
+                <div style="font-size:18px;font-weight:900;color:#81C784">13</div>
+                <div style="font-size:10px;color:#81C784;text-transform:uppercase">Recebidos</div>
+              </div>
+              <div style="flex:1;background:rgba(198,40,40,.25);border-radius:8px;padding:8px;text-align:center">
+                <div style="font-size:18px;font-weight:900;color:#EF9A9A">2</div>
+                <div style="font-size:10px;color:#EF9A9A;text-transform:uppercase">Pendentes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <span class="step-icon">🏪</span>
+        <div class="step-title">Aba Por Agência</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Agrupa todos os pacotes expedidos por agência no período selecionado (7, 15 ou 30 dias). Mostra enviados / recebidos / pendentes por agência. Toque em <strong>"Ver X IDs"</strong> para expandir e ver todos os códigos com status. Botão <strong>"📥 Baixar CSV"</strong> exporta a relação completa.
+        </p>
+        <div class="mock">
+          <div style="border-radius:10px;background:rgba(255,255,255,.07);padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <strong style="color:#eee">AG-003 — Agência Sul</strong>
+              <span style="background:rgba(198,40,40,.4);color:#EF9A9A;border-radius:100px;padding:2px 10px;font-size:11px;font-weight:700">5 pendentes</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <div style="flex:1;background:rgba(21,101,192,.2);border-radius:8px;padding:6px;text-align:center">
+                <div style="font-size:16px;font-weight:900;color:#90CAF9">48</div>
+                <div style="font-size:10px;color:#90CAF9">Enviados</div>
+              </div>
+              <div style="flex:1;background:rgba(46,125,50,.2);border-radius:8px;padding:6px;text-align:center">
+                <div style="font-size:16px;font-weight:900;color:#81C784">43</div>
+                <div style="font-size:10px;color:#81C784">Recebidos</div>
+              </div>
+              <div style="flex:1;background:rgba(198,40,40,.2);border-radius:8px;padding:6px;text-align:center">
+                <div style="font-size:16px;font-weight:900;color:#EF9A9A">5</div>
+                <div style="font-size:10px;color:#EF9A9A">Pendentes</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <span style="flex:1;background:rgba(255,255,255,.1);border-radius:8px;padding:7px;text-align:center;color:#ddd;font-size:12px">▼ Ver 48 IDs</span>
+              <span style="flex:1;background:rgba(21,101,192,.2);border-radius:8px;padding:7px;text-align:center;color:#90CAF9;font-size:12px">📥 Baixar CSV</span>
+            </div>
+          </div>
+        </div>
+        <div class="tip">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">Agências com mais pendências aparecem no topo da lista. O CSV inclui código, status, data de expedição e data de recebimento no SVC.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <span class="step-icon">🚛</span>
+        <div class="step-title">Aba Motoristas — Análise de Divergência</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Agrupa expedições por motorista e compara quantos pacotes <strong>pegou</strong> vs quantos <strong>entregou no SVC</strong>. Se houver diferença, exibe os IDs específicos que não chegaram — que voltam como pendência das agências de origem.
+        </p>
+        <div class="mock">
+          <div style="border-radius:10px;background:rgba(255,255,255,.07);padding:12px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <strong style="color:#eee">João Silva</strong>
+              <span style="background:rgba(198,40,40,.4);color:#EF9A9A;border-radius:100px;padding:2px 10px;font-size:11px;font-weight:700">3 faltando</span>
+            </div>
+            <div style="color:#888;font-size:11px;margin-bottom:8px">CPF: 123.456.789-00 · 2 expedições</div>
+            <div style="background:rgba(198,40,40,.2);border-radius:8px;padding:10px">
+              <div style="font-weight:700;color:#EF9A9A;margin-bottom:4px">⚠️ Pegou 30 · Entregou 27 · Faltam 3</div>
+              <div style="font-size:12px;color:#EF9A9A">Os 3 pacotes abaixo não chegaram no SVC.</div>
+            </div>
+          </div>
+          <div style="border-radius:10px;background:rgba(255,255,255,.07);padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <strong style="color:#eee">Maria Santos</strong>
+              <span style="background:rgba(46,125,50,.3);color:#81C784;border-radius:100px;padding:2px 10px;font-size:11px;font-weight:700">✓ Tudo entregue</span>
+            </div>
+            <div style="background:rgba(46,125,50,.15);border-radius:8px;padding:10px">
+              <div style="font-weight:700;color:#81C784">✅ Pegou 22 · Entregou 22 — sem divergência</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">Motoristas com mais pacotes faltando aparecem primeiro. Para cada motorista com divergência: expanda para ver os IDs e de qual agência vieram, e baixe o CSV de responsabilização.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <span class="step-icon">🔍</span>
+        <div class="step-title">Aba Buscar Pacote</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Digite qualquer código de pacote para ver o histórico completo: quando foi <strong>inventariado na agência</strong>, quando foi <strong>expedido</strong> e quando <strong>chegou no SVC</strong>. Se ainda não chegou, aparece "⚠️ Não recebido no SVC".
+        </p>
+        <div class="mock">
+          <div style="margin-bottom:10px">
+            <input type="text" placeholder="MLM001234567BR" style="background:rgba(255,255,255,.1);border:1.5px solid #444;border-radius:8px;padding:8px 12px;color:#eee;font-size:13px;width:100%;outline:none" readonly />
+          </div>
+          <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:12px">
+            <div style="font-family:monospace;font-size:14px;font-weight:700;color:#FFE600;margin-bottom:10px">MLM001234567BR</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <span style="width:10px;height:10px;border-radius:50%;background:#90CAF9;display:inline-block;margin-top:4px;flex-shrink:0"></span>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:#eee">📦 Inventariado — AG-001 Centro</div>
+                  <div style="font-size:11px;color:#888">08/06/2025 09:14</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <span style="width:10px;height:10px;border-radius:50%;background:#FFCC80;display:inline-block;margin-top:4px;flex-shrink:0"></span>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:#eee">🚛 Expedido pela agência</div>
+                  <div style="font-size:11px;color:#888">08/06/2025 11:30</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <span style="width:10px;height:10px;border-radius:50%;background:#81C784;display:inline-block;margin-top:4px;flex-shrink:0"></span>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:#81C784">✅ Recebido no SVC</div>
+                  <div style="font-size:11px;color:#888">08/06/2025 14:52</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">6</div>
+        <span class="step-icon">📥</span>
+        <div class="step-title">Aba Exportar CSV</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">
+          Selecione a <strong>data inicial</strong> e <strong>data final</strong> e clique <strong>"📥 Baixar CSV"</strong> para exportar o inventário completo do período escolhido. O arquivo inclui código, agência, status, data de inventário, data de expedição e data de recebimento no SVC.
+        </p>
+        <div class="mock">
+          <div style="margin-bottom:8px;color:#888;font-size:12px">Data inicial</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;color:#FFE600;font-size:13px;margin-bottom:12px">2025-06-01</div>
+          <div style="margin-bottom:8px;color:#888;font-size:12px">Data final</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;color:#FFE600;font-size:13px;margin-bottom:14px">2025-06-08</div>
+          <div style="background:#FFE600;border-radius:10px;padding:12px;text-align:center;color:#000;font-weight:700">📥 Baixar CSV</div>
+        </div>
+        <div class="tip">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">Todos os horários no CSV são em <strong>BRT (UTC-3)</strong>, horário de Brasília. O download está disponível apenas na versão web (navegador). No app nativo exibe uma mensagem orientando usar o navegador.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-grid" style="margin-top:32px">
+    <div class="summary-card">
+      <h4>📦 Colunas do CSV</h4>
+      <p>Código · Agência · Status · Data Inventário (BRT) · Data Expedição (BRT) · Data Recebimento SVC (BRT)</p>
+    </div>
+    <div class="summary-card">
+      <h4>🏪 Status possíveis</h4>
+      <p><span class="badge badge-blue">Inventariado</span> · <span class="badge badge-orange">Expedido</span> · <span class="badge badge-green">Recebido SVC</span></p>
+    </div>
+    <div class="summary-card">
+      <h4>⏱ Timezone</h4>
+      <p>Todos os horários exibidos e exportados usam <strong>BRT (UTC-3)</strong> — horário padrão do Brasil.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ── Footer ──────────────────────────────────── -->
+<footer>
+  <strong>NEX</strong> — Sistema de Inventário Mercado Livre Logística<br />
+  <span style="font-size:11px;color:#555;margin-top:4px;display:block">
+    Agência · SVC · Meli &nbsp;|&nbsp; Todos os horários em BRT (UTC-3)
+  </span>
+</footer>
+
+<script>
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+    document.getElementById('section-' + id).classList.add('visible');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('nav-' + id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+
+</body>
+</html>

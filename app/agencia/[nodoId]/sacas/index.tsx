@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../../../src/lib/supabase';
 import { COLORS, MenuCard, Card, Badge } from '../../../../src/components/ui';
 import { useTheme } from '../../../../src/lib/theme';
+import { formatTimeBRT, startOfTodayBRT } from '../../../../src/lib/utils';
 
 interface Movimento {
   id: string;
@@ -71,14 +72,11 @@ export default function SacasMainScreen() {
   }, [nodoId]);
 
   async function loadMovimentos() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     const { data } = await supabase
       .from('sacas_movimentos')
       .select('*')
       .eq('nodo_id', nodoId)
-      .gte('created_at', today.toISOString())
+      .gte('created_at', startOfTodayBRT().toISOString())
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -91,9 +89,7 @@ export default function SacasMainScreen() {
     setLoading(false);
   }
 
-  function formatTime(dateStr: string) {
-    return new Date(dateStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  }
+  function formatTime(dateStr: string) { return formatTimeBRT(dateStr); }
 
   return (
     <SafeAreaView style={styles.safe}>
