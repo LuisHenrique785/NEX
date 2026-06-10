@@ -284,7 +284,87 @@ export default function SelectNodoScreen() {
     );
   }
 
-  return (
+  // Blocked: location denied and no address entered yet
+  if (locationError && !userLocation) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+          <Text style={{ fontSize: 52, marginBottom: 16 }}>📍</Text>
+          <Text style={{ fontSize: 20, fontWeight: '900', color: theme.text, marginBottom: 10, textAlign: 'center' }}>
+            Localização necessária
+          </Text>
+          <Text style={{ fontSize: 14, color: theme.textSec, textAlign: 'center', lineHeight: 22, marginBottom: 32 }}>
+            Para garantir que você acessa apenas o seu NODO, precisamos confirmar sua localização.{'\n\n'}
+            Ative a localização do dispositivo ou digite o endereço da sua agência.
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: COLORS.yellow, borderRadius: 14, padding: 16,
+              width: '100%', alignItems: 'center', marginBottom: 12,
+            }}
+            onPress={loadNodosWithLocation}
+            activeOpacity={0.85}
+          >
+            <Text style={{ fontWeight: '800', fontSize: 15, color: '#000' }}>🔄 Tentar localização novamente</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              borderWidth: 1.5, borderColor: theme.border, borderRadius: 14, padding: 16,
+              width: '100%', alignItems: 'center',
+              backgroundColor: theme.surface,
+            }}
+            onPress={() => setAddressModal(true)}
+            activeOpacity={0.85}
+          >
+            <Text style={{ fontWeight: '800', fontSize: 15, color: theme.text }}>📍 Digitar meu endereço</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Address Modal */}
+        <Modal visible={addressModal} transparent animationType="fade" onRequestClose={() => setAddressModal(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+            <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 400 }}>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>📍 Digitar Endereço</Text>
+              <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 20, marginBottom: 20 }}>
+                Digite o endereço da sua agência para encontrar os NODOs mais próximos.{'\n'}Ex: "Rua das Flores 123, São Paulo SP"
+              </Text>
+              <TextInput
+                style={{
+                  borderWidth: 2, borderColor: theme.inputBorder, borderRadius: 12,
+                  padding: 14, fontSize: 15, color: theme.text,
+                  backgroundColor: theme.input, marginBottom: 20,
+                }}
+                placeholder="Endereço completo com cidade e estado"
+                placeholderTextColor={theme.textTer}
+                value={addressInput}
+                onChangeText={setAddressInput}
+                autoFocus
+                onSubmitEditing={handleAddressSearch}
+              />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity
+                  style={{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: theme.border, alignItems: 'center' }}
+                  onPress={() => { setAddressModal(false); setAddressInput(''); }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: theme.textSec }}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: COLORS.yellow, alignItems: 'center', opacity: geocoding ? 0.6 : 1 }}
+                  onPress={handleAddressSearch}
+                  disabled={geocoding}
+                >
+                  {geocoding
+                    ? <ActivityIndicator size="small" color="#000" />
+                    : <Text style={{ fontSize: 14, fontWeight: '800', color: '#000' }}>Buscar</Text>
+                  }
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
+    );
+  }
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         {locationError && (
