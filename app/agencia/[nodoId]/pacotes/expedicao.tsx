@@ -68,6 +68,7 @@ export default function ExpedicaoPacotesScreen() {
   // Camera
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<'front' | 'back'>('back');
+  const [zoom, setZoom] = useState(0);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const scanCooldown = useRef(false);
 
@@ -215,6 +216,7 @@ export default function ExpedicaoPacotesScreen() {
           key={facing}
           style={scannerStyles.camera}
           facing={facing}
+          zoom={zoom}
           enableTorch={flashEnabled}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'datamatrix'] }}
           onBarcodeScanned={handleBarcodeScanned}
@@ -239,6 +241,17 @@ export default function ExpedicaoPacotesScreen() {
               </View>
             </View>
           </SafeAreaView>
+          <View style={scannerStyles.zoomRow}>
+            {([{ label: '0.5×', v: 0 }, { label: '1×', v: 0.1 }, { label: '2×', v: 0.35 }]).map(z => (
+              <TouchableOpacity
+                key={z.label}
+                style={[scannerStyles.zoomBtn, zoom === z.v && scannerStyles.zoomBtnActive]}
+                onPress={() => setZoom(z.v)}
+              >
+                <Text style={[scannerStyles.zoomBtnText, zoom === z.v && scannerStyles.zoomBtnTextActive]}>{z.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <View style={scannerStyles.scanCounter}>
             <Text style={scannerStyles.scanCounterText}>{pacotes.length} na expedição</Text>
           </View>
@@ -417,6 +430,11 @@ const scannerStyles = StyleSheet.create({
   scanActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   flipBtn: { backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 6 },
   flipBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
+  zoomRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 8 },
+  zoomBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  zoomBtnActive: { backgroundColor: '#FFE600', borderColor: '#FFE600' },
+  zoomBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  zoomBtnTextActive: { color: '#000' },
   flashBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
   flashBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
   scanCounter: { alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },

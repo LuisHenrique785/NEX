@@ -156,13 +156,11 @@ export default function SelectNodoScreen() {
       });
 
       if (userLat && userLng) {
-        const nearby = processed
-          .filter((n) => n.distance !== undefined && n.distance <= MAX_DISTANCE_KM)
-          .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
-        const far = processed
-          .filter((n) => n.distance === undefined || n.distance > MAX_DISTANCE_KM)
-          .sort((a, b) => a.nome.localeCompare(b.nome));
-        processed = [...nearby, ...far];
+        processed = processed.sort((a, b) => {
+          const da = a.distance ?? 99999;
+          const db = b.distance ?? 99999;
+          return da - db;
+        });
       }
 
       setNodos(processed);
