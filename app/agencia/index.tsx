@@ -196,14 +196,9 @@ export default function SelectNodoScreen() {
     const isFar = userLocation && nodo.distance !== undefined && nodo.distance > MAX_DISTANCE_KM;
     const noCoords = !nodo.lat || !nodo.lng;
 
-    // Modo demo: libera tudo com aviso quando haveria restrição
-    if (isDemo && (noCoords || isFar)) {
-      Alert.alert(
-        '🎭 Acesso Demo',
-        `No modo real, este NODO estaria restrito por localização.\n\nNo modo demo o acesso está liberado, mas os dados não serão salvos.`,
-        [{ text: 'Acessar mesmo assim', onPress: () => router.push(`/agencia/${nodo.id}`) },
-         { text: 'Cancelar', style: 'cancel' }]
-      );
+    // Modo demo: acesso direto sem bloqueio (banner laranja já avisa)
+    if (isDemo) {
+      router.push(`/agencia/${nodo.id}`);
       return;
     }
 
@@ -254,13 +249,18 @@ export default function SelectNodoScreen() {
         ...n,
         distance: n.lat && n.lng ? haversineDistance(coords.lat, coords.lng, n.lat, n.lng) : undefined,
       }));
+      // Exibe APENAS NODOs dentro do raio — endereço manual não libera lista completa
       const nearby = withDist
         .filter((n) => n.distance !== undefined && n.distance <= MAX_DISTANCE_KM)
         .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
-      const far = withDist
-        .filter((n) => n.distance === undefined || n.distance > MAX_DISTANCE_KM)
-        .sort((a, b) => a.nome.localeCompare(b.nome));
-      setNodos([...nearby, ...far]);
+      if (nearby.length === 0) {
+        Alert.alert(
+          'Nenhum NODO próximo',
+          `Não encontramos nenhum NODO a menos de ${MAX_DISTANCE_KM}km desse endereço.\n\nVerifique se o endereço está correto e inclui cidade e estado.`
+        );
+        return;
+      }
+      setNodos(nearby);
     } catch {
       Alert.alert('Erro', 'Não foi possível buscar o endereço. Verifique sua conexão.');
     } finally {
