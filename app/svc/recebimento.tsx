@@ -171,7 +171,7 @@ export default function SVCRecebimentoScreen() {
     }
   }
 
-  const typeIcon = (t: string) => t === 'scanner' ? '📷' : t === 'manual' ? '[teclado]' : '📸';
+  const typeIcon = (t: string) => t === 'scanner' ? '📷' : t === 'manual' ? '⌨️' : '📸';
 
   // Scanner
   if (inputMode === 'scanner') {

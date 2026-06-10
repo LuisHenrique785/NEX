@@ -195,7 +195,7 @@ export default function ExpedicaoPacotesScreen() {
     }
   }
 
-  const typeIcon = (tipo: string) => tipo === 'scanner' ? '📷' : tipo === 'manual' ? '[teclado]' : '📸';
+  const typeIcon = (tipo: string) => tipo === 'scanner' ? '📷' : tipo === 'manual' ? '⌨️' : '📸';
 
   // ─── SCANNER MODAL ────────────────────────────────────────────
   if (inputMode === 'scanner') {
