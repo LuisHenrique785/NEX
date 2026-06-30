@@ -78,24 +78,33 @@ export default function ExpedicaoPacotesScreen() {
   const [photoCode, setPhotoCode] = useState('');
 
   function addPacote(codigo: string, tipo: 'scanner' | 'manual' | 'foto', fotoUri?: string) {
-    const trimmed = codigo.trim();
-    if (!trimmed) return;
-
-    const duplicate = pacotes.some((p) => p.codigo === trimmed);
-    if (duplicate) {
+    const cleaned = codigo.replace(/[^0-9]/g, '');
+    if (!cleaned) return;
+    if (cleaned.length !== 11) {
       if (tipo === 'scanner') {
-        setLastScanned(`⚠️ Repetido: ${trimmed}`);
+        setLastScanned(`⚠️ Inválido: ${cleaned.length} dígitos`);
         setTimeout(() => setLastScanned(''), 2000);
       } else {
-        Alert.alert('Duplicado', `O pacote ${trimmed} já está na lista.`);
+        Alert.alert('Código inválido', `O código deve ter exatamente 11 dígitos numéricos.\nInformado: ${cleaned.length} dígito${cleaned.length !== 1 ? 's' : ''}.`);
       }
       return;
     }
 
-    setPacotes((prev) => [{ codigo: trimmed, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
+    const duplicate = pacotes.some((p) => p.codigo === cleaned);
+    if (duplicate) {
+      if (tipo === 'scanner') {
+        setLastScanned(`⚠️ Repetido: ${cleaned}`);
+        setTimeout(() => setLastScanned(''), 2000);
+      } else {
+        Alert.alert('Duplicado', `O pacote ${cleaned} já está na lista.`);
+      }
+      return;
+    }
+
+    setPacotes((prev) => [{ codigo: cleaned, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
 
     if (tipo === 'scanner') {
-      setLastScanned(`✅ ${trimmed}`);
+      setLastScanned(`✅ ${cleaned}`);
       setTimeout(() => setLastScanned(''), 2000);
     }
   }
@@ -376,14 +385,14 @@ export default function ExpedicaoPacotesScreen() {
                 style={styles.manualInput}
                 placeholder="Digite o código do pacote..."
                 value={manualCode}
-                onChangeText={setManualCode}
-                autoCapitalize="characters"
+                onChangeText={(t) => setManualCode(t.replace(/[^0-9]/g, '').slice(0, 11))}
+                keyboardType="number-pad"
                 autoFocus
                 returnKeyType="done"
-                onSubmitEditing={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }}
+                onSubmitEditing={() => { if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); } }}
               />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                <Button label="Adicionar" onPress={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }} style={{ flex: 1 }} />
+                <Button label="Adicionar" onPress={() => { if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); } }} style={{ flex: 1 }} />
                 <Button label="Fechar" onPress={() => setInputMode('none')} variant="outline" style={{ flex: 1 }} />
               </View>
             </Card>
@@ -400,7 +409,7 @@ export default function ExpedicaoPacotesScreen() {
                   <Button label="🖼 Galeria" onPress={handlePickPhoto} variant="outline" style={{ flex: 1 }} />
                 </View>
               )}
-              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código do pacote na foto" value={photoCode} onChangeText={setPhotoCode} autoCapitalize="characters" />
+              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código do pacote na foto" value={photoCode} onChangeText={(t) => setPhotoCode(t.replace(/[^0-9]/g, '').slice(0, 11))} keyboardType="number-pad" />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
                 <Button label="Salvar" onPress={handlePhotoAdd} style={{ flex: 1 }} />
                 <Button label="Cancelar" onPress={() => { setInputMode('none'); setPhotoUri(null); setPhotoCode(''); }} variant="outline" style={{ flex: 1 }} />

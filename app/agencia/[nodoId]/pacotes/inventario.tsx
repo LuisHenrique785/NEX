@@ -316,16 +316,25 @@ export default function InventarioFisicoScreen() {
     tipo: 'scanner' | 'manual' | 'foto',
     fotoUri?: string
   ) {
-    const trimmed = codigo.trim();
-    if (!trimmed) return;
-
-    const alreadyScanned = pacotes.some((p) => p.codigo === trimmed);
-    if (alreadyScanned) {
+    const cleaned = codigo.replace(/[^0-9]/g, '');
+    if (!cleaned) return;
+    if (cleaned.length !== 11) {
       if (tipo === 'scanner') {
-        setLastScanned(`⚠️ Já bipado: ${trimmed}`);
+        setLastScanned(`⚠️ Inválido: ${cleaned.length} dígitos`);
         setTimeout(() => setLastScanned(''), 2000);
       } else {
-        Alert.alert('Duplicado', `O pacote ${trimmed} já foi bipado hoje.`);
+        Alert.alert('Código inválido', `O código deve ter exatamente 11 dígitos numéricos.\nInformado: ${cleaned.length} dígito${cleaned.length !== 1 ? 's' : ''}.`);
+      }
+      return;
+    }
+
+    const alreadyScanned = pacotes.some((p) => p.codigo === cleaned);
+    if (alreadyScanned) {
+      if (tipo === 'scanner') {
+        setLastScanned(`⚠️ Já bipado: ${cleaned}`);
+        setTimeout(() => setLastScanned(''), 2000);
+      } else {
+        Alert.alert('Duplicado', `O pacote ${cleaned} já foi bipado hoje.`);
       }
       return;
     }
@@ -333,15 +342,15 @@ export default function InventarioFisicoScreen() {
     if (isDemo) {
       const fakeEntry: Pacote = {
         id: `demo_${Date.now()}`,
-        codigo: trimmed,
+        codigo: cleaned,
         tipo_entrada: tipo,
         inventoried_at: new Date().toISOString(),
         foto_url: null,
       };
       setPacotes((prev) => [fakeEntry, ...prev]);
-      setPendencias((prev) => prev.filter((p) => p.codigo !== trimmed));
+      setPendencias((prev) => prev.filter((p) => p.codigo !== cleaned));
       if (tipo === 'scanner') {
-        setLastScanned(`✅ ${trimmed}`);
+        setLastScanned(`✅ ${cleaned}`);
         setTimeout(() => setLastScanned(''), 2000);
       }
       return;
@@ -349,11 +358,11 @@ export default function InventarioFisicoScreen() {
 
     setSaving(true);
     let fotoUrl: string | null = null;
-    if (fotoUri) fotoUrl = await uploadPhoto(fotoUri, trimmed);
+    if (fotoUri) fotoUrl = await uploadPhoto(fotoUri, cleaned);
 
     const { data, error } = await supabase
       .from('pacotes_inventario')
-      .insert({ nodo_id: nodoId, codigo: trimmed, tipo_entrada: tipo, foto_url: fotoUrl, status: 'inventoried' })
+      .insert({ nodo_id: nodoId, codigo: cleaned, tipo_entrada: tipo, foto_url: fotoUrl, status: 'inventoried' })
       .select()
       .single();
 
@@ -361,7 +370,7 @@ export default function InventarioFisicoScreen() {
 
     if (error) {
       if (error.code === '23505') {
-        Alert.alert('Duplicado', `O pacote ${trimmed} já está no inventário.`);
+        Alert.alert('Duplicado', `O pacote ${cleaned} já está no inventário.`);
       } else {
         Alert.alert('Erro', error.message);
       }
@@ -369,10 +378,10 @@ export default function InventarioFisicoScreen() {
     }
 
     setPacotes((prev) => [data, ...prev]);
-    setPendencias((prev) => prev.filter((p) => p.codigo !== trimmed));
+    setPendencias((prev) => prev.filter((p) => p.codigo !== cleaned));
 
     if (tipo === 'scanner') {
-      setLastScanned(`✅ ${trimmed}`);
+      setLastScanned(`✅ ${cleaned}`);
       setTimeout(() => setLastScanned(''), 2000);
     }
   }
@@ -559,21 +568,21 @@ export default function InventarioFisicoScreen() {
               <Text style={styles.manualTitle}>Digitar Código Manualmente</Text>
               <TextInput
                 style={styles.manualInput}
-                placeholder="Digite o ID do pacote..."
+                placeholder="Digite o código do pacote..."
                 placeholderTextColor={theme.textTer}
                 value={manualCode}
-                onChangeText={setManualCode}
-                autoCapitalize="characters"
+                onChangeText={(t) => setManualCode(t.replace(/[^0-9]/g, '').slice(0, 11))}
+                keyboardType="number-pad"
                 autoFocus
                 returnKeyType="done"
                 onSubmitEditing={() => {
-                  if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); }
+                  if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); }
                 }}
               />
               <Button
                 label="Adicionar"
                 onPress={() => {
-                  if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); }
+                  if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); }
                 }}
                 loading={saving}
                 style={{ marginTop: 12 }}
@@ -626,11 +635,11 @@ export default function InventarioFisicoScreen() {
               <Text style={styles.label}>Código do Pacote (visível na foto) *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: MLM123456789"
+                placeholder="11 dígitos numéricos"
                 placeholderTextColor={theme.textTer}
                 value={photoCode}
-                onChangeText={setPhotoCode}
-                autoCapitalize="characters"
+                onChangeText={(t) => setPhotoCode(t.replace(/[^0-9]/g, '').slice(0, 11))}
+                keyboardType="number-pad"
               />
 
               <Button label="Salvar Pacote" onPress={handlePhotoSubmit} loading={saving} style={{ marginTop: 16 }} />
