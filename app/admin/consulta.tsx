@@ -244,6 +244,7 @@ export default function ConsultaScreen() {
   const [expedicoes, setExpedicoes] = useState<Expedicao[]>([]);
   const [loadingExp, setLoadingExp] = useState(false);
   const [expLoaded, setExpLoaded] = useState(false);
+  const [totalInventoriados, setTotalInventoriados] = useState(0);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -275,14 +276,27 @@ export default function ConsultaScreen() {
   function handleLogin() {
     if (password === CONSULTA_PASSWORD) {
       setUnlocked(true);
-      loadExpedicoes();
+      loadData();
     } else {
       Alert.alert('Senha incorreta', 'Verifique a senha e tente novamente.');
       setPassword('');
     }
   }
 
-  // ─── Load expeditions ────────────────────────────────────────────
+  // ─── Load all data ───────────────────────────────────────────────
+  async function loadData() {
+    loadExpedicoes();
+    loadInventariados();
+  }
+
+  async function loadInventariados() {
+    const { count } = await supabase
+      .from('pacotes_inventario')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'inventoried');
+    setTotalInventoriados(count || 0);
+  }
+
   async function loadExpedicoes() {
     setLoadingExp(true);
     try {
@@ -538,7 +552,7 @@ export default function ConsultaScreen() {
               </Text>
             </View>
             <TouchableOpacity
-              onPress={() => { setUnlocked(false); setPassword(''); setExpedicoes([]); setExpLoaded(false); }}
+              onPress={() => { setUnlocked(false); setPassword(''); setExpedicoes([]); setExpLoaded(false); setTotalInventoriados(0); }}
               style={{
                 backgroundColor: theme.surface, borderRadius: 10,
                 borderWidth: 1, borderColor: theme.border,
@@ -558,24 +572,39 @@ export default function ConsultaScreen() {
               ))}
             </View>
           ) : expLoaded ? (
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {([
-                { val: expedicoes.length, label: 'Expedições', color: COLORS.blue },
-                { val: totalEnviados,     label: 'Enviados',   color: '#FF9500' },
-                { val: totalRecebidos,    label: 'Recebidos',  color: COLORS.green },
-                { val: totalPendentes,    label: 'Pendentes',  color: totalPendentes > 0 ? '#FF3B30' : COLORS.green },
-              ]).map(({ val, label, color }) => (
-                <View key={label} style={{
-                  flex: 1, backgroundColor: color + '22',
-                  borderRadius: 12, padding: 10, alignItems: 'center',
+            <>
+              {totalInventoriados > 0 && (
+                <View style={{
+                  backgroundColor: COLORS.blue + '18', borderRadius: 12,
+                  padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10,
+                  borderWidth: 1, borderColor: COLORS.blue + '44',
                 }}>
-                  <Text style={{ fontSize: 20, fontWeight: '900', color }}>{val}</Text>
-                  <Text style={{ fontSize: 9, fontWeight: '700', color: theme.textSec, textTransform: 'uppercase', letterSpacing: 0.3, marginTop: 2 }}>
-                    {label}
-                  </Text>
+                  <Text style={{ fontSize: 22, fontWeight: '900', color: COLORS.blue }}>{totalInventoriados}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.blue }}>pacote{totalInventoriados !== 1 ? 's' : ''} no inventário</Text>
+                    <Text style={{ fontSize: 11, color: theme.textSec, marginTop: 1 }}>Escaneados nas agências · aguardando expedição</Text>
+                  </View>
                 </View>
-              ))}
-            </View>
+              )}
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {([
+                  { val: expedicoes.length, label: 'Expedições', color: COLORS.blue },
+                  { val: totalEnviados,     label: 'Enviados',   color: '#FF9500' },
+                  { val: totalRecebidos,    label: 'Recebidos',  color: COLORS.green },
+                  { val: totalPendentes,    label: 'Pendentes',  color: totalPendentes > 0 ? '#FF3B30' : COLORS.green },
+                ]).map(({ val, label, color }) => (
+                  <View key={label} style={{
+                    flex: 1, backgroundColor: color + '22',
+                    borderRadius: 12, padding: 10, alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: 20, fontWeight: '900', color }}>{val}</Text>
+                    <Text style={{ fontSize: 9, fontWeight: '700', color: theme.textSec, textTransform: 'uppercase', letterSpacing: 0.3, marginTop: 2 }}>
+                      {label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </>
           ) : null}
         </View>
 
@@ -664,7 +693,7 @@ export default function ConsultaScreen() {
               <Text style={styles.sectionLabel}>
                 {filteredExps.length} RESULTADO{filteredExps.length !== 1 ? 'S' : ''}
               </Text>
-              <TouchableOpacity onPress={loadExpedicoes}>
+              <TouchableOpacity onPress={loadData}>
                 <Text style={{ color: COLORS.blue, fontWeight: '700', fontSize: 13 }}>↺ Atualizar</Text>
               </TouchableOpacity>
             </View>
@@ -673,9 +702,12 @@ export default function ConsultaScreen() {
 
             {!loadingExp && filteredExps.length === 0 && expLoaded && (
               <Card style={styles.emptyCard}>
+                <Text style={{ fontSize: 32, marginBottom: 10 }}>
+                  {expedicoes.length === 0 ? '📦' : '🔍'}
+                </Text>
                 <Text style={styles.emptyText}>
                   {expedicoes.length === 0
-                    ? 'Nenhuma expedição registrada ainda.'
+                    ? `Nenhuma expedição registrada ainda.${totalInventoriados > 0 ? `\n\n${totalInventoriados} pacote${totalInventoriados !== 1 ? 's estão' : ' está'} no inventário das agências aguardando expedição.\n\nPara aparecer aqui, o responsável da agência deve criar uma expedição informando placa e transportadora.` : ''}`
                     : 'Nenhuma expedição encontrada com esses filtros.'}
                 </Text>
               </Card>
@@ -694,7 +726,7 @@ export default function ConsultaScreen() {
               <Text style={styles.sectionLabel}>
                 {pendencias.length} EXPEDIÇÃO{pendencias.length !== 1 ? 'ÕES' : ''} PENDENTE{pendencias.length !== 1 ? 'S' : ''}
               </Text>
-              <TouchableOpacity onPress={loadExpedicoes}>
+              <TouchableOpacity onPress={loadData}>
                 <Text style={{ color: COLORS.blue, fontWeight: '700', fontSize: 13 }}>↺ Atualizar</Text>
               </TouchableOpacity>
             </View>
