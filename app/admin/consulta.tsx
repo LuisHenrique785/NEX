@@ -5,12 +5,14 @@ import {
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { router } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { supabase } from '../../src/lib/supabase';
 import { COLORS, Card, Badge, Button } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
 import type { Theme } from '../../src/lib/theme';
 import { CONSULTA_PASSWORD } from '../../src/config';
-import { formatDateTimeBRT, formatTimeBRT } from '../../src/lib/utils';
+import { formatDateTimeBRT } from '../../src/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────
 interface Expedicao {
@@ -35,12 +37,68 @@ interface PackageHistory {
   status: 'inventoried' | 'expedited' | 'received_svc';
 }
 
+type MainTab = 'expedicoes' | 'pendencias' | 'busca' | 'exportar';
+type StatusFilter = 'all' | 'pending' | 'complete';
+
+const EXPORT_PERIODS = [
+  { label: 'Hoje',    days: 1  },
+  { label: '7 dias',  days: 7  },
+  { label: '15 dias', days: 15 },
+  { label: '30 dias', days: 30 },
+] as const;
+
+function buildCSV(rows: any[]): string {
+  const headers = [
+    'Data/Hora (BRT)', 'NODO', 'Código', 'Placa', 'Transportadora',
+    'Total Declarado', 'Enviados', 'Recebidos SVC', 'Pendentes',
+  ];
+  const escape = (v: any) => {
+    const s = String(v ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n')
+      ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(',')];
+  for (const r of rows) {
+    lines.push([
+      r.created_at_brt, r.nodo_nome, r.nodo_codigo,
+      r.placa, r.transportadora,
+      r.total_pacotes, r.enviados, r.recebidos, r.pendentes,
+    ].map(escape).join(','));
+  }
+  return '﻿' + lines.join('\r\n');
+}
+
+async function downloadCSV(csv: string, filename: string) {
+  if (Platform.OS === 'web') {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+  try {
+    const path = FileSystem.cacheDirectory + filename;
+    await FileSystem.writeAsStringAsync(path, csv, { encoding: FileSystem.EncodingType.UTF8 });
+    const canShare = await Sharing.isAvailableAsync();
+    if (canShare) {
+      await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: 'Exportar CSV', UTI: 'public.comma-separated-values-text' });
+    } else {
+      Alert.alert('Arquivo salvo', `CSV salvo em: ${path}`);
+    }
+  } catch (err: any) {
+    Alert.alert('Erro', `Não foi possível exportar o CSV: ${err?.message || err}`);
+  }
+}
+
 // ─── Styles ──────────────────────────────────────────────────────
 function makeStyles(t: Theme) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.bg },
     flex: { flex: 1 },
-    container: { padding: 20, paddingBottom: 40 },
+    container: { padding: 16, paddingBottom: 40 },
 
     // Login
     loginWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
@@ -55,18 +113,32 @@ function makeStyles(t: Theme) {
     },
 
     // Tabs
-    tabRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-    tab: { flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: t.border, alignItems: 'center' },
+    tabRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    tab: {
+      flex: 1, paddingVertical: 10, borderRadius: 12,
+      borderWidth: 1.5, borderColor: t.border, alignItems: 'center',
+    },
     tabActive: { backgroundColor: COLORS.yellow, borderColor: COLORS.yellow },
-    tabLabel: { fontSize: 13, fontWeight: '700', color: t.textSec },
+    tabLabel: { fontSize: 12, fontWeight: '700', color: t.textSec },
     tabLabelActive: { color: COLORS.black },
 
+    // Filter chips
+    filterRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+    filterChip: {
+      paddingVertical: 6, paddingHorizontal: 12,
+      borderRadius: 20, borderWidth: 1.5, borderColor: t.border,
+      backgroundColor: t.surface,
+    },
+    filterChipActive: { backgroundColor: COLORS.black, borderColor: COLORS.black },
+    filterChipText: { fontSize: 12, fontWeight: '700', color: t.textSec },
+    filterChipTextActive: { color: COLORS.yellow },
+
     // Search
-    searchRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+    searchRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
     searchInput: {
       flex: 1, backgroundColor: t.input, borderRadius: 12,
       borderWidth: 1.5, borderColor: t.inputBorder,
-      padding: 12, fontSize: 14, color: t.text, fontFamily: 'monospace',
+      padding: 12, fontSize: 14, color: t.text,
     },
     searchBtn: {
       backgroundColor: COLORS.black, borderRadius: 12,
@@ -92,16 +164,71 @@ function makeStyles(t: Theme) {
     timelineDot: { width: 12, height: 12, borderRadius: 6, marginTop: 4, marginRight: 12 },
     timelineLabel: { fontSize: 14, fontWeight: '700', color: t.text },
     timelineTime: { fontSize: 12, color: t.textSec, marginTop: 2 },
-    timelineConnector: { width: 2, height: 16, backgroundColor: t.border, marginLeft: 5, marginBottom: 0, marginTop: -4 },
 
     sectionLabel: {
       fontSize: 11, fontWeight: '800', color: t.textSec,
       textTransform: 'uppercase', letterSpacing: 1.5,
-      marginTop: 20, marginBottom: 12,
+      marginTop: 16, marginBottom: 10,
     },
     emptyCard: { alignItems: 'center', paddingVertical: 32 },
     emptyText: { color: t.textSec, fontSize: 14, textAlign: 'center', lineHeight: 22 },
   });
+}
+
+// ─── Expedition Card ─────────────────────────────────────────────
+function ExpCard({ exp, styles, isPendencia }: { exp: Expedicao; styles: ReturnType<typeof makeStyles>; isPendencia?: boolean }) {
+  const ageMs = Date.now() - new Date(exp.created_at).getTime();
+  const ageHours = Math.floor(ageMs / 3600000);
+  const ageDays = Math.floor(ageHours / 24);
+  const isUrgent = isPendencia && ageDays >= 1;
+
+  return (
+    <Card style={[styles.expCard, isUrgent && { borderWidth: 1.5, borderColor: '#FF3B30' }]}>
+      <View style={styles.expHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.expAgency}>{exp.nodo_nome}</Text>
+          <Text style={[styles.expDate, { marginTop: 2 }]}>
+            {formatDateTimeBRT(exp.created_at)}
+            {isPendencia && (
+              <Text style={{ color: isUrgent ? '#FF3B30' : '#FF9500', fontWeight: '700' }}>
+                {ageDays > 0 ? `  ·  há ${ageDays}d` : `  ·  há ${ageHours}h`}
+              </Text>
+            )}
+          </Text>
+        </View>
+        {exp.pendentes > 0 ? (
+          <Badge label={`${exp.pendentes} pendente${exp.pendentes !== 1 ? 's' : ''}`} color={COLORS.red} />
+        ) : (
+          <Badge label="✓ Completo" color={COLORS.green} />
+        )}
+      </View>
+
+      {(exp.transportadora || exp.placa) && (
+        <Text style={styles.expMeta}>
+          🚛 {exp.transportadora || ''}{exp.placa ? ` · ${exp.placa}` : ''}
+        </Text>
+      )}
+
+      <View style={styles.statsRow}>
+        <View style={[styles.statBox, { backgroundColor: COLORS.blue + '22' }]}>
+          <Text style={[styles.statVal, { color: COLORS.blue }]}>{exp.enviados}</Text>
+          <Text style={[styles.statLbl, { color: COLORS.blue }]}>Enviados</Text>
+        </View>
+        <View style={[styles.statBox, { backgroundColor: COLORS.green + '22' }]}>
+          <Text style={[styles.statVal, { color: COLORS.green }]}>{exp.recebidos}</Text>
+          <Text style={[styles.statLbl, { color: COLORS.green }]}>Recebidos</Text>
+        </View>
+        <View style={[styles.statBox, { backgroundColor: exp.pendentes > 0 ? COLORS.red + '22' : COLORS.green + '11' }]}>
+          <Text style={[styles.statVal, { color: exp.pendentes > 0 ? COLORS.red : COLORS.green }]}>
+            {exp.pendentes}
+          </Text>
+          <Text style={[styles.statLbl, { color: exp.pendentes > 0 ? COLORS.red : COLORS.green }]}>
+            Pendente
+          </Text>
+        </View>
+      </View>
+    </Card>
+  );
 }
 
 // ─── Main Component ──────────────────────────────────────────────
@@ -111,18 +238,39 @@ export default function ConsultaScreen() {
 
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState('');
-  const [tab, setTab] = useState<'expedicoes' | 'busca'>('expedicoes');
+  const [tab, setTab] = useState<MainTab>('expedicoes');
 
   // Expedições tab state
   const [expedicoes, setExpedicoes] = useState<Expedicao[]>([]);
   const [loadingExp, setLoadingExp] = useState(false);
   const [expLoaded, setExpLoaded] = useState(false);
 
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [expSearch, setExpSearch] = useState('');
+
   // Busca tab state
   const [searchCode, setSearchCode] = useState('');
   const [pkgHistory, setPkgHistory] = useState<PackageHistory | null>(null);
   const [searching, setSearching] = useState(false);
   const [notFound, setNotFound] = useState(false);
+
+  // Export tab state
+  const [exportPeriod, setExportPeriod] = useState<1 | 7 | 15 | 30 | null>(7);
+  const [exportDateFrom, setExportDateFrom] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().slice(0, 10);
+  });
+  const [exportDateTo, setExportDateTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [exportLoading, setExportLoading] = useState(false);
+
+  function selectExportPeriod(days: 1 | 7 | 15 | 30) {
+    setExportPeriod(days);
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - (days - 1));
+    setExportDateTo(to.toISOString().slice(0, 10));
+    setExportDateFrom(from.toISOString().slice(0, 10));
+  }
 
   function handleLogin() {
     if (password === CONSULTA_PASSWORD) {
@@ -134,34 +282,30 @@ export default function ConsultaScreen() {
     }
   }
 
-  // ─── Load expeditions with sent/received/pending counts ─────────
+  // ─── Load expeditions ────────────────────────────────────────────
   async function loadExpedicoes() {
     setLoadingExp(true);
     try {
-      // Fetch expeditions with agency info
       const { data: exps } = await supabase
         .from('pacotes_expedicoes')
         .select('id, created_at, placa, transportadora, total_pacotes, nodo_id, nodos(nome, codigo)')
         .order('created_at', { ascending: false })
-        .limit(60);
+        .limit(100);
 
       if (!exps || exps.length === 0) {
         setExpedicoes([]);
         setExpLoaded(true);
-        setLoadingExp(false);
         return;
       }
 
       const expIds = exps.map((e: any) => e.id);
 
-      // Get all expedited packages for these expeditions
       const { data: packages } = await supabase
         .from('pacotes_inventario')
         .select('codigo, expedicao_id')
         .in('expedicao_id', expIds)
         .eq('status', 'expedited');
 
-      // Build map: expedicaoId → [codes]
       const pkgByExp = new Map<string, string[]>();
       (packages || []).forEach((p: any) => {
         if (!pkgByExp.has(p.expedicao_id)) pkgByExp.set(p.expedicao_id, []);
@@ -169,8 +313,6 @@ export default function ConsultaScreen() {
       });
 
       const allCodes = (packages || []).map((p: any) => p.codigo);
-
-      // Check which arrived at SVC
       let receivedSet = new Set<string>();
       if (allCodes.length > 0) {
         const { data: received } = await supabase
@@ -204,7 +346,7 @@ export default function ConsultaScreen() {
     }
   }
 
-  // ─── Search a specific package code ─────────────────────────────
+  // ─── Search package ───────────────────────────────────────────────
   async function handleSearch() {
     const code = searchCode.trim().toUpperCase();
     if (!code) return;
@@ -213,7 +355,6 @@ export default function ConsultaScreen() {
     setPkgHistory(null);
 
     try {
-      // Check inventory record
       const { data: inv } = await supabase
         .from('pacotes_inventario')
         .select('codigo, status, inventoried_at, expedited_at, nodo_id, nodos(nome)')
@@ -222,7 +363,6 @@ export default function ConsultaScreen() {
         .limit(1)
         .single();
 
-      // Check SVC received
       const { data: svcRec } = await supabase
         .from('svc_recebimentos_pacotes')
         .select('codigo, created_at')
@@ -233,7 +373,6 @@ export default function ConsultaScreen() {
 
       if (!inv && !svcRec) {
         setNotFound(true);
-        setSearching(false);
         return;
       }
 
@@ -254,14 +393,107 @@ export default function ConsultaScreen() {
     }
   }
 
-  // ─── Render ──────────────────────────────────────────────────────
+  // ─── Export CSV ───────────────────────────────────────────────────
+  async function handleExport() {
+    if (!exportDateFrom || !exportDateTo) {
+      Alert.alert('Datas inválidas', 'Preencha as datas de início e fim.');
+      return;
+    }
+    if (exportDateFrom > exportDateTo) {
+      Alert.alert('Datas inválidas', 'A data de início deve ser anterior ou igual à data de fim.');
+      return;
+    }
+    setExportLoading(true);
+    try {
+      const since = new Date(exportDateFrom + 'T00:00:00-03:00').toISOString();
+      const until = new Date(exportDateTo + 'T23:59:59-03:00').toISOString();
+      const { data: exps } = await supabase
+        .from('pacotes_expedicoes')
+        .select('id, created_at, placa, transportadora, total_pacotes, nodo_id, nodos(nome, codigo)')
+        .gte('created_at', since)
+        .lte('created_at', until)
+        .order('created_at', { ascending: false });
+
+      if (!exps || exps.length === 0) {
+        Alert.alert('Sem dados', `Nenhuma expedição encontrada de ${exportDateFrom} até ${exportDateTo}.`);
+        return;
+      }
+
+      const expIds = exps.map((e: any) => e.id);
+      const { data: packages } = await supabase
+        .from('pacotes_inventario')
+        .select('codigo, expedicao_id')
+        .in('expedicao_id', expIds)
+        .eq('status', 'expedited');
+
+      const pkgByExp = new Map<string, string[]>();
+      (packages || []).forEach((p: any) => {
+        if (!pkgByExp.has(p.expedicao_id)) pkgByExp.set(p.expedicao_id, []);
+        pkgByExp.get(p.expedicao_id)!.push(p.codigo);
+      });
+
+      const allCodes = (packages || []).map((p: any) => p.codigo);
+      let receivedSet = new Set<string>();
+      if (allCodes.length > 0) {
+        const { data: received } = await supabase
+          .from('svc_recebimentos_pacotes')
+          .select('codigo')
+          .in('codigo', allCodes);
+        receivedSet = new Set((received || []).map((r: any) => r.codigo));
+      }
+
+      const rows = exps.map((e: any) => {
+        const codes = pkgByExp.get(e.id) || [];
+        const recebidos = codes.filter((c: string) => receivedSet.has(c)).length;
+        const enviados = codes.length || e.total_pacotes;
+        return {
+          created_at_brt: formatDateTimeBRT(e.created_at),
+          nodo_nome: e.nodos?.nome || '—',
+          nodo_codigo: e.nodos?.codigo || '—',
+          placa: e.placa || '',
+          transportadora: e.transportadora || '',
+          total_pacotes: e.total_pacotes,
+          enviados,
+          recebidos,
+          pendentes: enviados - recebidos,
+        };
+      });
+
+      await downloadCSV(buildCSV(rows), `nex-expedicoes-${exportDateFrom}-ate-${exportDateTo}.csv`);
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  // ─── Derived data ────────────────────────────────────────────────
+  const filteredExps = expedicoes.filter(exp => {
+    if (statusFilter === 'pending' && exp.pendentes === 0) return false;
+    if (statusFilter === 'complete' && exp.pendentes > 0) return false;
+    if (expSearch.trim()) {
+      const q = expSearch.toLowerCase();
+      if (
+        !exp.nodo_nome.toLowerCase().includes(q) &&
+        !(exp.placa || '').toLowerCase().includes(q) &&
+        !(exp.transportadora || '').toLowerCase().includes(q) &&
+        !(exp.nodo_codigo || '').toLowerCase().includes(q)
+      ) return false;
+    }
+    return true;
+  });
+
+  const pendencias = expedicoes
+    .filter(e => e.pendentes > 0)
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+  const totalEnviados = expedicoes.reduce((s, e) => s + e.enviados, 0);
+  const totalRecebidos = expedicoes.reduce((s, e) => s + e.recebidos, 0);
+  const totalPendentes = expedicoes.reduce((s, e) => s + e.pendentes, 0);
+
+  // ─── Login screen ─────────────────────────────────────────────────
   if (!unlocked) {
     return (
       <SafeAreaView style={[styles.safe, { justifyContent: 'center' }]}>
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.loginWrap}>
             <Text style={styles.loginIcon}>🔍</Text>
             <Text style={styles.loginTitle}>Consulta NEX</Text>
@@ -289,10 +521,65 @@ export default function ConsultaScreen() {
     );
   }
 
+  // ─── Main screen ──────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {/* Tabs */}
+
+        {/* ── Dashboard Header ── */}
+        <View style={{ marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <View>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: theme.text, letterSpacing: -0.5 }}>
+                📊 Consulta NEX
+              </Text>
+              <Text style={{ fontSize: 12, color: theme.textSec, marginTop: 2 }}>
+                Expedições, pendências e rastreio
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => { setUnlocked(false); setPassword(''); setExpedicoes([]); setExpLoaded(false); }}
+              style={{
+                backgroundColor: theme.surface, borderRadius: 10,
+                borderWidth: 1, borderColor: theme.border,
+                paddingVertical: 6, paddingHorizontal: 12,
+              }}
+            >
+              <Text style={{ fontSize: 12, color: theme.textSec, fontWeight: '700' }}>Sair</Text>
+            </TouchableOpacity>
+          </View>
+
+          {loadingExp && !expLoaded ? (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {[0, 1, 2, 3].map(i => (
+                <View key={i} style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 12, height: 52, justifyContent: 'center', alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={theme.textTer} />
+                </View>
+              ))}
+            </View>
+          ) : expLoaded ? (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {([
+                { val: expedicoes.length, label: 'Expedições', color: COLORS.blue },
+                { val: totalEnviados,     label: 'Enviados',   color: '#FF9500' },
+                { val: totalRecebidos,    label: 'Recebidos',  color: COLORS.green },
+                { val: totalPendentes,    label: 'Pendentes',  color: totalPendentes > 0 ? '#FF3B30' : COLORS.green },
+              ]).map(({ val, label, color }) => (
+                <View key={label} style={{
+                  flex: 1, backgroundColor: color + '22',
+                  borderRadius: 12, padding: 10, alignItems: 'center',
+                }}>
+                  <Text style={{ fontSize: 20, fontWeight: '900', color }}>{val}</Text>
+                  <Text style={{ fontSize: 9, fontWeight: '700', color: theme.textSec, textTransform: 'uppercase', letterSpacing: 0.3, marginTop: 2 }}>
+                    {label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+
+        {/* ── Tabs ── */}
         <View style={styles.tabRow}>
           <TouchableOpacity
             style={[styles.tab, tab === 'expedicoes' && styles.tabActive]}
@@ -303,20 +590,80 @@ export default function ConsultaScreen() {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            style={[styles.tab, tab === 'pendencias' && styles.tabActive, pendencias.length > 0 && tab !== 'pendencias' && { borderColor: '#FF3B30' }]}
+            onPress={() => setTab('pendencias')}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={[styles.tabLabel, tab === 'pendencias' && styles.tabLabelActive]}>
+                ⚠️ Pendências
+              </Text>
+              {pendencias.length > 0 && (
+                <View style={{
+                  backgroundColor: tab === 'pendencias' ? '#000' : '#FF3B30',
+                  borderRadius: 8, minWidth: 18, height: 18,
+                  justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4,
+                }}>
+                  <Text style={{ color: tab === 'pendencias' ? COLORS.yellow : '#FFF', fontSize: 10, fontWeight: '900' }}>
+                    {pendencias.length}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.tab, tab === 'busca' && styles.tabActive]}
             onPress={() => setTab('busca')}
           >
             <Text style={[styles.tabLabel, tab === 'busca' && styles.tabLabelActive]}>
-              🔍 Buscar Pacote
+              🔍 Buscar
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, tab === 'exportar' && styles.tabActive]}
+            onPress={() => setTab('exportar')}
+          >
+            <Text style={[styles.tabLabel, tab === 'exportar' && styles.tabLabelActive]}>
+              📥 CSV
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* ── EXPEDIÇÕES TAB ── */}
+        {/* ── ABA: EXPEDIÇÕES ── */}
         {tab === 'expedicoes' && (
           <>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <Text style={styles.sectionLabel}>ÚLTIMAS 60 EXPEDIÇÕES</Text>
+            {/* Filtro de status */}
+            <View style={styles.filterRow}>
+              {([
+                { key: 'all',      label: 'Todas' },
+                { key: 'pending',  label: 'Pendentes' },
+                { key: 'complete', label: 'Completas' },
+              ] as { key: StatusFilter; label: string }[]).map(f => (
+                <TouchableOpacity
+                  key={f.key}
+                  style={[styles.filterChip, statusFilter === f.key && styles.filterChipActive]}
+                  onPress={() => setStatusFilter(f.key)}
+                >
+                  <Text style={[styles.filterChipText, statusFilter === f.key && styles.filterChipTextActive]}>
+                    {f.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Busca por NODO / placa / transportadora */}
+            <TextInput
+              style={[styles.searchInput, { marginBottom: 12 }]}
+              placeholder="🔍  Filtrar por NODO, placa ou transportadora..."
+              placeholderTextColor={theme.textTer}
+              value={expSearch}
+              onChangeText={setExpSearch}
+              clearButtonMode="always"
+            />
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={styles.sectionLabel}>
+                {filteredExps.length} RESULTADO{filteredExps.length !== 1 ? 'S' : ''}
+              </Text>
               <TouchableOpacity onPress={loadExpedicoes}>
                 <Text style={{ color: COLORS.blue, fontWeight: '700', fontSize: 13 }}>↺ Atualizar</Text>
               </TouchableOpacity>
@@ -324,58 +671,52 @@ export default function ConsultaScreen() {
 
             {loadingExp && <ActivityIndicator color={COLORS.yellow} style={{ marginTop: 20 }} />}
 
-            {!loadingExp && expedicoes.length === 0 && expLoaded && (
+            {!loadingExp && filteredExps.length === 0 && expLoaded && (
               <Card style={styles.emptyCard}>
-                <Text style={styles.emptyText}>Nenhuma expedição registrada ainda.</Text>
+                <Text style={styles.emptyText}>
+                  {expedicoes.length === 0
+                    ? 'Nenhuma expedição registrada ainda.'
+                    : 'Nenhuma expedição encontrada com esses filtros.'}
+                </Text>
               </Card>
             )}
 
-            {expedicoes.map((exp) => (
-              <Card key={exp.id} style={styles.expCard}>
-                <View style={styles.expHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.expAgency}>{exp.nodo_nome}</Text>
-                    <Text style={[styles.expDate, { marginTop: 2 }]}>
-                      {formatDateTimeBRT(exp.created_at)}
-                    </Text>
-                  </View>
-                  {exp.pendentes > 0 ? (
-                    <Badge label={`${exp.pendentes} pendente${exp.pendentes !== 1 ? 's' : ''}`} color={COLORS.red} />
-                  ) : (
-                    <Badge label="✓ Completo" color={COLORS.green} />
-                  )}
-                </View>
-
-                {(exp.transportadora || exp.placa) && (
-                  <Text style={styles.expMeta}>
-                    🚛 {exp.transportadora || ''}{exp.placa ? ` · ${exp.placa}` : ''}
-                  </Text>
-                )}
-
-                <View style={styles.statsRow}>
-                  <View style={[styles.statBox, { backgroundColor: COLORS.blue + '22' }]}>
-                    <Text style={[styles.statVal, { color: COLORS.blue }]}>{exp.enviados}</Text>
-                    <Text style={[styles.statLbl, { color: COLORS.blue }]}>Enviados</Text>
-                  </View>
-                  <View style={[styles.statBox, { backgroundColor: COLORS.green + '22' }]}>
-                    <Text style={[styles.statVal, { color: COLORS.green }]}>{exp.recebidos}</Text>
-                    <Text style={[styles.statLbl, { color: COLORS.green }]}>Recebidos</Text>
-                  </View>
-                  <View style={[styles.statBox, { backgroundColor: exp.pendentes > 0 ? COLORS.red + '22' : COLORS.green + '11' }]}>
-                    <Text style={[styles.statVal, { color: exp.pendentes > 0 ? COLORS.red : COLORS.green }]}>
-                      {exp.pendentes}
-                    </Text>
-                    <Text style={[styles.statLbl, { color: exp.pendentes > 0 ? COLORS.red : COLORS.green }]}>
-                      Pendente
-                    </Text>
-                  </View>
-                </View>
-              </Card>
+            {filteredExps.map(exp => (
+              <ExpCard key={exp.id} exp={exp} styles={styles} />
             ))}
           </>
         )}
 
-        {/* ── BUSCA TAB ── */}
+        {/* ── ABA: PENDÊNCIAS ── */}
+        {tab === 'pendencias' && (
+          <>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={styles.sectionLabel}>
+                {pendencias.length} EXPEDIÇÃO{pendencias.length !== 1 ? 'ÕES' : ''} PENDENTE{pendencias.length !== 1 ? 'S' : ''}
+              </Text>
+              <TouchableOpacity onPress={loadExpedicoes}>
+                <Text style={{ color: COLORS.blue, fontWeight: '700', fontSize: 13 }}>↺ Atualizar</Text>
+              </TouchableOpacity>
+            </View>
+
+            {loadingExp && <ActivityIndicator color={COLORS.yellow} style={{ marginTop: 20 }} />}
+
+            {!loadingExp && pendencias.length === 0 && expLoaded && (
+              <Card style={styles.emptyCard}>
+                <Text style={{ fontSize: 40, marginBottom: 12 }}>✅</Text>
+                <Text style={styles.emptyText}>
+                  Nenhuma pendência!{'\n'}Todas as expedições foram recebidas no SVC.
+                </Text>
+              </Card>
+            )}
+
+            {pendencias.map(exp => (
+              <ExpCard key={exp.id} exp={exp} styles={styles} isPendencia />
+            ))}
+          </>
+        )}
+
+        {/* ── ABA: BUSCAR PACOTE ── */}
         {tab === 'busca' && (
           <>
             <Text style={styles.sectionLabel}>CONSULTAR PACOTE POR CÓDIGO</Text>
@@ -386,7 +727,7 @@ export default function ConsultaScreen() {
                 placeholder="Ex: MLM123456789 ou 75343242..."
                 placeholderTextColor={theme.textTer}
                 value={searchCode}
-                onChangeText={(t) => { setSearchCode(t); setNotFound(false); setPkgHistory(null); }}
+                onChangeText={(v) => { setSearchCode(v); setNotFound(false); setPkgHistory(null); }}
                 autoCapitalize="characters"
                 returnKeyType="search"
                 onSubmitEditing={handleSearch}
@@ -412,14 +753,12 @@ export default function ConsultaScreen() {
               <Card style={styles.pkgCard}>
                 <Text style={styles.pkgCode}>{pkgHistory.codigo}</Text>
 
-                {/* Status badge */}
                 <View style={{ marginBottom: 16 }}>
                   {pkgHistory.status === 'received_svc' && <Badge label="✅ Recebido no SVC" color={COLORS.green} />}
-                  {pkgHistory.status === 'expedited' && <Badge label="🚛 Em trânsito (não recebido no SVC)" color={COLORS.orange} />}
-                  {pkgHistory.status === 'inventoried' && <Badge label="📦 Em inventário (não expedido)" color={COLORS.blue} />}
+                  {pkgHistory.status === 'expedited' && <Badge label="🚛 Em trânsito — aguardando SVC" color={COLORS.orange} />}
+                  {pkgHistory.status === 'inventoried' && <Badge label="📦 Em inventário — não expedido" color={COLORS.blue} />}
                 </View>
 
-                {/* Timeline */}
                 {pkgHistory.inventoriado_at && (
                   <View style={styles.timelineItem}>
                     <View style={[styles.timelineDot, { backgroundColor: COLORS.blue }]} />
@@ -452,7 +791,7 @@ export default function ConsultaScreen() {
 
                 {!pkgHistory.recebido_at && pkgHistory.expedido_at && (
                   <View style={styles.timelineItem}>
-                    <View style={[styles.timelineDot, { backgroundColor: COLORS.red, borderWidth: 2, borderColor: COLORS.red + '55' }]} />
+                    <View style={[styles.timelineDot, { backgroundColor: COLORS.red }]} />
                     <View>
                       <Text style={[styles.timelineLabel, { color: COLORS.red }]}>⚠️ Não recebido no SVC</Text>
                       <Text style={styles.timelineTime}>Pendente de confirmação</Text>
@@ -463,6 +802,152 @@ export default function ConsultaScreen() {
             )}
           </>
         )}
+
+        {/* ── ABA: EXPORTAR CSV ── */}
+        {tab === 'exportar' && (
+          <>
+            <Text style={styles.sectionLabel}>EXPORTAR EXPEDIÇÕES EM CSV</Text>
+
+            {/* Atalhos de período */}
+            <Text style={[styles.sectionLabel, { marginTop: 4 }]}>ATALHOS DE PERÍODO</Text>
+            <View style={[styles.filterRow, { flexWrap: 'wrap' }]}>
+              {EXPORT_PERIODS.map(p => (
+                <TouchableOpacity
+                  key={p.days}
+                  style={[
+                    styles.filterChip,
+                    { paddingVertical: 10, paddingHorizontal: 16 },
+                    exportPeriod === p.days && styles.filterChipActive,
+                  ]}
+                  onPress={() => selectExportPeriod(p.days as 1 | 7 | 15 | 30)}
+                >
+                  <Text style={[styles.filterChipText, exportPeriod === p.days && styles.filterChipTextActive]}>
+                    {p.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Seleção de datas */}
+            <Text style={[styles.sectionLabel, { marginTop: 8 }]}>PERÍODO PERSONALIZADO</Text>
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: theme.textSec, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  De
+                </Text>
+                {Platform.OS === 'web' ? (
+                  // @ts-ignore
+                  <input
+                    type="date"
+                    value={exportDateFrom}
+                    onChange={(e: any) => { setExportDateFrom(e.target.value); setExportPeriod(null); }}
+                    style={{
+                      backgroundColor: theme.input,
+                      border: `1.5px solid ${theme.inputBorder}`,
+                      borderRadius: 12,
+                      padding: '12px',
+                      fontSize: 14,
+                      color: theme.text,
+                      width: '100%',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                ) : (
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="AAAA-MM-DD"
+                    placeholderTextColor={theme.textTer}
+                    value={exportDateFrom}
+                    onChangeText={(v) => { setExportDateFrom(v); setExportPeriod(null); }}
+                    keyboardType="numbers-and-punctuation"
+                    maxLength={10}
+                  />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: theme.textSec, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Até
+                </Text>
+                {Platform.OS === 'web' ? (
+                  // @ts-ignore
+                  <input
+                    type="date"
+                    value={exportDateTo}
+                    onChange={(e: any) => { setExportDateTo(e.target.value); setExportPeriod(null); }}
+                    style={{
+                      backgroundColor: theme.input,
+                      border: `1.5px solid ${theme.inputBorder}`,
+                      borderRadius: 12,
+                      padding: '12px',
+                      fontSize: 14,
+                      color: theme.text,
+                      width: '100%',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                ) : (
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="AAAA-MM-DD"
+                    placeholderTextColor={theme.textTer}
+                    value={exportDateTo}
+                    onChangeText={(v) => { setExportDateTo(v); setExportPeriod(null); }}
+                    keyboardType="numbers-and-punctuation"
+                    maxLength={10}
+                  />
+                )}
+              </View>
+            </View>
+
+            <Card style={{ padding: 14, marginBottom: 20, backgroundColor: COLORS.blue + '15' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={{ fontSize: 24 }}>📋</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text }}>
+                    {exportDateFrom} → {exportDateTo}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: theme.textSec, marginTop: 2 }}>
+                    Colunas: Data/Hora · NODO · Placa · Transportadora · Total · Enviados · Recebidos · Pendentes
+                  </Text>
+                </View>
+              </View>
+            </Card>
+
+            <TouchableOpacity
+              style={{
+                backgroundColor: exportLoading ? theme.surface : COLORS.black,
+                borderRadius: 14, padding: 18,
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+                borderWidth: exportLoading ? 1.5 : 0,
+                borderColor: theme.border,
+              }}
+              onPress={handleExport}
+              disabled={exportLoading}
+              activeOpacity={0.85}
+            >
+              {exportLoading
+                ? <ActivityIndicator color={COLORS.yellow} size="small" />
+                : <Text style={{ fontSize: 20 }}>📥</Text>
+              }
+              <Text style={{
+                fontSize: 16, fontWeight: '900',
+                color: exportLoading ? theme.textSec : COLORS.yellow,
+              }}>
+                {exportLoading ? 'Gerando CSV...' : 'Baixar CSV'}
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={{ fontSize: 11, color: theme.textTer, textAlign: 'center', marginTop: 12, lineHeight: 16 }}>
+              {Platform.OS === 'web'
+                ? 'O download é iniciado automaticamente no navegador.'
+                : 'O arquivo será compartilhado via planilhas, e-mail ou outro app.'}{'\n'}
+              Abra o arquivo no Excel ou Google Sheets.
+            </Text>
+          </>
+        )}
+
       </ScrollView>
     </SafeAreaView>
   );
