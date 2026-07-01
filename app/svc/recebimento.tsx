@@ -68,6 +68,7 @@ export default function SVCRecebimentoScreen() {
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flashEnabled, setFlashEnabled] = useState(false);
   const scanCooldown = useRef(false);
+  const addedCodesRef = useRef(new Set<string>());
   const [manualCode, setManualCode] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoCode, setPhotoCode] = useState('');
@@ -95,8 +96,7 @@ export default function SVCRecebimentoScreen() {
       }
       return;
     }
-    const dup = pacotes.some((p) => p.codigo === cleaned);
-    if (dup) {
+    if (addedCodesRef.current.has(cleaned)) {
       if (tipo === 'scanner') {
         setLastScanned(`⚠️ Repetido: ${cleaned}`);
         setTimeout(() => setLastScanned(''), 2000);
@@ -105,6 +105,7 @@ export default function SVCRecebimentoScreen() {
       }
       return;
     }
+    addedCodesRef.current.add(cleaned);
     setPacotes((prev) => [{ codigo: cleaned, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
     if (tipo === 'scanner') {
       setLastScanned(`✅ ${cleaned}`);
@@ -363,7 +364,7 @@ export default function SVCRecebimentoScreen() {
             <View key={i} style={styles.pacoteRow}>
               <Text style={styles.pacoteIcon}>{typeIcon(p.tipo_entrada)}</Text>
               <Text style={styles.pacoteCodigo} numberOfLines={1}>{p.codigo}</Text>
-              <TouchableOpacity onPress={() => { Alert.alert('Remover?', p.codigo, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Remover', style: 'destructive', onPress: () => setPacotes((prev) => prev.filter((_, idx) => idx !== i)) }]); }}>
+              <TouchableOpacity onPress={() => { addedCodesRef.current.delete(p.codigo); setPacotes((prev) => prev.filter((_, idx) => idx !== i)); }}>
                 <Text style={styles.pacoteRemove}>✕</Text>
               </TouchableOpacity>
             </View>
