@@ -568,10 +568,14 @@ export default function InventarioFisicoScreen() {
               <Text style={styles.manualTitle}>Digitar Código Manualmente</Text>
               <TextInput
                 style={styles.manualInput}
-                placeholder="Digite o código do pacote..."
+                placeholder="Digite ou bipe o código..."
                 placeholderTextColor={theme.textTer}
                 value={manualCode}
-                onChangeText={(t) => setManualCode(t.replace(/[^0-9]/g, '').slice(0, 11))}
+                onChangeText={(t) => {
+                  const v = t.replace(/[^0-9]/g, '').slice(0, 11);
+                  setManualCode(v);
+                  if (v.length === 11) { addPacote(v, 'manual'); setManualCode(''); }
+                }}
                 keyboardType="number-pad"
                 autoFocus
                 returnKeyType="done"

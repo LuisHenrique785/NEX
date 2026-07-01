@@ -326,7 +326,13 @@ export default function SVCRecebimentoScreen() {
 
           {inputMode === 'manual' && (
             <Card style={{ marginBottom: 4 }}>
-              <TextInput style={styles.manualInput} placeholder="Digite o código..." placeholderTextColor={theme.textTer} value={manualCode} onChangeText={(t) => setManualCode(t.replace(/[^0-9]/g, '').slice(0, 11))} keyboardType="number-pad" autoFocus
+              <TextInput style={styles.manualInput} placeholder="Digite ou bipe o código..." placeholderTextColor={theme.textTer} value={manualCode}
+                onChangeText={(t) => {
+                  const v = t.replace(/[^0-9]/g, '').slice(0, 11);
+                  setManualCode(v);
+                  if (v.length === 11) { addPacote(v, 'manual'); setManualCode(''); }
+                }}
+                keyboardType="number-pad" autoFocus
                 returnKeyType="done"
                 onSubmitEditing={() => { if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); } }} />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
