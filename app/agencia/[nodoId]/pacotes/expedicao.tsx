@@ -63,6 +63,7 @@ export default function ExpedicaoPacotesScreen() {
   const [inputMode, setInputMode] = useState<InputMode>('none');
   const [saving, setSaving] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
+  const [resultModal, setResultModal] = useState<{ ok: boolean; msg: string } | null>(null);
   const [lastScanned, setLastScanned] = useState('');
 
   // Camera
@@ -200,33 +201,36 @@ export default function ExpedicaoPacotesScreen() {
     }
     setSaving(true);
     try {
-    const { data: expData, error: expError } = await supabase
-      .from('pacotes_expedicoes')
-      .insert({ nodo_id: nodoId, placa: placa.trim(), transportadora: transportadora.trim(), total_pacotes: pacotes.length })
-      .select().single();
-    if (expError) { Alert.alert('Erro ao criar expedição', expError.message); return; }
-
-    let erros = 0;
-    for (const p of pacotes) {
-      let fotoUrl: string | null = null;
-      if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
-      const { data: existing } = await supabase.from('pacotes_inventario').select('id').eq('nodo_id', nodoId).eq('codigo', p.codigo).eq('status', 'inventoried').single();
-      if (existing) {
-        const { error } = await supabase.from('pacotes_inventario').update({ status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() }).eq('id', existing.id);
-        if (error) erros++;
-      } else {
-        const { error } = await supabase.from('pacotes_inventario').insert({ nodo_id: nodoId, codigo: p.codigo, tipo_entrada: p.tipo_entrada, foto_url: fotoUrl, status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() });
-        if (error) erros++;
+      const { data: expData, error: expError } = await supabase
+        .from('pacotes_expedicoes')
+        .insert({ nodo_id: nodoId, placa: placa.trim(), transportadora: transportadora.trim(), total_pacotes: pacotes.length })
+        .select().single();
+      if (expError) {
+        setResultModal({ ok: false, msg: `Erro ao criar expedição:\n${expError.message}` });
+        return;
       }
-    }
 
-    if (erros > 0) {
-      Alert.alert('Atenção', `Expedição salva, mas ${erros} pacote${erros !== 1 ? 's' : ''} tiv${erros !== 1 ? 'eram' : 'e'} erro ao registrar. Verifique na Consulta.`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
-    } else {
-      Alert.alert('✅ Expedição Registrada!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso.`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
-    }
+      let erros = 0;
+      for (const p of pacotes) {
+        let fotoUrl: string | null = null;
+        if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
+        const { data: existing } = await supabase.from('pacotes_inventario').select('id').eq('nodo_id', nodoId).eq('codigo', p.codigo).eq('status', 'inventoried').single();
+        if (existing) {
+          const { error } = await supabase.from('pacotes_inventario').update({ status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() }).eq('id', existing.id);
+          if (error) erros++;
+        } else {
+          const { error } = await supabase.from('pacotes_inventario').insert({ nodo_id: nodoId, codigo: p.codigo, tipo_entrada: p.tipo_entrada, foto_url: fotoUrl, status: 'expedited', expedicao_id: expData.id, expedited_at: new Date().toISOString() });
+          if (error) erros++;
+        }
+      }
+
+      if (erros > 0) {
+        setResultModal({ ok: false, msg: `Expedição salva, mas ${erros} pacote${erros !== 1 ? 's' : ''} tiv${erros !== 1 ? 'eram' : 'e'} erro. Verifique na Consulta.` });
+      } else {
+        setResultModal({ ok: true, msg: `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso!` });
+      }
     } catch (e: any) {
-      Alert.alert('Erro inesperado', e?.message || 'Tente novamente.');
+      setResultModal({ ok: false, msg: e?.message || 'Erro inesperado. Tente novamente.' });
     } finally {
       setSaving(false);
     }
@@ -457,6 +461,26 @@ export default function ExpedicaoPacotesScreen() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* ── Result Modal (sucesso / erro) ── */}
+      <Modal visible={!!resultModal} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380, alignItems: 'center' }}>
+            <Text style={{ fontSize: 48, marginBottom: 12 }}>{resultModal?.ok ? '✅' : '⚠️'}</Text>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text, marginBottom: 10, textAlign: 'center' }}>
+              {resultModal?.ok ? 'Expedição Registrada!' : 'Atenção'}
+            </Text>
+            <Text style={{ fontSize: 15, color: theme.textSec, lineHeight: 22, marginBottom: 24, textAlign: 'center' }}>
+              {resultModal?.msg}
+            </Text>
+            <Button
+              label="OK"
+              onPress={() => { setResultModal(null); router.replace(`/agencia/${nodoId}/pacotes`); }}
+              style={{ width: '100%' }}
+            />
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={confirmModal} transparent animationType="fade" onRequestClose={() => setConfirmModal(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
