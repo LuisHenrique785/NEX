@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  ActivityIndicator, Alert, TouchableOpacity, Platform,
+  ActivityIndicator, Alert, Platform, TextInput, Modal, TouchableOpacity,
 } from 'react-native';
 import { supabase } from '../../src/lib/supabase';
-import { importNodosFromSheets, importNodosFromCSV } from '../../src/lib/sheets';
+import { importNodosFromSheets, importNodosFromCSV, importNodosFromExcel } from '../../src/lib/sheets';
 import { COLORS, Button, Card, Badge } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
 
@@ -24,7 +24,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     safe: { flex: 1, backgroundColor: theme.bg },
     container: { padding: 20, paddingBottom: 40 },
     infoCard: {
-      backgroundColor: '#FFFEF0',
+      backgroundColor: theme.isDark ? theme.surfaceAlt : '#FFFEF0',
       borderWidth: 1.5,
       borderColor: COLORS.yellow,
       marginBottom: 16,
@@ -60,7 +60,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     uploadTitle: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
     uploadSubtitle: { color: theme.textTer, fontSize: 13, marginTop: 3 },
     howToCard: {
-      backgroundColor: '#F0F8FF',
+      backgroundColor: theme.isDark ? theme.surfaceAlt : '#F0F8FF',
       borderWidth: 1,
       borderColor: COLORS.blue + '44',
       marginBottom: 8,
@@ -80,6 +80,19 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     nodoNome: { fontSize: 15, fontWeight: '700', color: theme.text, marginBottom: 2 },
     nodoCodigo: { fontSize: 12, color: theme.textSec, marginBottom: 4 },
     nodoCidade: { fontSize: 13, color: theme.textSec, marginBottom: 6 },
+    nodoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+    editBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      backgroundColor: COLORS.orange + '22', borderRadius: 8,
+      paddingHorizontal: 12, paddingVertical: 6,
+    },
+    editBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.orange },
+    coordInput: {
+      borderWidth: 1.5, borderColor: theme.inputBorder, borderRadius: 10,
+      padding: 12, fontSize: 15, color: theme.text, backgroundColor: theme.input,
+      marginBottom: 12, fontFamily: 'monospace',
+    },
+    coordHint: { fontSize: 12, color: theme.textSec, marginBottom: 8, lineHeight: 18 },
   });
 }
 
@@ -91,8 +104,14 @@ export default function NovosNodosScreen() {
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState('');
-  const [stats, setStats] = useState<{ added: number; skipped: number } | null>(null);
-  const fileInputRef = useRef<any>(null);
+  const [stats, setStats] = useState<{ added: number; updated: number; skipped: number } | null>(null);
+  const [syncModal, setSyncModal] = useState(false);
+
+  // Coordinate editing
+  const [editingNodo, setEditingNodo] = useState<Nodo | null>(null);
+  const [editLat, setEditLat] = useState('');
+  const [editLng, setEditLng] = useState('');
+  const [savingCoords, setSavingCoords] = useState(false);
 
   useEffect(() => {
     loadNodos();
@@ -109,16 +128,21 @@ export default function NovosNodosScreen() {
     setLoading(false);
   }
 
-  async function runImport(fn: () => Promise<{ added: number; skipped: number; errors: string[] }>) {
+  async function runImport(fn: () => Promise<{ added: number; updated: number; skipped: number; errors: string[] }>) {
     setImporting(true);
     setStats(null);
     try {
       const result = await fn();
-      setStats({ added: result.added, skipped: result.skipped });
+      setStats({ added: result.added, updated: result.updated, skipped: result.skipped });
+      const parts = [];
+      if (result.added > 0) parts.push(`${result.added} novo${result.added !== 1 ? 's' : ''}`);
+      if (result.updated > 0) parts.push(`${result.updated} corrigido${result.updated !== 1 ? 's' : ''}`);
+      if (result.skipped > 0) parts.push(`${result.skipped} já ok`);
+      const summary = parts.join(' · ');
       const msg =
         result.errors.length > 0
-          ? `${result.added} adicionados, ${result.skipped} já existentes.\n\nErros:\n${result.errors.slice(0, 5).join('\n')}`
-          : `${result.added} novo${result.added !== 1 ? 's' : ''} NODO${result.added !== 1 ? 's' : ''} importado${result.added !== 1 ? 's' : ''}.\n${result.skipped} já existiam.`;
+          ? `${summary}\n\nErros:\n${result.errors.slice(0, 5).join('\n')}`
+          : summary || 'Nenhuma alteração necessária.';
       Alert.alert(result.errors.length > 0 ? 'Concluído com erros' : '✅ Concluído!', msg);
       await loadNodos();
     } catch (e: any) {
@@ -129,48 +153,58 @@ export default function NovosNodosScreen() {
     }
   }
 
-  function handleSyncSheets() {
-    Alert.alert(
-      'Sincronizar com Google Sheets',
-      'Vai buscar os NODOS da planilha online. Continuar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sincronizar', onPress: () => runImport(() => importNodosFromSheets((msg) => setProgress(msg))) },
-      ]
-    );
+  function handleSyncSheets() { setSyncModal(true); }
+
+  function openEditCoords(nodo: Nodo) {
+    setEditingNodo(nodo);
+    setEditLat(nodo.lat != null ? String(nodo.lat) : '');
+    setEditLng(nodo.lng != null ? String(nodo.lng) : '');
   }
 
-  function handleUploadCSV() {
-    if (Platform.OS === 'web') {
-      // Na web: abrir input de arquivo nativo
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.csv,text/csv';
-      input.onchange = async (e: any) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-          const text = ev.target?.result as string;
-          if (!text) return;
-          Alert.alert(
-            'Importar CSV',
-            `Arquivo: ${file.name}\n\nImportar os NODOS deste arquivo?`,
-            [
-              { text: 'Cancelar', style: 'cancel' },
-              {
-                text: 'Importar',
-                onPress: () => runImport(() => importNodosFromCSV(text, (msg) => setProgress(msg))),
-              },
-            ]
-          );
-        };
-        reader.readAsText(file, 'UTF-8');
-      };
-      input.click();
-    } else {
-      Alert.alert('Não disponível', 'Upload de CSV disponível apenas na versão web.');
+  async function saveCoords() {
+    if (!editingNodo) return;
+    const lat = parseFloat(editLat.replace(',', '.'));
+    const lng = parseFloat(editLng.replace(',', '.'));
+    if (isNaN(lat) || lat < -90 || lat > 90) {
+      Alert.alert('Latitude inválida', 'Use formato decimal, ex: -23.5505');
+      return;
     }
+    if (isNaN(lng) || lng < -180 || lng > 180) {
+      Alert.alert('Longitude inválida', 'Use formato decimal, ex: -46.6333');
+      return;
+    }
+    setSavingCoords(true);
+    const { error } = await supabase
+      .from('nodos')
+      .update({ lat, lng })
+      .eq('id', editingNodo.id);
+    setSavingCoords(false);
+    if (error) { Alert.alert('Erro', error.message); return; }
+    setEditingNodo(null);
+    loadNodos();
+  }
+
+  function handleFile(e: any) {
+    const file = e.target?.files?.[0];
+    if (!file) return;
+    const name = (file.name || '').toLowerCase();
+    const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls');
+    if (isExcel) {
+      const reader = new FileReader();
+      reader.onload = (ev: any) => {
+        const buffer = ev.target?.result as ArrayBuffer;
+        if (buffer) runImport(() => importNodosFromExcel(buffer, (msg) => setProgress(msg)));
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev: any) => {
+        const text = ev.target?.result as string;
+        if (text) runImport(() => importNodosFromCSV(text, (msg) => setProgress(msg)));
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+    e.target.value = '';
   }
 
   return (
@@ -180,8 +214,8 @@ export default function NovosNodosScreen() {
         <Card style={styles.infoCard}>
           <Text style={styles.infoTitle}>⚙️ Gerenciamento de NODOS</Text>
           <Text style={styles.infoText}>
-            Importe os NODOS da planilha Google Sheets (aba "BASE - Nodos").
-            {'\n\n'}Coluna A = Código · Coluna B = Nome · Coluna D = Cidade · Coluna E = Estado · Coluna F = Endereço
+            Importe os NODOS da planilha "Controle NODOS — BASE - Nodos".
+            {'\n\n'}Coluna C = Código · Coluna E = Nome · Coluna F = Endereço
           </Text>
         </Card>
 
@@ -196,28 +230,36 @@ export default function NovosNodosScreen() {
           Tenta buscar diretamente da planilha. Pode falhar por restrição de acesso.
         </Text>
 
-        {/* Opção 2: Upload CSV */}
-        <Text style={[styles.sectionLabel, { marginTop: 20 }]}>OPÇÃO 2 — UPLOAD DE CSV (RECOMENDADO)</Text>
+        {/* Opção 2: Upload Excel / CSV */}
+        <Text style={[styles.sectionLabel, { marginTop: 20 }]}>OPÇÃO 2 — UPLOAD EXCEL OU CSV (RECOMENDADO)</Text>
 
-        <TouchableOpacity
-          style={[styles.uploadBtn, importing && styles.uploadBtnDisabled]}
-          onPress={handleUploadCSV}
-          disabled={importing}
-          activeOpacity={0.8}
-        >
+        <View style={[styles.uploadBtn, importing && styles.uploadBtnDisabled]}>
           <Text style={styles.uploadIcon}>📂</Text>
           <View style={styles.uploadText}>
-            <Text style={styles.uploadTitle}>Selecionar arquivo CSV</Text>
-            <Text style={styles.uploadSubtitle}>Exporte da planilha e faça upload aqui</Text>
+            <Text style={styles.uploadTitle}>Selecionar Excel ou CSV</Text>
+            <Text style={styles.uploadSubtitle}>.xlsx · .xls · .csv</Text>
           </View>
-        </TouchableOpacity>
+          {Platform.OS === 'web' && !importing && React.createElement('input', {
+            type: 'file',
+            accept: '.xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel',
+            style: {
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              opacity: 0,
+              cursor: 'pointer',
+              width: '100%',
+              height: '100%',
+            },
+            onChange: handleFile,
+          })}
+        </View>
 
         <Card style={styles.howToCard}>
-          <Text style={styles.howToTitle}>Como exportar o CSV da planilha:</Text>
-          <Text style={styles.howToStep}>1. Abra a planilha Google Sheets</Text>
-          <Text style={styles.howToStep}>2. Clique em <Text style={styles.bold}>Arquivo → Fazer download → CSV</Text></Text>
-          <Text style={styles.howToStep}>3. Salve o arquivo no celular/computador</Text>
-          <Text style={styles.howToStep}>4. Clique em "Selecionar arquivo CSV" acima</Text>
+          <Text style={styles.howToTitle}>Como exportar da planilha Google Sheets:</Text>
+          <Text style={styles.howToStep}>1. Abra a planilha (aba "BASE - Nodos")</Text>
+          <Text style={styles.howToStep}>2. <Text style={styles.bold}>Arquivo → Fazer download → Excel (.xlsx)</Text></Text>
+          <Text style={styles.howToStep}>3. Salve no celular/computador</Text>
+          <Text style={styles.howToStep}>4. Toque no botão acima e selecione o arquivo</Text>
         </Card>
 
         {/* Progress */}
@@ -235,9 +277,13 @@ export default function NovosNodosScreen() {
               <Text style={[styles.statVal, { color: COLORS.green }]}>{stats.added}</Text>
               <Text style={styles.statLbl}>Novos</Text>
             </View>
+            <View style={[styles.statBox, { backgroundColor: COLORS.blue + '22', borderColor: COLORS.blue }]}>
+              <Text style={[styles.statVal, { color: COLORS.blue }]}>{stats.updated}</Text>
+              <Text style={styles.statLbl}>Corrigidos</Text>
+            </View>
             <View style={[styles.statBox, { backgroundColor: COLORS.gray + '22', borderColor: COLORS.gray }]}>
               <Text style={[styles.statVal, { color: COLORS.gray }]}>{stats.skipped}</Text>
-              <Text style={styles.statLbl}>Já existiam</Text>
+              <Text style={styles.statLbl}>Já ok</Text>
             </View>
           </View>
         )}
@@ -265,15 +311,88 @@ export default function NovosNodosScreen() {
                   📍 {nodo.cidade}{nodo.estado ? `, ${nodo.estado}` : ''}
                 </Text>
               )}
-              {nodo.lat ? (
-                <Badge label="Geocodificado ✓" color={COLORS.green} />
-              ) : (
-                <Badge label="Sem coordenadas" color={COLORS.orange} />
-              )}
+              <View style={styles.nodoRow}>
+                {nodo.lat ? (
+                  <Badge label={`✓ ${nodo.lat.toFixed(4)}, ${nodo.lng?.toFixed(4)}`} color={COLORS.green} />
+                ) : (
+                  <Badge label="Sem coordenadas" color={COLORS.orange} />
+                )}
+                <TouchableOpacity style={styles.editBtn} onPress={() => openEditCoords(nodo)}>
+                  <Text style={{ fontSize: 14 }}>📍</Text>
+                  <Text style={styles.editBtnText}>{nodo.lat ? 'Editar coords' : 'Inserir coords'}</Text>
+                </TouchableOpacity>
+              </View>
             </Card>
           ))
         )}
       </ScrollView>
+
+      {/* Sync confirmation modal */}
+      <Modal visible={syncModal} transparent animationType="fade" onRequestClose={() => setSyncModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginBottom: 8 }}>
+              🔄 Sincronizar com Google Sheets
+            </Text>
+            <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 22, marginBottom: 20 }}>
+              Vai buscar os NODOS da planilha online. Pode falhar por restrição de acesso (CORS). Continuar?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancelar" onPress={() => setSyncModal(false)} variant="outline" style={{ flex: 1 }} />
+              <Button label="Sincronizar" onPress={() => { setSyncModal(false); runImport(() => importNodosFromSheets((msg) => setProgress(msg))); }} style={{ flex: 1 }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit coordinates modal */}
+      <Modal visible={!!editingNodo} transparent animationType="fade" onRequestClose={() => setEditingNodo(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 400 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginBottom: 4 }}>
+              📍 Coordenadas
+            </Text>
+            <Text style={{ fontSize: 13, color: theme.textSec, marginBottom: 16 }}>
+              {editingNodo?.nome}
+            </Text>
+
+            <Text style={styles.coordHint}>
+              Use coordenadas decimais. Exemplo para São Paulo:{'\n'}
+              Latitude: <Text style={{ fontWeight: '700', color: theme.text }}>-23.5505</Text>
+              {'   '}Longitude: <Text style={{ fontWeight: '700', color: theme.text }}>-46.6333</Text>
+              {'\n'}Dica: abra o Google Maps, segure o ponto desejado e copie as coordenadas.
+            </Text>
+
+            <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 6 }}>Latitude</Text>
+            <TextInput
+              style={styles.coordInput}
+              placeholder="-23.5505"
+              placeholderTextColor={theme.textTer}
+              value={editLat}
+              onChangeText={setEditLat}
+              keyboardType="numbers-and-punctuation"
+              returnKeyType="next"
+            />
+
+            <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 6 }}>Longitude</Text>
+            <TextInput
+              style={styles.coordInput}
+              placeholder="-46.6333"
+              placeholderTextColor={theme.textTer}
+              value={editLng}
+              onChangeText={setEditLng}
+              keyboardType="numbers-and-punctuation"
+              returnKeyType="done"
+              onSubmitEditing={saveCoords}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+              <Button label="Cancelar" onPress={() => setEditingNodo(null)} variant="outline" style={{ flex: 1 }} />
+              <Button label="Salvar" onPress={saveCoords} loading={savingCoords} style={{ flex: 1 }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

@@ -71,7 +71,6 @@ export default function ExpedicaoPacotesScreen() {
   const [zoom, setZoom] = useState(0);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const scanCooldown = useRef(false);
-  const addedCodesRef = useRef(new Set<string>());
 
   // Manual
   const [manualCode, setManualCode] = useState('');
@@ -81,33 +80,24 @@ export default function ExpedicaoPacotesScreen() {
   const [photoCode, setPhotoCode] = useState('');
 
   function addPacote(codigo: string, tipo: 'scanner' | 'manual' | 'foto', fotoUri?: string) {
-    const cleaned = codigo.replace(/[^0-9]/g, '');
-    if (!cleaned) return;
-    if (cleaned.length !== 11) {
+    const trimmed = codigo.trim();
+    if (!trimmed) return;
+
+    const duplicate = pacotes.some((p) => p.codigo === trimmed);
+    if (duplicate) {
       if (tipo === 'scanner') {
-        setLastScanned(`⚠️ Inválido: ${cleaned.length} dígitos`);
+        setLastScanned(`⚠️ Repetido: ${trimmed}`);
         setTimeout(() => setLastScanned(''), 2000);
       } else {
-        Alert.alert('Código inválido', `O código deve ter exatamente 11 dígitos numéricos.\nInformado: ${cleaned.length} dígito${cleaned.length !== 1 ? 's' : ''}.`);
+        Alert.alert('Duplicado', `O pacote ${trimmed} já está na lista.`);
       }
       return;
     }
 
-    if (addedCodesRef.current.has(cleaned)) {
-      if (tipo === 'scanner') {
-        setLastScanned(`⚠️ Repetido: ${cleaned}`);
-        setTimeout(() => setLastScanned(''), 2000);
-      } else {
-        Alert.alert('Duplicado', `O pacote ${cleaned} já está na lista.`);
-      }
-      return;
-    }
-
-    addedCodesRef.current.add(cleaned);
-    setPacotes((prev) => [{ codigo: cleaned, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
+    setPacotes((prev) => [{ codigo: trimmed, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
 
     if (tipo === 'scanner') {
-      setLastScanned(`✅ ${cleaned}`);
+      setLastScanned(`✅ ${trimmed}`);
       setTimeout(() => setLastScanned(''), 2000);
     }
   }
@@ -173,7 +163,7 @@ export default function ExpedicaoPacotesScreen() {
   async function doSave() {
     setConfirmModal(false);
     if (isDemo) {
-      Alert.alert('✅ [DEMO] Expedição Registrada!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`, [{ text: 'OK', onPress: () => router.back() }]);
+      Alert.alert('✅ [DEMO] Expedição Registrada!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
       return;
     }
     setSaving(true);
@@ -196,16 +186,16 @@ export default function ExpedicaoPacotesScreen() {
         if (error) erros++;
       }
     }
+
     setSaving(false);
     if (erros > 0) {
-      Alert.alert('Atenção', `Expedição salva, mas ${erros} pacote${erros !== 1 ? 's' : ''} tiveram erro. Verifique na Consulta.`, [{ text: 'OK', onPress: () => router.back() }]);
+      Alert.alert('Atenção', `Expedição salva, mas ${erros} pacote${erros !== 1 ? 's' : ''} tiv${erros !== 1 ? 'eram' : 'e'} erro ao registrar. Verifique na Consulta.`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
     } else {
-      Alert.alert('✅ Expedição Registrada!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso.`, [{ text: 'OK', onPress: () => router.back() }]);
+      Alert.alert('✅ Expedição Registrada!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso.`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
     }
   }
 
-  const typeIcon = (tipo: string) =>
-    tipo === 'scanner' ? '📷' : tipo === 'manual' ? '⌨️' : '📸';
+  const typeIcon = (tipo: string) => tipo === 'scanner' ? '📷' : tipo === 'manual' ? '⌨️' : '📸';
 
   // ─── SCANNER MODAL ────────────────────────────────────────────
   if (inputMode === 'scanner') {
@@ -262,7 +252,11 @@ export default function ExpedicaoPacotesScreen() {
           </SafeAreaView>
           <View style={scannerStyles.zoomRow}>
             {([{ label: '0.5×', v: 0 }, { label: '1×', v: 0.1 }, { label: '2×', v: 0.35 }]).map(z => (
-              <TouchableOpacity key={z.label} style={[scannerStyles.zoomBtn, zoom === z.v && scannerStyles.zoomBtnActive]} onPress={() => setZoom(z.v)}>
+              <TouchableOpacity
+                key={z.label}
+                style={[scannerStyles.zoomBtn, zoom === z.v && scannerStyles.zoomBtnActive]}
+                onPress={() => setZoom(z.v)}
+              >
                 <Text style={[scannerStyles.zoomBtnText, zoom === z.v && scannerStyles.zoomBtnTextActive]}>{z.label}</Text>
               </TouchableOpacity>
             ))}
@@ -343,20 +337,16 @@ export default function ExpedicaoPacotesScreen() {
             <Card style={{ marginBottom: 4 }}>
               <TextInput
                 style={styles.manualInput}
-                placeholder="Digite ou bipe o código..."
+                placeholder="Digite o código do pacote..."
                 value={manualCode}
-                onChangeText={(t) => {
-                  const v = t.replace(/[^0-9]/g, '').slice(0, 11);
-                  setManualCode(v);
-                  if (v.length === 11) { addPacote(v, 'manual'); setManualCode(''); }
-                }}
-                keyboardType="number-pad"
+                onChangeText={setManualCode}
+                autoCapitalize="characters"
                 autoFocus
                 returnKeyType="done"
-                onSubmitEditing={() => { if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); } }}
+                onSubmitEditing={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }}
               />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                <Button label="Adicionar" onPress={() => { if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); } }} style={{ flex: 1 }} />
+                <Button label="Adicionar" onPress={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }} style={{ flex: 1 }} />
                 <Button label="Fechar" onPress={() => setInputMode('none')} variant="outline" style={{ flex: 1 }} />
               </View>
             </Card>
@@ -373,7 +363,7 @@ export default function ExpedicaoPacotesScreen() {
                   <Button label="🖼 Galeria" onPress={handlePickPhoto} variant="outline" style={{ flex: 1 }} />
                 </View>
               )}
-              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código do pacote na foto" value={photoCode} onChangeText={(t) => setPhotoCode(t.replace(/[^0-9]/g, '').slice(0, 11))} keyboardType="number-pad" />
+              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código do pacote na foto" value={photoCode} onChangeText={setPhotoCode} autoCapitalize="characters" />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
                 <Button label="Salvar" onPress={handlePhotoAdd} style={{ flex: 1 }} />
                 <Button label="Cancelar" onPress={() => { setInputMode('none'); setPhotoUri(null); setPhotoCode(''); }} variant="outline" style={{ flex: 1 }} />
@@ -390,8 +380,10 @@ export default function ExpedicaoPacotesScreen() {
                   <Text style={styles.pacoteCodigo} numberOfLines={1}>{p.codigo}</Text>
                   <TouchableOpacity
                     onPress={() => {
-                      addedCodesRef.current.delete(p.codigo);
-                      setPacotes((prev) => prev.filter((_, idx) => idx !== i));
+                      Alert.alert('Remover', `Remover ${p.codigo}?`, [
+                        { text: 'Cancelar', style: 'cancel' },
+                        { text: 'Remover', style: 'destructive', onPress: () => setPacotes((prev) => prev.filter((_, idx) => idx !== i)) },
+                      ]);
                     }}
                   >
                     <Text style={styles.pacoteRemove}>✕</Text>
@@ -419,7 +411,9 @@ export default function ExpedicaoPacotesScreen() {
       <Modal visible={confirmModal} transparent animationType="fade" onRequestClose={() => setConfirmModal(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>Confirmar Expedição</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>
+              Confirmar Expedição
+            </Text>
             <Text style={{ fontSize: 15, color: theme.textSec, lineHeight: 22, marginBottom: 20 }}>
               Expedir {pacotes.length} pacote{pacotes.length !== 1 ? 's' : ''} — {transportadora.trim()} ({placa.trim()})?
             </Text>
@@ -445,13 +439,13 @@ const scannerStyles = StyleSheet.create({
   scanActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   flipBtn: { backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 6 },
   flipBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
-  flashBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
-  flashBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
   zoomRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 8 },
   zoomBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   zoomBtnActive: { backgroundColor: '#FFE600', borderColor: '#FFE600' },
   zoomBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   zoomBtnTextActive: { color: '#000' },
+  flashBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
+  flashBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
   scanCounter: { alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
   scanCounterText: { color: COLORS.yellow, fontWeight: '800', fontSize: 15 },
   scanFrame: { width: 260, height: 160, alignSelf: 'center', position: 'relative' },

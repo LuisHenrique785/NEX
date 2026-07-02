@@ -5,8 +5,6 @@ import {
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { router } from 'expo-router';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import { supabase } from '../../src/lib/supabase';
 import { COLORS, Card, Badge, Button } from '../../src/components/ui';
 import { useTheme } from '../../src/lib/theme';
@@ -68,29 +66,18 @@ function buildCSV(rows: any[]): string {
   return '﻿' + lines.join('\r\n');
 }
 
-async function downloadCSV(csv: string, filename: string) {
-  if (Platform.OS === 'web') {
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+function downloadCSV(csv: string, filename: string) {
+  if (Platform.OS !== 'web') {
+    Alert.alert('Não disponível', 'O download de CSV só está disponível no navegador web.');
     return;
   }
-  try {
-    const path = FileSystem.cacheDirectory + filename;
-    await FileSystem.writeAsStringAsync(path, csv, { encoding: FileSystem.EncodingType.UTF8 });
-    const canShare = await Sharing.isAvailableAsync();
-    if (canShare) {
-      await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: 'Exportar CSV', UTI: 'public.comma-separated-values-text' });
-    } else {
-      Alert.alert('Arquivo salvo', `CSV salvo em: ${path}`);
-    }
-  } catch (err: any) {
-    Alert.alert('Erro', `Não foi possível exportar o CSV: ${err?.message || err}`);
-  }
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ─── Styles ──────────────────────────────────────────────────────
@@ -244,7 +231,6 @@ export default function ConsultaScreen() {
   const [expedicoes, setExpedicoes] = useState<Expedicao[]>([]);
   const [loadingExp, setLoadingExp] = useState(false);
   const [expLoaded, setExpLoaded] = useState(false);
-  const [totalInventoriados, setTotalInventoriados] = useState(0);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -276,27 +262,14 @@ export default function ConsultaScreen() {
   function handleLogin() {
     if (password === CONSULTA_PASSWORD) {
       setUnlocked(true);
-      loadData();
+      loadExpedicoes();
     } else {
       Alert.alert('Senha incorreta', 'Verifique a senha e tente novamente.');
       setPassword('');
     }
   }
 
-  // ─── Load all data ───────────────────────────────────────────────
-  async function loadData() {
-    loadExpedicoes();
-    loadInventariados();
-  }
-
-  async function loadInventariados() {
-    const { count } = await supabase
-      .from('pacotes_inventario')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'inventoried');
-    setTotalInventoriados(count || 0);
-  }
-
+  // ─── Load expeditions ────────────────────────────────────────────
   async function loadExpedicoes() {
     setLoadingExp(true);
     try {
@@ -473,7 +446,7 @@ export default function ConsultaScreen() {
         };
       });
 
-      await downloadCSV(buildCSV(rows), `nex-expedicoes-${exportDateFrom}-ate-${exportDateTo}.csv`);
+      downloadCSV(buildCSV(rows), `nex-expedicoes-${exportDateFrom}-ate-${exportDateTo}.csv`);
     } finally {
       setExportLoading(false);
     }
@@ -552,7 +525,7 @@ export default function ConsultaScreen() {
               </Text>
             </View>
             <TouchableOpacity
-              onPress={() => { setUnlocked(false); setPassword(''); setExpedicoes([]); setExpLoaded(false); setTotalInventoriados(0); }}
+              onPress={() => { setUnlocked(false); setPassword(''); setExpedicoes([]); setExpLoaded(false); }}
               style={{
                 backgroundColor: theme.surface, borderRadius: 10,
                 borderWidth: 1, borderColor: theme.border,
@@ -572,39 +545,24 @@ export default function ConsultaScreen() {
               ))}
             </View>
           ) : expLoaded ? (
-            <>
-              {totalInventoriados > 0 && (
-                <View style={{
-                  backgroundColor: COLORS.blue + '18', borderRadius: 12,
-                  padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10,
-                  borderWidth: 1, borderColor: COLORS.blue + '44',
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {([
+                { val: expedicoes.length, label: 'Expedições', color: COLORS.blue },
+                { val: totalEnviados,     label: 'Enviados',   color: '#FF9500' },
+                { val: totalRecebidos,    label: 'Recebidos',  color: COLORS.green },
+                { val: totalPendentes,    label: 'Pendentes',  color: totalPendentes > 0 ? '#FF3B30' : COLORS.green },
+              ]).map(({ val, label, color }) => (
+                <View key={label} style={{
+                  flex: 1, backgroundColor: color + '22',
+                  borderRadius: 12, padding: 10, alignItems: 'center',
                 }}>
-                  <Text style={{ fontSize: 22, fontWeight: '900', color: COLORS.blue }}>{totalInventoriados}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '800', color: COLORS.blue }}>pacote{totalInventoriados !== 1 ? 's' : ''} no inventário</Text>
-                    <Text style={{ fontSize: 11, color: theme.textSec, marginTop: 1 }}>Escaneados nas agências · aguardando expedição</Text>
-                  </View>
+                  <Text style={{ fontSize: 20, fontWeight: '900', color }}>{val}</Text>
+                  <Text style={{ fontSize: 9, fontWeight: '700', color: theme.textSec, textTransform: 'uppercase', letterSpacing: 0.3, marginTop: 2 }}>
+                    {label}
+                  </Text>
                 </View>
-              )}
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {([
-                  { val: expedicoes.length, label: 'Expedições', color: COLORS.blue },
-                  { val: totalEnviados,     label: 'Enviados',   color: '#FF9500' },
-                  { val: totalRecebidos,    label: 'Recebidos',  color: COLORS.green },
-                  { val: totalPendentes,    label: 'Pendentes',  color: totalPendentes > 0 ? '#FF3B30' : COLORS.green },
-                ]).map(({ val, label, color }) => (
-                  <View key={label} style={{
-                    flex: 1, backgroundColor: color + '22',
-                    borderRadius: 12, padding: 10, alignItems: 'center',
-                  }}>
-                    <Text style={{ fontSize: 20, fontWeight: '900', color }}>{val}</Text>
-                    <Text style={{ fontSize: 9, fontWeight: '700', color: theme.textSec, textTransform: 'uppercase', letterSpacing: 0.3, marginTop: 2 }}>
-                      {label}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </>
+              ))}
+            </View>
           ) : null}
         </View>
 
@@ -693,7 +651,7 @@ export default function ConsultaScreen() {
               <Text style={styles.sectionLabel}>
                 {filteredExps.length} RESULTADO{filteredExps.length !== 1 ? 'S' : ''}
               </Text>
-              <TouchableOpacity onPress={loadData}>
+              <TouchableOpacity onPress={loadExpedicoes}>
                 <Text style={{ color: COLORS.blue, fontWeight: '700', fontSize: 13 }}>↺ Atualizar</Text>
               </TouchableOpacity>
             </View>
@@ -702,12 +660,9 @@ export default function ConsultaScreen() {
 
             {!loadingExp && filteredExps.length === 0 && expLoaded && (
               <Card style={styles.emptyCard}>
-                <Text style={{ fontSize: 32, marginBottom: 10 }}>
-                  {expedicoes.length === 0 ? '📦' : '🔍'}
-                </Text>
                 <Text style={styles.emptyText}>
                   {expedicoes.length === 0
-                    ? `Nenhuma expedição registrada ainda.${totalInventoriados > 0 ? `\n\n${totalInventoriados} pacote${totalInventoriados !== 1 ? 's estão' : ' está'} no inventário das agências aguardando expedição.\n\nPara aparecer aqui, o responsável da agência deve criar uma expedição informando placa e transportadora.` : ''}`
+                    ? 'Nenhuma expedição registrada ainda.'
                     : 'Nenhuma expedição encontrada com esses filtros.'}
                 </Text>
               </Card>
@@ -726,7 +681,7 @@ export default function ConsultaScreen() {
               <Text style={styles.sectionLabel}>
                 {pendencias.length} EXPEDIÇÃO{pendencias.length !== 1 ? 'ÕES' : ''} PENDENTE{pendencias.length !== 1 ? 'S' : ''}
               </Text>
-              <TouchableOpacity onPress={loadData}>
+              <TouchableOpacity onPress={loadExpedicoes}>
                 <Text style={{ color: COLORS.blue, fontWeight: '700', fontSize: 13 }}>↺ Atualizar</Text>
               </TouchableOpacity>
             </View>
@@ -972,9 +927,7 @@ export default function ConsultaScreen() {
             </TouchableOpacity>
 
             <Text style={{ fontSize: 11, color: theme.textTer, textAlign: 'center', marginTop: 12, lineHeight: 16 }}>
-              {Platform.OS === 'web'
-                ? 'O download é iniciado automaticamente no navegador.'
-                : 'O arquivo será compartilhado via planilhas, e-mail ou outro app.'}{'\n'}
+              O download é iniciado automaticamente no navegador.{'\n'}
               Abra o arquivo no Excel ou Google Sheets.
             </Text>
           </>

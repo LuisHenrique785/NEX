@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
   TextInput, TouchableOpacity, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Platform, Image,
+  KeyboardAvoidingView, Platform, Image, Modal,
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -62,10 +62,12 @@ export default function SVCRecebimentoScreen() {
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
   const [inputMode, setInputMode] = useState<InputMode>('none');
   const [saving, setSaving] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false);
   const [lastScanned, setLastScanned] = useState('');
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<'front' | 'back'>('back');
+  const [zoom, setZoom] = useState(0);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const scanCooldown = useRef(false);
   const addedCodesRef = useRef(new Set<string>());
@@ -147,67 +149,36 @@ export default function SVCRecebimentoScreen() {
     } catch { return null; }
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (pacotes.length === 0) { Alert.alert('Atenção', 'Adicione pelo menos um pacote.'); return; }
+    setConfirmModal(true);
+  }
 
-    Alert.alert(
-      'Confirmar Recebimento',
-      `Registrar recebimento de ${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            if (isDemo) {
-              Alert.alert(
-                '✅ [DEMO] Recebimento Registrado!',
-                `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`,
-                [{ text: 'OK', onPress: () => router.back() }]
-              );
-              return;
-            }
-            setSaving(true);
-
-            const { data: recData, error: recError } = await supabase
-              .from('svc_recebimentos')
-              .insert({
-                placa: placa.trim() || null,
-                transportadora: transportadora.trim() || null,
-                total_pacotes: pacotes.length,
-              })
-              .select()
-              .single();
-
-            if (recError) {
-              setSaving(false);
-              Alert.alert('Erro', recError.message);
-              return;
-            }
-
-            const items: any[] = [];
-            for (const p of pacotes) {
-              let fotoUrl: string | null = null;
-              if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
-              items.push({
-                recebimento_id: recData.id,
-                codigo: p.codigo,
-                tipo_entrada: p.tipo_entrada,
-                foto_url: fotoUrl,
-              });
-            }
-
-            await supabase.from('svc_recebimentos_pacotes').insert(items);
-
-            setSaving(false);
-            Alert.alert(
-              '✅ Recebimento Registrado!',
-              `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} com sucesso.`,
-              [{ text: 'OK', onPress: () => router.back() }]
-            );
-          },
-        },
-      ]
-    );
+  async function doSave() {
+    setConfirmModal(false);
+    if (isDemo) {
+      Alert.alert('✅ [DEMO] Recebimento Registrado!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`, [{ text: 'OK', onPress: () => router.replace('/svc') }]);
+      return;
+    }
+    setSaving(true);
+    const { data: recData, error: recError } = await supabase
+      .from('svc_recebimentos')
+      .insert({ placa: placa.trim() || null, transportadora: transportadora.trim() || null, total_pacotes: pacotes.length })
+      .select().single();
+    if (recError) { setSaving(false); Alert.alert('Erro', recError.message); return; }
+    const items: any[] = [];
+    for (const p of pacotes) {
+      let fotoUrl: string | null = null;
+      if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
+      items.push({ recebimento_id: recData.id, codigo: p.codigo, tipo_entrada: p.tipo_entrada, foto_url: fotoUrl });
+    }
+    const { error: itemsError } = await supabase.from('svc_recebimentos_pacotes').insert(items);
+    setSaving(false);
+    if (itemsError) {
+      Alert.alert('Atenção', `Recebimento salvo, mas houve erro ao registrar os pacotes individualmente: ${itemsError.message}`, [{ text: 'OK', onPress: () => router.replace('/svc') }]);
+    } else {
+      Alert.alert('✅ Recebimento Registrado!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} recebido${pacotes.length !== 1 ? 's' : ''} com sucesso.`, [{ text: 'OK', onPress: () => router.replace('/svc') }]);
+    }
   }
 
   const typeIcon = (t: string) => t === 'scanner' ? '📷' : t === 'manual' ? '⌨️' : '📸';
@@ -240,6 +211,7 @@ export default function SVCRecebimentoScreen() {
           key={facing}
           style={scannerStyles.camera}
           facing={facing}
+          zoom={zoom}
           enableTorch={flashEnabled}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'datamatrix'] }}
           onBarcodeScanned={handleBarcodeScanned}
@@ -264,6 +236,17 @@ export default function SVCRecebimentoScreen() {
               </View>
             </View>
           </SafeAreaView>
+          <View style={scannerStyles.zoomRow}>
+            {([{ label: '0.5×', v: 0 }, { label: '1×', v: 0.1 }, { label: '2×', v: 0.35 }]).map(z => (
+              <TouchableOpacity
+                key={z.label}
+                style={[scannerStyles.zoomBtn, zoom === z.v && scannerStyles.zoomBtnActive]}
+                onPress={() => setZoom(z.v)}
+              >
+                <Text style={[scannerStyles.zoomBtnText, zoom === z.v && scannerStyles.zoomBtnTextActive]}>{z.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <View style={scannerStyles.scanCounter}>
             <Text style={scannerStyles.scanCounterText}>{pacotes.length} para receber</Text>
           </View>
@@ -377,6 +360,23 @@ export default function SVCRecebimentoScreen() {
           <Button label={`Confirmar Recebimento (${pacotes.length})`} onPress={handleSave} loading={saving} style={{ marginTop: 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={confirmModal} transparent animationType="fade" onRequestClose={() => setConfirmModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 }}>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8 }}>
+              Confirmar Recebimento
+            </Text>
+            <Text style={{ fontSize: 15, color: theme.textSec, lineHeight: 22, marginBottom: 20 }}>
+              Registrar recebimento de {pacotes.length} pacote{pacotes.length !== 1 ? 's' : ''}?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button label="Cancelar" onPress={() => setConfirmModal(false)} variant="outline" style={{ flex: 1 }} />
+              <Button label="Confirmar" onPress={doSave} style={{ flex: 1 }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -392,6 +392,11 @@ const scannerStyles = StyleSheet.create({
   scanActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   flipBtn: { backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 6 },
   flipBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  zoomRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 8 },
+  zoomBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  zoomBtnActive: { backgroundColor: '#FFE600', borderColor: '#FFE600' },
+  zoomBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  zoomBtnTextActive: { color: '#000' },
   flashBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
   flashBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   scanCounter: { alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
