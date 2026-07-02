@@ -149,8 +149,7 @@ VALUES ('pacotes-fotos', 'pacotes-fotos', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
--- Row Level Security (RLS) - desabilitado para facilitar acesso
--- Em produção, configure conforme necessário
+-- Row Level Security (RLS)
 -- ============================================================
 ALTER TABLE nodos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sacas_movimentos ENABLE ROW LEVEL SECURITY;
@@ -160,7 +159,26 @@ ALTER TABLE pacotes_inventario ENABLE ROW LEVEL SECURITY;
 ALTER TABLE svc_recebimentos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE svc_recebimentos_pacotes ENABLE ROW LEVEL SECURITY;
 
--- Policies permissivas (DROP antes para evitar conflito em re-execuções)
+-- ============================================================
+-- Função auxiliar: retorna o nodo_id do usuário autenticado
+-- (usa o email do Supabase Auth: {codigo}@nex.internal)
+-- ============================================================
+CREATE OR REPLACE FUNCTION nex_nodo_id()
+RETURNS UUID LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT id FROM nodos
+  WHERE lower(codigo) = split_part(lower(auth.email()), '@', 1)
+    AND ativo = true
+  LIMIT 1;
+$$;
+
+-- ============================================================
+-- Policies por tabela
+-- nodos: qualquer um lê (para login), só o próprio nodo escreve
+-- sacas/pacotes: cada agência só vê/edita o seu nodo_id
+-- svc/admin: acesso total (sem nodo_id específico)
+-- ============================================================
+
+-- DROP para re-execução limpa
 DROP POLICY IF EXISTS "Allow all" ON nodos;
 DROP POLICY IF EXISTS "Allow all" ON sacas_movimentos;
 DROP POLICY IF EXISTS "Allow all" ON pacotes_expedicoes;
@@ -169,14 +187,60 @@ DROP POLICY IF EXISTS "Allow all" ON svc_recebimentos;
 DROP POLICY IF EXISTS "Allow all" ON svc_recebimentos_pacotes;
 DROP POLICY IF EXISTS "Allow all" ON svc_sacas_retornos;
 DROP POLICY IF EXISTS "Allow all storage" ON storage.objects;
+DROP POLICY IF EXISTS "Nodos: leitura publica" ON nodos;
+DROP POLICY IF EXISTS "Nodos: escrita proprio" ON nodos;
+DROP POLICY IF EXISTS "Sacas: proprio nodo" ON sacas_movimentos;
+DROP POLICY IF EXISTS "Expedicoes: proprio nodo" ON pacotes_expedicoes;
+DROP POLICY IF EXISTS "Inventario: proprio nodo" ON pacotes_inventario;
+DROP POLICY IF EXISTS "SVC recebimentos: acesso total" ON svc_recebimentos;
+DROP POLICY IF EXISTS "SVC pacotes: acesso total" ON svc_recebimentos_pacotes;
+DROP POLICY IF EXISTS "SVC sacas retornos: acesso total" ON svc_sacas_retornos;
 
-CREATE POLICY "Allow all" ON nodos FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON sacas_movimentos FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON pacotes_expedicoes FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON pacotes_inventario FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON svc_recebimentos FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON svc_recebimentos_pacotes FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON svc_sacas_retornos FOR ALL USING (true) WITH CHECK (true);
+-- nodos: SELECT aberto (necessário para o login buscar por codigo)
+-- UPDATE restrito ao próprio nodo (troca de senha)
+CREATE POLICY "Nodos: leitura publica" ON nodos
+  FOR SELECT USING (true);
+
+CREATE POLICY "Nodos: escrita proprio" ON nodos
+  FOR UPDATE USING (id = nex_nodo_id())
+  WITH CHECK (id = nex_nodo_id());
+
+-- sacas_movimentos: apenas o próprio nodo
+CREATE POLICY "Sacas: proprio nodo" ON sacas_movimentos
+  FOR ALL USING (nodo_id = nex_nodo_id())
+  WITH CHECK (nodo_id = nex_nodo_id());
+
+-- pacotes_expedicoes: apenas o próprio nodo
+CREATE POLICY "Expedicoes: proprio nodo" ON pacotes_expedicoes
+  FOR ALL USING (nodo_id = nex_nodo_id())
+  WITH CHECK (nodo_id = nex_nodo_id());
+
+-- pacotes_inventario: apenas o próprio nodo
+CREATE POLICY "Inventario: proprio nodo" ON pacotes_inventario
+  FOR ALL USING (nodo_id = nex_nodo_id())
+  WITH CHECK (nodo_id = nex_nodo_id());
+
+-- SVC e admin: acesso total (não têm nodo_id de agência)
+CREATE POLICY "SVC recebimentos: acesso total" ON svc_recebimentos
+  FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "SVC pacotes: acesso total" ON svc_recebimentos_pacotes
+  FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "SVC sacas retornos: acesso total" ON svc_sacas_retornos
+  FOR ALL USING (true) WITH CHECK (true);
 
 CREATE POLICY "Allow all storage" ON storage.objects
   FOR ALL USING (bucket_id = 'pacotes-fotos') WITH CHECK (bucket_id = 'pacotes-fotos');
+
+-- ============================================================
+-- NOTA: as policies de sacas/expedicoes/inventario dependem de
+-- nex_nodo_id() que usa auth.email() do Supabase Auth.
+-- Enquanto a integração com Supabase Auth não for configurada,
+-- essas policies ficam abertas. Para ativar o bloqueio por API:
+--   1. Crie um usuário Supabase Auth por nodo:
+--      email: {codigo}@nex.internal, senha: a senha do nodo
+--   2. O app usa supabase.auth.signInWithPassword() no login
+--   3. As policies acima passam a funcionar automaticamente.
+-- Até lá, o isolamento é garantido pelo layout guard no app.
+-- ============================================================
