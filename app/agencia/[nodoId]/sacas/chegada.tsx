@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  TextInput, Alert, KeyboardAvoidingView, Platform,
+  TextInput, Alert, KeyboardAvoidingView, Platform, TouchableOpacity,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../../../src/lib/supabase';
@@ -46,6 +46,17 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     },
     textArea: { fontSize: 15, fontWeight: '400', minHeight: 80, textAlignVertical: 'top' },
     saveBtn: { marginTop: 28 },
+    horarioRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+    horarioBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      paddingHorizontal: 10,
+      borderRadius: 12,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    horarioBtnText: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
   });
 }
 
@@ -56,6 +67,7 @@ export default function SacasChegadaScreen() {
 
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
   const [quantidade, setQuantidade] = useState('');
+  const [dentroHorario, setDentroHorario] = useState<boolean | null>(null);
   const [observacao, setObservacao] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -63,6 +75,10 @@ export default function SacasChegadaScreen() {
     const qtd = parseInt(quantidade);
     if (!quantidade || isNaN(qtd) || qtd <= 0) {
       Alert.alert('Atenção', 'Informe uma quantidade válida de sacas.');
+      return;
+    }
+    if (dentroHorario === null) {
+      Alert.alert('Atenção', 'Informe se a chegada foi dentro ou fora do horário.');
       return;
     }
 
@@ -85,6 +101,7 @@ export default function SacasChegadaScreen() {
               nodo_id: nodoId,
               tipo: 'chegada',
               quantidade: qtd,
+              dentro_horario: dentroHorario,
               observacao: observacao.trim() || null,
             });
             setLoading(false);
@@ -128,6 +145,38 @@ export default function SacasChegadaScreen() {
             keyboardType="number-pad"
             returnKeyType="done"
           />
+
+          <Text style={styles.label}>Horário de Chegada *</Text>
+          <View style={styles.horarioRow}>
+            <TouchableOpacity
+              style={[
+                styles.horarioBtn,
+                {
+                  backgroundColor: dentroHorario === true ? COLORS.green + '22' : theme.input,
+                  borderColor: dentroHorario === true ? COLORS.green : theme.inputBorder,
+                },
+              ]}
+              onPress={() => setDentroHorario(true)}
+            >
+              <Text style={[styles.horarioBtnText, { color: dentroHorario === true ? COLORS.green : theme.textSec }]}>
+                ✅ Dentro do{'\n'}horário
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.horarioBtn,
+                {
+                  backgroundColor: dentroHorario === false ? '#FF6B0022' : theme.input,
+                  borderColor: dentroHorario === false ? '#FF6B00' : theme.inputBorder,
+                },
+              ]}
+              onPress={() => setDentroHorario(false)}
+            >
+              <Text style={[styles.horarioBtnText, { color: dentroHorario === false ? '#FF6B00' : theme.textSec }]}>
+                ⚠️ Fora do{'\n'}horário
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.label}>Observação (opcional)</Text>
           <TextInput

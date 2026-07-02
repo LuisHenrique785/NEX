@@ -13,6 +13,7 @@ interface Movimento {
   quantidade: number;
   placa: string | null;
   transportadora: string | null;
+  dentro_horario: boolean | null;
   created_at: string;
 }
 
@@ -152,6 +153,11 @@ export default function SacasMainScreen() {
                     <Text style={styles.movTime}>{formatTime(m.created_at)}</Text>
                   </View>
                   <Text style={styles.movQtd}>{m.quantidade} sacas</Text>
+                  {m.tipo === 'chegada' && m.dentro_horario !== null && (
+                    <Text style={[styles.movDetail, { color: m.dentro_horario ? COLORS.green : '#FF6B00', fontWeight: '600' }]}>
+                      {m.dentro_horario ? '✅ Dentro do horário' : '⚠️ Fora do horário'}
+                    </Text>
+                  )}
                   {m.placa && (
                     <Text style={styles.movDetail}>
                       🚛 {m.placa} · {m.transportadora}
