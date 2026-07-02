@@ -53,13 +53,17 @@ CREATE INDEX IF NOT EXISTS idx_sacas_created ON sacas_movimentos(created_at DESC
 CREATE TABLE IF NOT EXISTS pacotes_expedicoes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nodo_id UUID REFERENCES nodos(id) NOT NULL,
-  nome_motorista TEXT NOT NULL,
-  cpf_motorista TEXT NOT NULL,
+  nome_motorista TEXT,
+  cpf_motorista TEXT,
   placa TEXT NOT NULL,
   transportadora TEXT NOT NULL,
   total_pacotes INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration para banco existente (execute no SQL Editor do Supabase):
+-- ALTER TABLE pacotes_expedicoes ALTER COLUMN nome_motorista DROP NOT NULL;
+-- ALTER TABLE pacotes_expedicoes ALTER COLUMN cpf_motorista DROP NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_expedicoes_nodo ON pacotes_expedicoes(nodo_id);
 CREATE INDEX IF NOT EXISTS idx_expedicoes_created ON pacotes_expedicoes(created_at DESC);
