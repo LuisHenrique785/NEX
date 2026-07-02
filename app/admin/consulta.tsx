@@ -47,8 +47,8 @@ const EXPORT_PERIODS = [
 
 function buildCSV(rows: any[]): string {
   const headers = [
-    'Data/Hora (BRT)', 'NODO', 'Código', 'Placa', 'Transportadora',
-    'Total Declarado', 'Enviados', 'Recebidos SVC', 'Pendentes',
+    'Data Inventário (BRT)', 'NODO', 'Código NODO', 'Código Pacote',
+    'Status', 'Placa', 'Transportadora', 'Data Expedição (BRT)', 'Data Recebimento SVC (BRT)',
   ];
   const escape = (v: any) => {
     const s = String(v ?? '');
@@ -58,9 +58,8 @@ function buildCSV(rows: any[]): string {
   const lines = [headers.join(',')];
   for (const r of rows) {
     lines.push([
-      r.created_at_brt, r.nodo_nome, r.nodo_codigo,
-      r.placa, r.transportadora,
-      r.total_pacotes, r.enviados, r.recebidos, r.pendentes,
+      r.inventoried_at_brt, r.nodo_nome, r.nodo_codigo, r.codigo,
+      r.status, r.placa, r.transportadora, r.expedited_at_brt, r.received_at_brt,
     ].map(escape).join(','));
   }
   return '﻿' + lines.join('\r\n');
@@ -411,59 +410,62 @@ export default function ConsultaScreen() {
     try {
       const since = new Date(exportDateFrom + 'T00:00:00-03:00').toISOString();
       const until = new Date(exportDateTo + 'T23:59:59-03:00').toISOString();
-      const { data: exps } = await supabase
-        .from('pacotes_expedicoes')
-        .select('id, created_at, placa, transportadora, total_pacotes, nodo_id, nodos(nome, codigo)')
-        .gte('created_at', since)
-        .lte('created_at', until)
-        .order('created_at', { ascending: false });
 
-      if (!exps || exps.length === 0) {
-        Alert.alert('Sem dados', `Nenhuma expedição encontrada de ${exportDateFrom} até ${exportDateTo}.`);
+      // Busca TODOS os pacotes inventariados no período (inventoriados e expedidos)
+      const { data: packages } = await supabase
+        .from('pacotes_inventario')
+        .select('codigo, status, inventoried_at, expedited_at, nodo_id, expedicao_id, nodos(nome, codigo)')
+        .gte('inventoried_at', since)
+        .lte('inventoried_at', until)
+        .order('inventoried_at', { ascending: false });
+
+      if (!packages || packages.length === 0) {
+        Alert.alert('Sem dados', `Nenhum pacote encontrado de ${exportDateFrom} até ${exportDateTo}.`);
         return;
       }
 
-      const expIds = exps.map((e: any) => e.id);
-      const { data: packages } = await supabase
-        .from('pacotes_inventario')
-        .select('codigo, expedicao_id')
-        .in('expedicao_id', expIds)
-        .eq('status', 'expedited');
+      // Busca placa/transportadora das expedições referenciadas
+      const expIds = [...new Set((packages as any[]).filter(p => p.expedicao_id).map(p => p.expedicao_id))];
+      const expMap = new Map<string, { placa: string; transportadora: string }>();
+      if (expIds.length > 0) {
+        const { data: exps } = await supabase
+          .from('pacotes_expedicoes')
+          .select('id, placa, transportadora')
+          .in('id', expIds);
+        (exps || []).forEach((e: any) => expMap.set(e.id, { placa: e.placa || '', transportadora: e.transportadora || '' }));
+      }
 
-      const pkgByExp = new Map<string, string[]>();
-      (packages || []).forEach((p: any) => {
-        if (!pkgByExp.has(p.expedicao_id)) pkgByExp.set(p.expedicao_id, []);
-        pkgByExp.get(p.expedicao_id)!.push(p.codigo);
-      });
-
-      const allCodes = (packages || []).map((p: any) => p.codigo);
-      let receivedSet = new Set<string>();
+      // Busca pacotes recebidos no SVC
+      const allCodes = (packages as any[]).map(p => p.codigo);
+      const receivedMap = new Map<string, string>();
       if (allCodes.length > 0) {
         const { data: received } = await supabase
           .from('svc_recebimentos_pacotes')
-          .select('codigo')
+          .select('codigo, created_at')
           .in('codigo', allCodes);
-        receivedSet = new Set((received || []).map((r: any) => r.codigo));
+        (received || []).forEach((r: any) => receivedMap.set(r.codigo, r.created_at));
       }
 
-      const rows = exps.map((e: any) => {
-        const codes = pkgByExp.get(e.id) || [];
-        const recebidos = codes.filter((c: string) => receivedSet.has(c)).length;
-        const enviados = codes.length || e.total_pacotes;
+      const rows = (packages as any[]).map(p => {
+        const exp = p.expedicao_id ? expMap.get(p.expedicao_id) : null;
+        const receivedAt = receivedMap.get(p.codigo);
+        let status = 'Inventoriado';
+        if (receivedAt) status = 'Recebido SVC';
+        else if (p.status === 'expedited') status = 'Expedido';
         return {
-          created_at_brt: formatDateTimeBRT(e.created_at),
-          nodo_nome: e.nodos?.nome || '—',
-          nodo_codigo: e.nodos?.codigo || '—',
-          placa: e.placa || '',
-          transportadora: e.transportadora || '',
-          total_pacotes: e.total_pacotes,
-          enviados,
-          recebidos,
-          pendentes: enviados - recebidos,
+          inventoried_at_brt: formatDateTimeBRT(p.inventoried_at),
+          nodo_nome: (p as any).nodos?.nome || '—',
+          nodo_codigo: (p as any).nodos?.codigo || '—',
+          codigo: p.codigo,
+          status,
+          placa: exp?.placa || '',
+          transportadora: exp?.transportadora || '',
+          expedited_at_brt: p.expedited_at ? formatDateTimeBRT(p.expedited_at) : '',
+          received_at_brt: receivedAt ? formatDateTimeBRT(receivedAt) : '',
         };
       });
 
-      downloadCSV(buildCSV(rows), `nex-expedicoes-${exportDateFrom}-ate-${exportDateTo}.csv`);
+      downloadCSV(buildCSV(rows), `nex-pacotes-${exportDateFrom}-ate-${exportDateTo}.csv`);
     } finally {
       setExportLoading(false);
     }
@@ -947,7 +949,7 @@ export default function ConsultaScreen() {
                     {exportDateFrom} → {exportDateTo}
                   </Text>
                   <Text style={{ fontSize: 12, color: theme.textSec, marginTop: 2 }}>
-                    Colunas: Data/Hora · NODO · Placa · Transportadora · Total · Enviados · Recebidos · Pendentes
+                    Colunas: Data Inventário · NODO · Código NODO · Código Pacote · Status · Placa · Transportadora · Data Expedição · Data Recebimento SVC
                   </Text>
                 </View>
               </View>
