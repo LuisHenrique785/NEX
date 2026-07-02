@@ -186,6 +186,37 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 28, color: 'rgba(255,255,255,0.2)' }}>›</Text>
           </TouchableOpacity>
 
+          {/* Busca QR Saca Mãe */}
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#1A2E1A',
+              borderRadius: 20,
+              padding: 24,
+              marginTop: 14,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+            onPress={() => router.push('/busca-qr')}
+            activeOpacity={0.88}
+          >
+            <View style={{
+              width: 56, height: 56, borderRadius: 16,
+              backgroundColor: 'rgba(80,200,80,0.15)',
+              alignItems: 'center', justifyContent: 'center', marginRight: 18,
+            }}>
+              <Text style={{ fontSize: 30 }}>📦</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: '#4CD964', letterSpacing: -0.5 }}>
+                QR Saca Mãe
+              </Text>
+              <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 3, fontWeight: '500' }}>
+                Buscar e visualizar QR da saca
+              </Text>
+            </View>
+            <Text style={{ fontSize: 28, color: 'rgba(255,255,255,0.2)' }}>›</Text>
+          </TouchableOpacity>
+
           {/* Consulta button */}
           <TouchableOpacity
             style={{

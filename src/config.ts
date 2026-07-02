@@ -17,3 +17,7 @@ export const CONSULTA_PASSWORD = '91109394@';
 
 // Raio máximo em km para exibir NODOS próximos
 export const MAX_DISTANCE_KM = 1;
+
+// Supabase - Auditoria de Sacas (projeto separado: hfswxhaaglubdmksrucz)
+export const AUDITORIA_SUPABASE_URL = 'https://hfswxhaaglubdmksrucz.supabase.co';
+export const AUDITORIA_SUPABASE_ANON_KEY = 'sb_publishable__xuRv5UbSaorSGkxW-zmJg_HF_vS6uL';
