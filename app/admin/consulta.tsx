@@ -231,6 +231,7 @@ export default function ConsultaScreen() {
   const [expedicoes, setExpedicoes] = useState<Expedicao[]>([]);
   const [loadingExp, setLoadingExp] = useState(false);
   const [expLoaded, setExpLoaded] = useState(false);
+  const [totalInventoriados, setTotalInventoriados] = useState(0);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -259,10 +260,19 @@ export default function ConsultaScreen() {
     setExportDateFrom(from.toISOString().slice(0, 10));
   }
 
+  async function loadInventariados() {
+    const { count } = await supabase
+      .from('pacotes_inventario')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'inventoried');
+    setTotalInventoriados(count || 0);
+  }
+
   function handleLogin() {
     if (password === CONSULTA_PASSWORD) {
       setUnlocked(true);
       loadExpedicoes();
+      loadInventariados();
     } else {
       Alert.alert('Senha incorreta', 'Verifique a senha e tente novamente.');
       setPassword('');
@@ -573,6 +583,25 @@ export default function ConsultaScreen() {
           ) : null}
         </View>
 
+        {/* ── Banner: pacotes aguardando expedição ── */}
+        {totalInventoriados > 0 && (
+          <View style={{
+            backgroundColor: COLORS.blue + '22', borderWidth: 1.5,
+            borderColor: COLORS.blue + '66', borderRadius: 12,
+            padding: 14, marginBottom: 12, flexDirection: 'row', alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 22, marginRight: 10 }}>📦</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '800', color: COLORS.blue, fontSize: 14 }}>
+                {totalInventoriados} pacote{totalInventoriados !== 1 ? 's' : ''} inventariado{totalInventoriados !== 1 ? 's' : ''} aguardando expedição
+              </Text>
+              <Text style={{ fontSize: 12, color: theme.textSec, marginTop: 2 }}>
+                Acesse Agência → Expedição para criar uma expedição.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* ── Tabs ── */}
         <View style={styles.tabRow}>
           <TouchableOpacity
@@ -658,7 +687,7 @@ export default function ConsultaScreen() {
               <Text style={styles.sectionLabel}>
                 {filteredExps.length} RESULTADO{filteredExps.length !== 1 ? 'S' : ''}
               </Text>
-              <TouchableOpacity onPress={loadExpedicoes}>
+              <TouchableOpacity onPress={() => { loadExpedicoes(); loadInventariados(); }}>
                 <Text style={{ color: COLORS.blue, fontWeight: '700', fontSize: 13 }}>↺ Atualizar</Text>
               </TouchableOpacity>
             </View>
@@ -667,11 +696,26 @@ export default function ConsultaScreen() {
 
             {!loadingExp && filteredExps.length === 0 && expLoaded && (
               <Card style={styles.emptyCard}>
-                <Text style={styles.emptyText}>
-                  {expedicoes.length === 0
-                    ? 'Nenhuma expedição registrada ainda.'
-                    : 'Nenhuma expedição encontrada com esses filtros.'}
-                </Text>
+                {expedicoes.length === 0 ? (
+                  <>
+                    <Text style={{ fontSize: 36, marginBottom: 10 }}>📭</Text>
+                    <Text style={[styles.emptyText, { fontWeight: '800', color: theme.text, marginBottom: 6 }]}>
+                      Nenhuma expedição registrada
+                    </Text>
+                    {totalInventoriados > 0 ? (
+                      <Text style={[styles.emptyText, { color: COLORS.blue }]}>
+                        Você tem {totalInventoriados} pacote{totalInventoriados !== 1 ? 's' : ''} inventariado{totalInventoriados !== 1 ? 's' : ''}.{'\n'}
+                        Vá em Agência → Expedição para enviá-los.
+                      </Text>
+                    ) : (
+                      <Text style={styles.emptyText}>
+                        As expedições criadas nas agências aparecem aqui.
+                      </Text>
+                    )}
+                  </>
+                ) : (
+                  <Text style={styles.emptyText}>Nenhuma expedição encontrada com esses filtros.</Text>
+                )}
               </Card>
             )}
 
@@ -688,7 +732,7 @@ export default function ConsultaScreen() {
               <Text style={styles.sectionLabel}>
                 {pendencias.length} EXPEDIÇÃO{pendencias.length !== 1 ? 'ÕES' : ''} PENDENTE{pendencias.length !== 1 ? 'S' : ''}
               </Text>
-              <TouchableOpacity onPress={loadExpedicoes}>
+              <TouchableOpacity onPress={() => { loadExpedicoes(); loadInventariados(); }}>
                 <Text style={{ color: COLORS.blue, fontWeight: '700', fontSize: 13 }}>↺ Atualizar</Text>
               </TouchableOpacity>
             </View>
