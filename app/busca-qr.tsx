@@ -12,14 +12,17 @@ import { useTheme } from '../src/lib/theme';
 import { COLORS, Card } from '../src/components/ui';
 
 // ─── Configuração da tabela de auditoria ───────────────────────────────────
-const AUDITORIA_TABLE = 'sacas';
-const SEARCH_COLUMN = 'label';  // coluna usada na busca textual
+const AUDITORIA_TABLE = 'base';
+const SEARCH_COLUMN = 'saca_id';
+const SVC_FILTER = 'SMG3';
 // ──────────────────────────────────────────────────────────────────────────
 
 interface SacaResult {
-  id: string;
+  id: number;
+  saca_id: string;
   qr_mae: string;
-  [key: string]: any;
+  rota: string | null;
+  svc: string | null;
 }
 
 export default function BuscaQRScreen() {
@@ -50,7 +53,8 @@ export default function BuscaQRScreen() {
 
     const { data, error } = await supabaseAuditoria
       .from(AUDITORIA_TABLE)
-      .select('*')
+      .select('id, saca_id, qr_mae, rota, svc')
+      .eq('svc', SVC_FILTER)
       .ilike(SEARCH_COLUMN, `%${t}%`)
       .limit(20);
 
@@ -234,11 +238,9 @@ export default function BuscaQRScreen() {
               <Card style={styles.resultCard}>
                 <View style={styles.resultRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.resultLabel}>
-                      {saca[SEARCH_COLUMN] || saca.id}
-                    </Text>
+                    <Text style={styles.resultLabel}>Saca {saca.saca_id}</Text>
                     <Text style={styles.resultSub}>
-                      QR mãe: {saca.qr_mae ? saca.qr_mae.substring(0, 30) + '…' : 'N/D'}
+                      {saca.rota && saca.rota !== 'EMPTY' ? `Rota: ${saca.rota}` : 'Sem rota'} · {saca.svc}
                     </Text>
                   </View>
                   <Text style={styles.arrowText}>›</Text>
@@ -274,7 +276,8 @@ export default function BuscaQRScreen() {
             {selectedSaca && (
               <>
                 <Text style={styles.modalSub}>
-                  {selectedSaca[SEARCH_COLUMN] || selectedSaca.id}
+                  Saca {selectedSaca.saca_id}
+                  {selectedSaca.rota && selectedSaca.rota !== 'EMPTY' ? `  ·  ${selectedSaca.rota}` : ''}
                 </Text>
                 {selectedSaca.qr_mae ? (
                   <>
