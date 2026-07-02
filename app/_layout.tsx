@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '../src/lib/theme';
 import { DemoProvider, useDemo } from '../src/lib/demo';
+import { NodoAuthProvider } from '../src/lib/auth';
 
 function DemoBanner() {
   const { isDemo, exitDemo } = useDemo();
@@ -43,7 +44,8 @@ function InnerLayout() {
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="agencia/index" options={{ title: 'Selecionar NODO' }} />
+        <Stack.Screen name="agencia/index" options={{ title: 'Agência — Login' }} />
+        <Stack.Screen name="agencia/trocar-senha" options={{ title: 'Criar Senha', headerBackVisible: false }} />
         <Stack.Screen name="agencia/[nodoId]/index" options={{ title: 'Agência' }} />
         <Stack.Screen name="agencia/[nodoId]/sacas/index" options={{ title: 'Inventário de Sacas' }} />
         <Stack.Screen name="agencia/[nodoId]/sacas/chegada" options={{ title: 'Chegada de Sacas' }} />
@@ -65,7 +67,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <DemoProvider>
-        <InnerLayout />
+        <NodoAuthProvider>
+          <InnerLayout />
+        </NodoAuthProvider>
       </DemoProvider>
     </ThemeProvider>
   );

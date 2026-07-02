@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, TouchableOpacity, Alert,
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../../src/lib/supabase';
 import { COLORS, MenuCard, Card } from '../../../src/components/ui';
 import { useTheme } from '../../../src/lib/theme';
+import { useNodoAuth } from '../../../src/lib/auth';
+import { useDemo } from '../../../src/lib/demo';
 
 interface Nodo {
   id: string;
@@ -52,6 +54,8 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
 export default function AgenciaHomeScreen() {
   const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const { logout } = useNodoAuth();
+  const { isDemo } = useDemo();
 
   const { nodoId } = useLocalSearchParams<{ nodoId: string }>();
   const navigation = useNavigation();
@@ -64,9 +68,37 @@ export default function AgenciaHomeScreen() {
 
   useEffect(() => {
     if (nodo) {
-      navigation.setOptions({ title: nodo.nome });
+      navigation.setOptions({
+        title: nodo.nome,
+        headerRight: () => !isDemo ? (
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={{ marginRight: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: '700', color: theme.textSec }}>Sair</Text>
+          </TouchableOpacity>
+        ) : null,
+      });
     }
-  }, [nodo]);
+  }, [nodo, theme]);
+
+  async function handleLogout() {
+    Alert.alert(
+      'Sair da agência',
+      'Deseja sair? Você precisará fazer login novamente.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/agencia');
+          },
+        },
+      ]
+    );
+  }
 
   async function loadNodo() {
     const { data } = await supabase.from('nodos').select('*').eq('id', nodoId).single();
