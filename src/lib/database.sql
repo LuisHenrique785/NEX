@@ -37,8 +37,12 @@ CREATE TABLE IF NOT EXISTS sacas_movimentos (
   placa TEXT,
   transportadora TEXT,
   observacao TEXT,
+  dentro_horario BOOLEAN,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration para tabelas existentes:
+-- ALTER TABLE sacas_movimentos ADD COLUMN IF NOT EXISTS dentro_horario BOOLEAN;
 
 CREATE INDEX IF NOT EXISTS idx_sacas_nodo ON sacas_movimentos(nodo_id);
 CREATE INDEX IF NOT EXISTS idx_sacas_created ON sacas_movimentos(created_at DESC);

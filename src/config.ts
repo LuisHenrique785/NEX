@@ -9,7 +9,6 @@ export const SHEETS_GID = '1652264183';
 export const SHEETS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/export?format=csv&gid=${SHEETS_GID}`;
 
 // PIN de administrador para cadastro de novos NODOS
-// Mude para um PIN seguro após o primeiro acesso
 export const ADMIN_PIN = '7852';
 
 // Senha para tela de Consulta
@@ -22,3 +21,7 @@ export const MAX_DISTANCE_KM = 1;
 export const SVC_LAT = -22.347425;
 export const SVC_LNG = -45.9249912;
 export const SVC_MAX_KM = 3.0;
+
+// Supabase - Auditoria de Sacas (projeto separado: hfswxhaaglubdmksrucz)
+export const AUDITORIA_SUPABASE_URL = 'https://hfswxhaaglubdmksrucz.supabase.co';
+export const AUDITORIA_SUPABASE_ANON_KEY = 'sb_publishable__xuRv5UbSaorSGkxW-zmJg_HF_vS6uL';

@@ -70,6 +70,7 @@ export default function SVCRecebimentoScreen() {
   const [zoom, setZoom] = useState(0);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const scanCooldown = useRef(false);
+  const addedCodesRef = useRef(new Set<string>());
   const [manualCode, setManualCode] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoCode, setPhotoCode] = useState('');
@@ -86,21 +87,30 @@ export default function SVCRecebimentoScreen() {
   }, [inputMode, theme]);
 
   function addPacote(codigo: string, tipo: 'scanner' | 'manual' | 'foto', fotoUri?: string) {
-    const trimmed = codigo.trim();
-    if (!trimmed) return;
-    const dup = pacotes.some((p) => p.codigo === trimmed);
-    if (dup) {
+    const cleaned = codigo.replace(/[^0-9]/g, '');
+    if (!cleaned) return;
+    if (cleaned.length !== 11) {
       if (tipo === 'scanner') {
-        setLastScanned(`⚠️ Repetido: ${trimmed}`);
+        setLastScanned(`⚠️ Inválido: ${cleaned.length} dígitos`);
         setTimeout(() => setLastScanned(''), 2000);
       } else {
-        Alert.alert('Duplicado', `${trimmed} já está na lista.`);
+        Alert.alert('Código inválido', `O código deve ter exatamente 11 dígitos numéricos.\nInformado: ${cleaned.length} dígito${cleaned.length !== 1 ? 's' : ''}.`);
       }
       return;
     }
-    setPacotes((prev) => [{ codigo: trimmed, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
+    if (addedCodesRef.current.has(cleaned)) {
+      if (tipo === 'scanner') {
+        setLastScanned(`⚠️ Repetido: ${cleaned}`);
+        setTimeout(() => setLastScanned(''), 2000);
+      } else {
+        Alert.alert('Duplicado', `${cleaned} já está na lista.`);
+      }
+      return;
+    }
+    addedCodesRef.current.add(cleaned);
+    setPacotes((prev) => [{ codigo: cleaned, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
     if (tipo === 'scanner') {
-      setLastScanned(`✅ ${trimmed}`);
+      setLastScanned(`✅ ${cleaned}`);
       setTimeout(() => setLastScanned(''), 2000);
     }
   }
@@ -300,11 +310,17 @@ export default function SVCRecebimentoScreen() {
 
           {inputMode === 'manual' && (
             <Card style={{ marginBottom: 4 }}>
-              <TextInput style={styles.manualInput} placeholder="Digite o código..." placeholderTextColor={theme.textTer} value={manualCode} onChangeText={setManualCode} autoCapitalize="characters" autoFocus
+              <TextInput style={styles.manualInput} placeholder="Digite ou bipe o código..." placeholderTextColor={theme.textTer} value={manualCode}
+                onChangeText={(t) => {
+                  const v = t.replace(/[^0-9]/g, '').slice(0, 11);
+                  setManualCode(v);
+                  if (v.length === 11) { addPacote(v, 'manual'); setManualCode(''); }
+                }}
+                keyboardType="number-pad" autoFocus
                 returnKeyType="done"
-                onSubmitEditing={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }} />
+                onSubmitEditing={() => { if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); } }} />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                <Button label="Adicionar" onPress={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }} style={{ flex: 1 }} />
+                <Button label="Adicionar" onPress={() => { if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); } }} style={{ flex: 1 }} />
                 <Button label="Fechar" onPress={() => setInputMode('none')} variant="outline" style={{ flex: 1 }} />
               </View>
             </Card>
@@ -319,7 +335,7 @@ export default function SVCRecebimentoScreen() {
                     <Button label="🖼 Galeria" onPress={handlePickPhoto} variant="outline" style={{ flex: 1 }} />
                   </View>
               }
-              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código visível na foto" placeholderTextColor={theme.textTer} value={photoCode} onChangeText={setPhotoCode} autoCapitalize="characters" />
+              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código visível na foto" placeholderTextColor={theme.textTer} value={photoCode} onChangeText={(t) => setPhotoCode(t.replace(/[^0-9]/g, '').slice(0, 11))} keyboardType="number-pad" />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
                 <Button label="Salvar" onPress={() => { if (!photoUri || !photoCode.trim()) { Alert.alert('Preencha todos os campos'); return; } addPacote(photoCode.trim(), 'foto', photoUri); setPhotoUri(null); setPhotoCode(''); setInputMode('none'); }} style={{ flex: 1 }} />
                 <Button label="Cancelar" onPress={() => { setInputMode('none'); setPhotoUri(null); setPhotoCode(''); }} variant="outline" style={{ flex: 1 }} />
@@ -331,7 +347,7 @@ export default function SVCRecebimentoScreen() {
             <View key={i} style={styles.pacoteRow}>
               <Text style={styles.pacoteIcon}>{typeIcon(p.tipo_entrada)}</Text>
               <Text style={styles.pacoteCodigo} numberOfLines={1}>{p.codigo}</Text>
-              <TouchableOpacity onPress={() => { Alert.alert('Remover?', p.codigo, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Remover', style: 'destructive', onPress: () => setPacotes((prev) => prev.filter((_, idx) => idx !== i)) }]); }}>
+              <TouchableOpacity onPress={() => { addedCodesRef.current.delete(p.codigo); setPacotes((prev) => prev.filter((_, idx) => idx !== i)); }}>
                 <Text style={styles.pacoteRemove}>✕</Text>
               </TouchableOpacity>
             </View>
