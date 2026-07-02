@@ -19,9 +19,16 @@ CREATE TABLE IF NOT EXISTS nodos (
   lat DOUBLE PRECISION,
   lng DOUBLE PRECISION,
   ativo BOOLEAN DEFAULT true,
+  senha TEXT,
+  senha_alterada BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration para banco existente (execute no SQL Editor do Supabase):
+-- ALTER TABLE nodos ADD COLUMN IF NOT EXISTS senha TEXT;
+-- ALTER TABLE nodos ADD COLUMN IF NOT EXISTS senha_alterada BOOLEAN DEFAULT false;
+-- UPDATE nodos SET senha = codigo WHERE senha IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_nodos_ativo ON nodos(ativo);
 CREATE INDEX IF NOT EXISTS idx_nodos_codigo ON nodos(codigo);
