@@ -75,6 +75,7 @@ export default function ExpedicaoPacotesScreen() {
 
   // Manual
   const [manualCode, setManualCode] = useState('');
+  const [loadingInventory, setLoadingInventory] = useState(false);
 
   // Photo
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -158,6 +159,30 @@ export default function ExpedicaoPacotesScreen() {
       const { data: urlData } = supabase.storage.from('pacotes-fotos').getPublicUrl(data.path);
       return urlData?.publicUrl || null;
     } catch { return null; }
+  }
+
+  async function loadFromInventario() {
+    setLoadingInventory(true);
+    const { data, error } = await supabase
+      .from('pacotes_inventario')
+      .select('codigo')
+      .eq('nodo_id', nodoId)
+      .eq('status', 'inventoried')
+      .order('inventoried_at', { ascending: false });
+    setLoadingInventory(false);
+    if (error) { Alert.alert('Erro', error.message); return; }
+    if (!data || data.length === 0) { Alert.alert('Inventário vazio', 'Nenhum pacote inventoriado aguardando expedição.'); return; }
+    let adicionados = 0;
+    for (const row of data) {
+      const c = row.codigo.replace(/[^0-9]/g, '');
+      if (c.length === 11 && !addedCodesRef.current.has(c)) {
+        addedCodesRef.current.add(c);
+        setPacotes((prev) => [...prev, { codigo: c, tipo_entrada: 'manual' }]);
+        adicionados++;
+      }
+    }
+    if (adicionados === 0) Alert.alert('Aviso', 'Todos os pacotes do inventário já estão na lista.');
+    else Alert.alert('✅ Carregado', `${adicionados} pacote${adicionados !== 1 ? 's' : ''} adicionado${adicionados !== 1 ? 's' : ''} do inventário.`);
   }
 
   function handleSave() {
@@ -343,16 +368,31 @@ export default function ExpedicaoPacotesScreen() {
               <Text style={styles.addBtnText}>Foto</Text>
             </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: COLORS.green, flexDirection: 'row', justifyContent: 'center', marginBottom: 12 }]}
+            onPress={loadFromInventario}
+            disabled={loadingInventory}
+          >
+            {loadingInventory
+              ? <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+              : <Text style={[styles.addBtnIcon, { marginRight: 8, marginBottom: 0 }]}>📦</Text>}
+            <Text style={styles.addBtnText}>Carregar do Inventário</Text>
+          </TouchableOpacity>
 
           {/* Manual input inline */}
           {inputMode === 'manual' && (
             <Card style={{ marginBottom: 4 }}>
               <TextInput
                 style={styles.manualInput}
-                placeholder="Digite o código do pacote..."
+                placeholder="Digite ou bipe o código..."
                 value={manualCode}
-                onChangeText={setManualCode}
-                autoCapitalize="characters"
+                onChangeText={(v) => {
+                  const n = v.replace(/[^0-9]/g, '').slice(0, 11);
+                  setManualCode(n);
+                  if (n.length === 11) { addPacote(n, 'manual'); setManualCode(''); }
+                }}
+                keyboardType="number-pad"
+                autoCapitalize="none"
                 autoFocus
                 returnKeyType="done"
                 onSubmitEditing={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }}
