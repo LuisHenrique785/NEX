@@ -273,11 +273,18 @@ export default function ConsultaScreen() {
   async function loadExpedicoes() {
     setLoadingExp(true);
     try {
-      const { data: exps } = await supabase
+      const { data: exps, error: expsError } = await supabase
         .from('pacotes_expedicoes')
         .select('id, created_at, placa, transportadora, total_pacotes, nodo_id, nodos(nome, codigo)')
         .order('created_at', { ascending: false })
         .limit(100);
+
+      if (expsError) {
+        Alert.alert('Erro ao carregar expedições', expsError.message);
+        setExpedicoes([]);
+        setExpLoaded(true);
+        return;
+      }
 
       if (!exps || exps.length === 0) {
         setExpedicoes([]);

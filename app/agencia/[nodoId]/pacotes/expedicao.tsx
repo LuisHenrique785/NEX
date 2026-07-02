@@ -71,6 +71,7 @@ export default function ExpedicaoPacotesScreen() {
   const [zoom, setZoom] = useState(0);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const scanCooldown = useRef(false);
+  const addedCodesRef = useRef(new Set<string>());
 
   // Manual
   const [manualCode, setManualCode] = useState('');
@@ -80,24 +81,30 @@ export default function ExpedicaoPacotesScreen() {
   const [photoCode, setPhotoCode] = useState('');
 
   function addPacote(codigo: string, tipo: 'scanner' | 'manual' | 'foto', fotoUri?: string) {
-    const trimmed = codigo.trim();
-    if (!trimmed) return;
-
-    const duplicate = pacotes.some((p) => p.codigo === trimmed);
-    if (duplicate) {
+    const cleaned = codigo.replace(/[^0-9]/g, '');
+    if (!cleaned) return;
+    if (cleaned.length !== 11) {
       if (tipo === 'scanner') {
-        setLastScanned(`⚠️ Repetido: ${trimmed}`);
+        setLastScanned(`⚠️ Inválido: ${cleaned.length} dígitos`);
         setTimeout(() => setLastScanned(''), 2000);
       } else {
-        Alert.alert('Duplicado', `O pacote ${trimmed} já está na lista.`);
+        Alert.alert('Código inválido', `O código deve ter exatamente 11 dígitos numéricos.\nInformado: ${cleaned.length} dígito${cleaned.length !== 1 ? 's' : ''}.`);
       }
       return;
     }
-
-    setPacotes((prev) => [{ codigo: trimmed, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
-
+    if (addedCodesRef.current.has(cleaned)) {
+      if (tipo === 'scanner') {
+        setLastScanned(`⚠️ Repetido: ${cleaned}`);
+        setTimeout(() => setLastScanned(''), 2000);
+      } else {
+        Alert.alert('Duplicado', `O pacote ${cleaned} já está na lista.`);
+      }
+      return;
+    }
+    addedCodesRef.current.add(cleaned);
+    setPacotes((prev) => [{ codigo: cleaned, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
     if (tipo === 'scanner') {
-      setLastScanned(`✅ ${trimmed}`);
+      setLastScanned(`✅ ${cleaned}`);
       setTimeout(() => setLastScanned(''), 2000);
     }
   }
@@ -167,11 +174,12 @@ export default function ExpedicaoPacotesScreen() {
       return;
     }
     setSaving(true);
+    try {
     const { data: expData, error: expError } = await supabase
       .from('pacotes_expedicoes')
       .insert({ nodo_id: nodoId, placa: placa.trim(), transportadora: transportadora.trim(), total_pacotes: pacotes.length })
       .select().single();
-    if (expError) { setSaving(false); Alert.alert('Erro', expError.message); return; }
+    if (expError) { Alert.alert('Erro ao criar expedição', expError.message); return; }
 
     let erros = 0;
     for (const p of pacotes) {
@@ -187,11 +195,15 @@ export default function ExpedicaoPacotesScreen() {
       }
     }
 
-    setSaving(false);
     if (erros > 0) {
       Alert.alert('Atenção', `Expedição salva, mas ${erros} pacote${erros !== 1 ? 's' : ''} tiv${erros !== 1 ? 'eram' : 'e'} erro ao registrar. Verifique na Consulta.`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
     } else {
       Alert.alert('✅ Expedição Registrada!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso.`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
+    }
+    } catch (e: any) {
+      Alert.alert('Erro inesperado', e?.message || 'Tente novamente.');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -380,10 +392,8 @@ export default function ExpedicaoPacotesScreen() {
                   <Text style={styles.pacoteCodigo} numberOfLines={1}>{p.codigo}</Text>
                   <TouchableOpacity
                     onPress={() => {
-                      Alert.alert('Remover', `Remover ${p.codigo}?`, [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Remover', style: 'destructive', onPress: () => setPacotes((prev) => prev.filter((_, idx) => idx !== i)) },
-                      ]);
+                      addedCodesRef.current.delete(p.codigo);
+                      setPacotes((prev) => prev.filter((_, idx) => idx !== i));
                     }}
                   >
                     <Text style={styles.pacoteRemove}>✕</Text>
