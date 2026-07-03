@@ -330,14 +330,14 @@ export default function InventarioFisicoScreen() {
     tipo: 'scanner' | 'manual' | 'foto',
     fotoUri?: string
   ) {
-    const cleaned = codigo.replace(/[^0-9]/g, '');
-    if (!cleaned) return;
-    if (cleaned.length !== 11) {
+    const nums = codigo.replace(/[^0-9]/g, '');
+    const cleaned = nums.length > 11 ? nums.slice(-11) : nums;
+    if (!cleaned || cleaned.length < 11) {
       if (tipo === 'scanner') {
-        setLastScanned(`⚠️ Inválido: ${cleaned.length} dígitos`);
+        setLastScanned(`⚠️ Inválido: ${nums.length} dígito${nums.length !== 1 ? 's' : ''}`);
         setTimeout(() => setLastScanned(''), 2000);
       } else {
-        Alert.alert('Código inválido', `O código deve ter exatamente 11 dígitos numéricos.\nInformado: ${cleaned.length} dígito${cleaned.length !== 1 ? 's' : ''}.`);
+        Alert.alert('Código inválido', `O código deve ter pelo menos 11 dígitos numéricos.\nInformado: ${nums.length} dígito${nums.length !== 1 ? 's' : ''}.`);
       }
       return;
     }
@@ -599,7 +599,8 @@ export default function InventarioFisicoScreen() {
                 placeholderTextColor={theme.textTer}
                 value={manualCode}
                 onChangeText={(t) => {
-                  const v = t.replace(/[^0-9]/g, '').slice(0, 11);
+                  const nums = t.replace(/[^0-9]/g, '');
+                  const v = nums.length > 11 ? nums.slice(-11) : nums;
                   setManualCode(v);
                   if (v.length === 11) submitManual(v);
                 }}
@@ -665,7 +666,7 @@ export default function InventarioFisicoScreen() {
                 placeholder="11 dígitos numéricos"
                 placeholderTextColor={theme.textTer}
                 value={photoCode}
-                onChangeText={(t) => setPhotoCode(t.replace(/[^0-9]/g, '').slice(0, 11))}
+                onChangeText={(t) => { const d = t.replace(/[^0-9]/g, ''); setPhotoCode(d.length > 11 ? d.slice(-11) : d); }}
                 keyboardType="number-pad"
               />
 

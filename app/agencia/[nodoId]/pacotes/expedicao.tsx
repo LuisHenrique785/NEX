@@ -90,14 +90,14 @@ export default function ExpedicaoPacotesScreen() {
   const [photoCode, setPhotoCode] = useState('');
 
   function addPacote(codigo: string, tipo: 'scanner' | 'manual' | 'foto', fotoUri?: string) {
-    const cleaned = codigo.replace(/[^0-9]/g, '');
-    if (!cleaned) return;
-    if (cleaned.length !== 11) {
+    const nums = codigo.replace(/[^0-9]/g, '');
+    const cleaned = nums.length > 11 ? nums.slice(-11) : nums;
+    if (!cleaned || cleaned.length < 11) {
       if (tipo === 'scanner') {
-        setLastScanned(`⚠️ Inválido: ${cleaned.length} dígitos`);
+        setLastScanned(`⚠️ Inválido: ${nums.length} dígito${nums.length !== 1 ? 's' : ''}`);
         setTimeout(() => setLastScanned(''), 2000);
       } else {
-        Alert.alert('Código inválido', `O código deve ter exatamente 11 dígitos numéricos.\nInformado: ${cleaned.length} dígito${cleaned.length !== 1 ? 's' : ''}.`);
+        Alert.alert('Código inválido', `O código deve ter pelo menos 11 dígitos numéricos.\nInformado: ${nums.length} dígito${nums.length !== 1 ? 's' : ''}.`);
       }
       return;
     }
@@ -432,7 +432,8 @@ export default function ExpedicaoPacotesScreen() {
                 placeholder="Digite ou bipe o código..."
                 value={manualCode}
                 onChangeText={(v) => {
-                  const n = v.replace(/[^0-9]/g, '').slice(0, 11);
+                  const nums = v.replace(/[^0-9]/g, '');
+                  const n = nums.length > 11 ? nums.slice(-11) : nums;
                   setManualCode(n);
                   if (n.length === 11) submitManual(n);
                 }}
