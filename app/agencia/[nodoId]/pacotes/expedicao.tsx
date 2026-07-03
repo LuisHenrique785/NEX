@@ -77,6 +77,13 @@ export default function ExpedicaoPacotesScreen() {
   // Manual
   const [manualCode, setManualCode] = useState('');
   const [loadingInventory, setLoadingInventory] = useState(false);
+  const manualInputRef = useRef<any>(null);
+
+  function submitManual(code: string) {
+    addPacote(code, 'manual');
+    setManualCode('');
+    setTimeout(() => manualInputRef.current?.focus(), 30);
+  }
 
   // Photo
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -387,22 +394,23 @@ export default function ExpedicaoPacotesScreen() {
           {inputMode === 'manual' && (
             <Card style={{ marginBottom: 4 }}>
               <TextInput
+                ref={manualInputRef}
                 style={styles.manualInput}
                 placeholder="Digite ou bipe o código..."
                 value={manualCode}
                 onChangeText={(v) => {
                   const n = v.replace(/[^0-9]/g, '').slice(0, 11);
                   setManualCode(n);
-                  if (n.length === 11) { addPacote(n, 'manual'); setManualCode(''); }
+                  if (n.length === 11) submitManual(n);
                 }}
                 keyboardType="number-pad"
                 autoCapitalize="none"
                 autoFocus
                 returnKeyType="done"
-                onSubmitEditing={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }}
+                onSubmitEditing={() => { if (manualCode.trim()) submitManual(manualCode.trim()); }}
               />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                <Button label="Adicionar" onPress={() => { if (manualCode.trim()) { addPacote(manualCode.trim(), 'manual'); setManualCode(''); } }} style={{ flex: 1 }} />
+                <Button label="Adicionar" onPress={() => { if (manualCode.trim()) submitManual(manualCode.trim()); }} style={{ flex: 1 }} />
                 <Button label="Fechar" onPress={() => setInputMode('none')} variant="outline" style={{ flex: 1 }} />
               </View>
             </Card>
