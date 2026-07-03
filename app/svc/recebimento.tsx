@@ -63,6 +63,7 @@ export default function SVCRecebimentoScreen() {
   const [inputMode, setInputMode] = useState<InputMode>('none');
   const [saving, setSaving] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
+  const [resultModal, setResultModal] = useState<{ ok: boolean; msg: string } | null>(null);
   const [lastScanned, setLastScanned] = useState('');
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -87,14 +88,14 @@ export default function SVCRecebimentoScreen() {
   }, [inputMode, theme]);
 
   function addPacote(codigo: string, tipo: 'scanner' | 'manual' | 'foto', fotoUri?: string) {
-    const cleaned = codigo.replace(/[^0-9]/g, '');
-    if (!cleaned) return;
-    if (cleaned.length !== 11) {
+    const nums = codigo.replace(/[^0-9]/g, '');
+    const cleaned = nums.length > 11 ? nums.slice(-11) : nums;
+    if (!cleaned || cleaned.length < 11) {
       if (tipo === 'scanner') {
-        setLastScanned(`⚠️ Inválido: ${cleaned.length} dígitos`);
+        setLastScanned(`⚠️ Inválido: ${nums.length} dígito${nums.length !== 1 ? 's' : ''}`);
         setTimeout(() => setLastScanned(''), 2000);
       } else {
-        Alert.alert('Código inválido', `O código deve ter exatamente 11 dígitos numéricos.\nInformado: ${cleaned.length} dígito${cleaned.length !== 1 ? 's' : ''}.`);
+        Alert.alert('Código inválido', `O código deve ter pelo menos 11 dígitos numéricos.\nInformado: ${nums.length} dígito${nums.length !== 1 ? 's' : ''}.`);
       }
       return;
     }
@@ -157,7 +158,7 @@ export default function SVCRecebimentoScreen() {
   async function doSave() {
     setConfirmModal(false);
     if (isDemo) {
-      Alert.alert('✅ [DEMO] Recebimento Registrado!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`, [{ text: 'OK', onPress: () => router.replace('/svc') }]);
+      setResultModal({ ok: true, msg: `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} registrado${pacotes.length !== 1 ? 's' : ''} (modo demonstração).` });
       return;
     }
     setSaving(true);
@@ -175,9 +176,9 @@ export default function SVCRecebimentoScreen() {
     const { error: itemsError } = await supabase.from('svc_recebimentos_pacotes').insert(items);
     setSaving(false);
     if (itemsError) {
-      Alert.alert('Atenção', `Recebimento salvo, mas houve erro ao registrar os pacotes individualmente: ${itemsError.message}`, [{ text: 'OK', onPress: () => router.replace('/svc') }]);
+      setResultModal({ ok: false, msg: `Recebimento salvo, mas houve erro ao registrar os pacotes individualmente:\n${itemsError.message}` });
     } else {
-      Alert.alert('✅ Recebimento Registrado!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} recebido${pacotes.length !== 1 ? 's' : ''} com sucesso.`, [{ text: 'OK', onPress: () => router.replace('/svc') }]);
+      setResultModal({ ok: true, msg: `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} recebido${pacotes.length !== 1 ? 's' : ''} com sucesso.` });
     }
   }
 
@@ -312,7 +313,8 @@ export default function SVCRecebimentoScreen() {
             <Card style={{ marginBottom: 4 }}>
               <TextInput style={styles.manualInput} placeholder="Digite ou bipe o código..." placeholderTextColor={theme.textTer} value={manualCode}
                 onChangeText={(t) => {
-                  const v = t.replace(/[^0-9]/g, '').slice(0, 11);
+                  const nums = t.replace(/[^0-9]/g, '');
+                  const v = nums.length > 11 ? nums.slice(-11) : nums;
                   setManualCode(v);
                   if (v.length === 11) { addPacote(v, 'manual'); setManualCode(''); }
                 }}
@@ -335,7 +337,7 @@ export default function SVCRecebimentoScreen() {
                     <Button label="🖼 Galeria" onPress={handlePickPhoto} variant="outline" style={{ flex: 1 }} />
                   </View>
               }
-              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código visível na foto" placeholderTextColor={theme.textTer} value={photoCode} onChangeText={(t) => setPhotoCode(t.replace(/[^0-9]/g, '').slice(0, 11))} keyboardType="number-pad" />
+              <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Código visível na foto" placeholderTextColor={theme.textTer} value={photoCode} onChangeText={(t) => { const d = t.replace(/[^0-9]/g, ''); setPhotoCode(d.length > 11 ? d.slice(-11) : d); }} keyboardType="number-pad" />
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
                 <Button label="Salvar" onPress={() => { if (!photoUri || !photoCode.trim()) { Alert.alert('Preencha todos os campos'); return; } addPacote(photoCode.trim(), 'foto', photoUri); setPhotoUri(null); setPhotoCode(''); setInputMode('none'); }} style={{ flex: 1 }} />
                 <Button label="Cancelar" onPress={() => { setInputMode('none'); setPhotoUri(null); setPhotoCode(''); }} variant="outline" style={{ flex: 1 }} />
@@ -374,6 +376,25 @@ export default function SVCRecebimentoScreen() {
               <Button label="Cancelar" onPress={() => setConfirmModal(false)} variant="outline" style={{ flex: 1 }} />
               <Button label="Confirmar" onPress={doSave} style={{ flex: 1 }} />
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={!!resultModal} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380, alignItems: 'center' }}>
+            <Text style={{ fontSize: 48, marginBottom: 12 }}>{resultModal?.ok ? '✅' : '⚠️'}</Text>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text, marginBottom: 10, textAlign: 'center' }}>
+              {resultModal?.ok ? 'Recebimento Registrado!' : 'Atenção'}
+            </Text>
+            <Text style={{ fontSize: 15, color: theme.textSec, lineHeight: 22, marginBottom: 24, textAlign: 'center' }}>
+              {resultModal?.msg}
+            </Text>
+            <Button
+              label="OK"
+              onPress={() => { setResultModal(null); router.replace('/svc'); }}
+              style={{ width: '100%' }}
+            />
           </View>
         </View>
       </Modal>

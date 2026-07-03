@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, TouchableOpacity, Alert,
+  View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, TouchableOpacity, Alert, Modal,
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../../src/lib/supabase';
@@ -61,6 +61,7 @@ export default function AgenciaHomeScreen() {
   const navigation = useNavigation();
   const [nodo, setNodo] = useState<Nodo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [logoutModal, setLogoutModal] = useState(false);
 
   useEffect(() => {
     loadNodo();
@@ -82,22 +83,8 @@ export default function AgenciaHomeScreen() {
     }
   }, [nodo, theme]);
 
-  async function handleLogout() {
-    Alert.alert(
-      'Sair da agência',
-      'Deseja sair? Você precisará fazer login novamente.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace('/agencia');
-          },
-        },
-      ]
-    );
+  function handleLogout() {
+    setLogoutModal(true);
   }
 
   async function loadNodo() {
@@ -154,6 +141,31 @@ export default function AgenciaHomeScreen() {
           onPress={() => router.push(`/agencia/${nodoId}/pacotes`)}
         />
       </ScrollView>
+
+      <Modal visible={logoutModal} transparent animationType="fade" onRequestClose={() => setLogoutModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 380 }}>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text, marginBottom: 8 }}>Sair da agência</Text>
+            <Text style={{ fontSize: 14, color: theme.textSec, lineHeight: 20, marginBottom: 24 }}>
+              Deseja sair? Você precisará fazer login novamente.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                style={{ flex: 1, borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1.5, borderColor: theme.border, backgroundColor: theme.surface }}
+                onPress={() => setLogoutModal(false)}
+              >
+                <Text style={{ fontWeight: '700', color: theme.text }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, borderRadius: 14, padding: 14, alignItems: 'center', backgroundColor: COLORS.red }}
+                onPress={async () => { setLogoutModal(false); await logout(); router.replace('/agencia'); }}
+              >
+                <Text style={{ fontWeight: '800', color: '#fff' }}>Sair</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
