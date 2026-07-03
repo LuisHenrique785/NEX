@@ -244,6 +244,8 @@ export default function ConsultaScreen() {
 
   // Export tab state
   const [exportPeriod, setExportPeriod] = useState<1 | 7 | 15 | 30 | null>(7);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [cleanupPreview, setCleanupPreview] = useState<string[] | null>(null);
   const [exportDateFrom, setExportDateFrom] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().slice(0, 10);
   });
@@ -393,6 +395,50 @@ export default function ConsultaScreen() {
       });
     } finally {
       setSearching(false);
+    }
+  }
+
+  // ─── Cleanup empty expeditions ────────────────────────────────────
+  async function previewCleanup() {
+    setCleanupLoading(true);
+    try {
+      const { data: expsWithPkgs } = await supabase
+        .from('pacotes_inventario')
+        .select('expedicao_id')
+        .not('expedicao_id', 'is', null);
+      const validExpIds = new Set(
+        (expsWithPkgs || []).map((p: any) => p.expedicao_id).filter(Boolean)
+      );
+      const { data: allExps } = await supabase.from('pacotes_expedicoes').select('id');
+      const emptyIds = (allExps || []).map((e: any) => e.id).filter(id => !validExpIds.has(id));
+      setCleanupPreview(emptyIds);
+    } catch (e: any) {
+      Alert.alert('Erro', e?.message || 'Erro ao verificar duplicatas.');
+    } finally {
+      setCleanupLoading(false);
+    }
+  }
+
+  async function confirmCleanup() {
+    if (!cleanupPreview || cleanupPreview.length === 0) return;
+    setCleanupLoading(true);
+    try {
+      const { error } = await supabase
+        .from('pacotes_expedicoes')
+        .delete()
+        .in('id', cleanupPreview);
+      if (error) {
+        Alert.alert('Erro', error.message);
+      } else {
+        setCleanupPreview(null);
+        loadExpedicoes();
+        Alert.alert(
+          'Limpeza concluída',
+          `${cleanupPreview.length} expedição${cleanupPreview.length !== 1 ? 'ões removidas' : ' removida'} com sucesso.`
+        );
+      }
+    } finally {
+      setCleanupLoading(false);
     }
   }
 
@@ -983,6 +1029,72 @@ export default function ConsultaScreen() {
               O download é iniciado automaticamente no navegador.{'\n'}
               Abra o arquivo no Excel ou Google Sheets.
             </Text>
+
+            {/* ── Manutenção ── */}
+            <View style={{ marginTop: 32, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 20 }}>
+              <Text style={styles.sectionLabel}>MANUTENÇÃO DO BANCO</Text>
+
+              {cleanupPreview === null ? (
+                <>
+                  <Card style={{ padding: 14, marginBottom: 16, backgroundColor: COLORS.red + '12' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <Text style={{ fontSize: 24 }}>🧹</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text }}>
+                          Limpar expedições duplicadas
+                        </Text>
+                        <Text style={{ fontSize: 12, color: theme.textSec, marginTop: 2 }}>
+                          Remove registros de expedição criados sem pacotes (duplicatas de reenvio).
+                        </Text>
+                      </View>
+                    </View>
+                  </Card>
+                  <Button
+                    label="Verificar duplicatas"
+                    onPress={previewCleanup}
+                    loading={cleanupLoading}
+                    variant="outline"
+                  />
+                </>
+              ) : cleanupPreview.length === 0 ? (
+                <Card style={{ padding: 16, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 36, marginBottom: 8 }}>✅</Text>
+                  <Text style={{ fontWeight: '800', color: COLORS.green, fontSize: 15 }}>Banco limpo!</Text>
+                  <Text style={{ fontSize: 13, color: theme.textSec, marginTop: 4, textAlign: 'center' }}>
+                    Nenhuma expedição vazia encontrada.
+                  </Text>
+                  <Button
+                    label="Fechar"
+                    onPress={() => setCleanupPreview(null)}
+                    variant="outline"
+                    style={{ marginTop: 14 }}
+                  />
+                </Card>
+              ) : (
+                <Card style={{ padding: 16 }}>
+                  <Text style={{ fontWeight: '900', color: COLORS.red, fontSize: 16, marginBottom: 8 }}>
+                    {cleanupPreview.length} expedição{cleanupPreview.length !== 1 ? 'ões vazias' : ' vazia'} encontrada{cleanupPreview.length !== 1 ? 's' : ''}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: theme.textSec, marginBottom: 20, lineHeight: 19 }}>
+                    Esses registros não têm pacotes associados e podem ser removidos com segurança.
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <Button
+                      label="Cancelar"
+                      onPress={() => setCleanupPreview(null)}
+                      variant="outline"
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      label={`Remover ${cleanupPreview.length}`}
+                      onPress={confirmCleanup}
+                      loading={cleanupLoading}
+                      style={{ flex: 1, backgroundColor: COLORS.red }}
+                    />
+                  </View>
+                </Card>
+              )}
+            </View>
           </>
         )}
 
