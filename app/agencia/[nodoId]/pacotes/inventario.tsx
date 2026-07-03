@@ -247,6 +247,14 @@ export default function InventarioFisicoScreen() {
   const scanCooldown = useRef(false);
 
   const [manualCode, setManualCode] = useState('');
+  const manualInputRef = useRef<any>(null);
+
+  function submitManual(code: string) {
+    addPacote(code, 'manual');
+    setManualCode('');
+    setTimeout(() => manualInputRef.current?.focus(), 30);
+  }
+
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoCode, setPhotoCode] = useState('');
 
@@ -585,6 +593,7 @@ export default function InventarioFisicoScreen() {
               <Text style={styles.manualIcon}>⌨️</Text>
               <Text style={styles.manualTitle}>Digitar Código Manualmente</Text>
               <TextInput
+                ref={manualInputRef}
                 style={styles.manualInput}
                 placeholder="Digite ou bipe o código..."
                 placeholderTextColor={theme.textTer}
@@ -592,20 +601,16 @@ export default function InventarioFisicoScreen() {
                 onChangeText={(t) => {
                   const v = t.replace(/[^0-9]/g, '').slice(0, 11);
                   setManualCode(v);
-                  if (v.length === 11) { addPacote(v, 'manual'); setManualCode(''); }
+                  if (v.length === 11) submitManual(v);
                 }}
                 keyboardType="number-pad"
                 autoFocus
                 returnKeyType="done"
-                onSubmitEditing={() => {
-                  if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); }
-                }}
+                onSubmitEditing={() => { if (manualCode) submitManual(manualCode); }}
               />
               <Button
                 label="Adicionar"
-                onPress={() => {
-                  if (manualCode) { addPacote(manualCode, 'manual'); setManualCode(''); }
-                }}
+                onPress={() => { if (manualCode) submitManual(manualCode); }}
                 loading={saving}
                 style={{ marginTop: 12 }}
               />
