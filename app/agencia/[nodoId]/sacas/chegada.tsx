@@ -73,6 +73,7 @@ export default function SacasChegadaScreen() {
   const [observacao, setObservacao] = useState('');
   const [loading, setLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
+  const [resultModal, setResultModal] = useState<{ ok: boolean; msg: string } | null>(null);
 
   function handleSave() {
     const qtd = parseInt(quantidade);
@@ -92,11 +93,7 @@ export default function SacasChegadaScreen() {
     setConfirmModal(false);
 
     if (isDemo) {
-      Alert.alert(
-        '✅ [DEMO] Registrado!',
-        `Chegada de ${qtd} saca${qtd !== 1 ? 's' : ''} registrada (modo demonstração).`,
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      setResultModal({ ok: true, msg: `Chegada de ${qtd} saca${qtd !== 1 ? 's' : ''} registrada (modo demonstração).` });
       return;
     }
 
@@ -115,11 +112,7 @@ export default function SacasChegadaScreen() {
       return;
     }
 
-    Alert.alert(
-      '✅ Registrado!',
-      `Chegada de ${qtd} saca${qtd !== 1 ? 's' : ''} registrada com sucesso.`,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+    setResultModal({ ok: true, msg: `Chegada de ${qtd} saca${qtd !== 1 ? 's' : ''} registrada com sucesso.` });
   }
 
   const qtd = parseInt(quantidade) || 0;
@@ -215,6 +208,24 @@ export default function SacasChegadaScreen() {
                 <Text style={{ fontWeight: '800', color: '#fff' }}>Confirmar</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={!!resultModal} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={{ fontSize: 40, textAlign: 'center', marginBottom: 12 }}>
+              {resultModal?.ok ? '✅' : '⚠️'}
+            </Text>
+            <Text style={styles.modalTitle}>{resultModal?.ok ? 'Registrado!' : 'Atenção'}</Text>
+            <Text style={styles.modalText}>{resultModal?.msg}</Text>
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: COLORS.green }]}
+              onPress={() => { setResultModal(null); router.back(); }}
+            >
+              <Text style={{ fontWeight: '800', color: '#fff' }}>OK</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

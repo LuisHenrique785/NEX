@@ -66,6 +66,7 @@ export default function SVCSacasRetornoScreen() {
   const [observacao, setObservacao] = useState('');
   const [loading, setLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
+  const [resultModal, setResultModal] = useState<{ ok: boolean; msg: string } | null>(null);
 
   function formatPlaca(text: string) {
     return text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
@@ -93,11 +94,7 @@ export default function SVCSacasRetornoScreen() {
     setConfirmModal(false);
 
     if (isDemo) {
-      Alert.alert(
-        '✅ [DEMO] Retorno Registrado!',
-        `${qtd} saca${qtd !== 1 ? 's' : ''} de retorno registrada${qtd !== 1 ? 's' : ''} (modo demonstração).`,
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      setResultModal({ ok: true, msg: `${qtd} saca${qtd !== 1 ? 's' : ''} de retorno registrada${qtd !== 1 ? 's' : ''} (modo demonstração).` });
       return;
     }
 
@@ -115,11 +112,7 @@ export default function SVCSacasRetornoScreen() {
       return;
     }
 
-    Alert.alert(
-      '✅ Retorno Registrado!',
-      `${qtd} saca${qtd !== 1 ? 's' : ''} de retorno registrada${qtd !== 1 ? 's' : ''} com sucesso.\n${transportadora.trim()} · ${placa.trim()}`,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+    setResultModal({ ok: true, msg: `${qtd} saca${qtd !== 1 ? 's' : ''} de retorno registrada${qtd !== 1 ? 's' : ''} com sucesso.\n${transportadora.trim()} · ${placa.trim()}` });
   }
 
   const qtd = parseInt(quantidade) || 0;
@@ -212,6 +205,24 @@ export default function SVCSacasRetornoScreen() {
                 <Text style={{ fontWeight: '800', color: '#fff' }}>Confirmar</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={!!resultModal} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={{ fontSize: 40, textAlign: 'center', marginBottom: 12 }}>
+              {resultModal?.ok ? '✅' : '⚠️'}
+            </Text>
+            <Text style={styles.modalTitle}>{resultModal?.ok ? 'Retorno Registrado!' : 'Atenção'}</Text>
+            <Text style={styles.modalText}>{resultModal?.msg}</Text>
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: '#FF9500' }]}
+              onPress={() => { setResultModal(null); router.back(); }}
+            >
+              <Text style={{ fontWeight: '800', color: '#fff' }}>OK</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
