@@ -203,14 +203,37 @@ export default function ExpedicaoPacotesScreen() {
   async function doSave() {
     setConfirmModal(false);
     if (isDemo) {
-      Alert.alert('✅ [DEMO] Expedição Registrada!', `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} (modo demonstração).`, [{ text: 'OK', onPress: () => router.replace(`/agencia/${nodoId}/pacotes`) }]);
+      setPacotes([]);
+      addedCodesRef.current.clear();
+      setResultModal({ ok: true, msg: `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} (modo demonstração).` });
       return;
     }
     setSaving(true);
     try {
+      // Verifica quais códigos já foram expedidos anteriormente no banco
+      const codes = pacotes.map(p => p.codigo);
+      const { data: jaExpedidos } = await supabase
+        .from('pacotes_inventario')
+        .select('codigo')
+        .in('codigo', codes)
+        .eq('nodo_id', nodoId)
+        .eq('status', 'expedited');
+
+      const expedidosSet = new Set((jaExpedidos || []).map((p: any) => p.codigo));
+      const pacotesNovos = pacotes.filter(p => !expedidosSet.has(p.codigo));
+      const qtdDuplicados = expedidosSet.size;
+
+      if (pacotesNovos.length === 0) {
+        setResultModal({
+          ok: false,
+          msg: `Todos os ${qtdDuplicados} pacote${qtdDuplicados !== 1 ? 's' : ''} já foram expedidos anteriormente.\nNenhuma nova expedição criada.`,
+        });
+        return;
+      }
+
       const { data: expData, error: expError } = await supabase
         .from('pacotes_expedicoes')
-        .insert({ nodo_id: nodoId, placa: placa.trim(), transportadora: transportadora.trim(), total_pacotes: pacotes.length })
+        .insert({ nodo_id: nodoId, placa: placa.trim(), transportadora: transportadora.trim(), total_pacotes: pacotesNovos.length })
         .select().single();
       if (expError) {
         setResultModal({ ok: false, msg: `Erro ao criar expedição:\n${expError.message}` });
@@ -218,7 +241,7 @@ export default function ExpedicaoPacotesScreen() {
       }
 
       let erros = 0;
-      for (const p of pacotes) {
+      for (const p of pacotesNovos) {
         let fotoUrl: string | null = null;
         if (p.foto_uri) fotoUrl = await uploadPhoto(p.foto_uri, p.codigo);
         const { data: existing } = await supabase.from('pacotes_inventario').select('id').eq('nodo_id', nodoId).eq('codigo', p.codigo).eq('status', 'inventoried').single();
@@ -231,10 +254,20 @@ export default function ExpedicaoPacotesScreen() {
         }
       }
 
+      // Limpa o formulário após salvar para evitar reenvio acidental
+      setPacotes([]);
+      addedCodesRef.current.clear();
+      setPlaca('');
+      setTransportadora('');
+
+      const dupeAviso = qtdDuplicados > 0
+        ? `\n⚠️ ${qtdDuplicados} código${qtdDuplicados !== 1 ? 's' : ''} já expedido${qtdDuplicados !== 1 ? 's' : ''} ignorado${qtdDuplicados !== 1 ? 's' : ''}.`
+        : '';
+
       if (erros > 0) {
-        setResultModal({ ok: false, msg: `Expedição salva, mas ${erros} pacote${erros !== 1 ? 's' : ''} tiv${erros !== 1 ? 'eram' : 'e'} erro. Verifique na Consulta.` });
+        setResultModal({ ok: false, msg: `Expedição salva, mas ${erros} pacote${erros !== 1 ? 's' : ''} tiv${erros !== 1 ? 'eram' : 'e'} erro. Verifique na Consulta.${dupeAviso}` });
       } else {
-        setResultModal({ ok: true, msg: `${pacotes.length} pacote${pacotes.length !== 1 ? 's' : ''} expedido${pacotes.length !== 1 ? 's' : ''} com sucesso!` });
+        setResultModal({ ok: true, msg: `${pacotesNovos.length} pacote${pacotesNovos.length !== 1 ? 's' : ''} expedido${pacotesNovos.length !== 1 ? 's' : ''} com sucesso!${dupeAviso}` });
       }
     } catch (e: any) {
       setResultModal({ ok: false, msg: e?.message || 'Erro inesperado. Tente novamente.' });
@@ -483,7 +516,7 @@ export default function ExpedicaoPacotesScreen() {
             </Text>
             <Button
               label="OK"
-              onPress={() => { setResultModal(null); router.replace(`/agencia/${nodoId}/pacotes`); }}
+              onPress={() => { setResultModal(null); router.back(); }}
               style={{ width: '100%' }}
             />
           </View>
