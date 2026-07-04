@@ -21,6 +21,7 @@ interface Movimento {
 
 interface AuditoriaInfo {
   totalSacas: number;
+  extras: number;
   impressas: number;
   eta: string | null;
   loading: boolean;
@@ -138,7 +139,7 @@ export default function SacasMainScreen() {
   const [loading, setLoading] = useState(true);
   const [totais, setTotais] = useState({ chegada: 0, expedicao: 0 });
   const [auditoria, setAuditoria] = useState<AuditoriaInfo>({
-    totalSacas: 0, impressas: 0, eta: null, loading: true,
+    totalSacas: 0, extras: 0, impressas: 0, eta: null, loading: true,
     sacaIds: [], printedIds: new Set(),
   });
 
@@ -182,7 +183,7 @@ export default function SacasMainScreen() {
       .order('id', { ascending: false });
 
     if (!rotaRaw || rotaRaw.length === 0) {
-      setAuditoria({ totalSacas: 0, impressas: 0, eta: null, loading: false, sacaIds: [], printedIds: new Set() });
+      setAuditoria({ totalSacas: 0, extras: 0, impressas: 0, eta: null, loading: false, sacaIds: [], printedIds: new Set() });
       return;
     }
 
@@ -202,21 +203,25 @@ export default function SacasMainScreen() {
 
     const { data: logRaw } = await supabaseAuditoria
       .from('log')
-      .select('saca_id, id')
+      .select('saca_id, id, rota')
       .in('saca_id', allIds)
       .ilike('data', `${today}%`);
 
     // Deduplicate log by saca_id keeping latest
-    const latestLog = new Map<string, number>();
+    const latestLog = new Map<string, { id: number; rota: string | null }>();
     for (const l of logRaw || []) {
       const cur = latestLog.get(l.saca_id);
-      if (!cur || l.id > cur) latestLog.set(l.saca_id, l.id);
+      if (!cur || l.id > cur.id) latestLog.set(l.saca_id, { id: l.id, rota: l.rota });
     }
+
+    const loggedRoutes = new Set(Array.from(latestLog.values()).map((v) => v.rota).filter(Boolean));
+    const extras = Math.max(0, latestLog.size - loggedRoutes.size);
 
     const sacaIds = allIds.slice().sort((a, b) => Number(a) - Number(b));
 
     setAuditoria({
       totalSacas,
+      extras,
       impressas: latestLog.size,
       eta,
       loading: false,
@@ -252,6 +257,12 @@ export default function SacasMainScreen() {
                       {auditoria.impressas}
                     </Text>
                     <Text style={styles.auditoriaNumLabel}>Impressas hoje</Text>
+                  </View>
+                  <View style={styles.auditoriaNumBox}>
+                    <Text style={[styles.auditoriaNum, { color: auditoria.extras > 0 ? COLORS.orange : theme.textTer }]}>
+                      {auditoria.extras}
+                    </Text>
+                    <Text style={styles.auditoriaNumLabel}>Extras</Text>
                   </View>
                 </View>
                 <View style={styles.auditoriaProgressRow}>

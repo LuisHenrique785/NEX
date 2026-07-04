@@ -88,9 +88,9 @@ export default function AgenciaHomeScreen() {
   const [loading, setLoading] = useState(true);
   const [logoutModal, setLogoutModal] = useState(false);
   const [sacasInfo, setSacasInfo] = useState<{
-    totalSacas: number; impressas: number; eta: string | null;
+    totalSacas: number; extras: number; impressas: number; eta: string | null;
     sacaIds: string[]; printedIds: Set<string>; loading: boolean;
-  }>({ totalSacas: 0, impressas: 0, eta: null, sacaIds: [], printedIds: new Set(), loading: true });
+  }>({ totalSacas: 0, extras: 0, impressas: 0, eta: null, sacaIds: [], printedIds: new Set(), loading: true });
 
   useEffect(() => {
     loadNodo();
@@ -132,7 +132,7 @@ export default function AgenciaHomeScreen() {
       .order('id', { ascending: false });
 
     if (!rotaRaw || rotaRaw.length === 0) {
-      setSacasInfo({ totalSacas: 0, impressas: 0, eta: null, sacaIds: [], printedIds: new Set(), loading: false });
+      setSacasInfo({ totalSacas: 0, extras: 0, impressas: 0, eta: null, sacaIds: [], printedIds: new Set(), loading: false });
       return;
     }
 
@@ -149,19 +149,23 @@ export default function AgenciaHomeScreen() {
     const today = todayBR();
     const { data: logRaw } = await supabaseAuditoria
       .from('log')
-      .select('saca_id, id')
+      .select('saca_id, id, rota')
       .in('saca_id', allIds)
       .ilike('data', `${today}%`);
 
-    const latestLog = new Map<string, number>();
+    const latestLog = new Map<string, { id: number; rota: string | null }>();
     for (const l of logRaw || []) {
       const cur = latestLog.get(l.saca_id);
-      if (!cur || l.id > cur) latestLog.set(l.saca_id, l.id);
+      if (!cur || l.id > cur.id) latestLog.set(l.saca_id, { id: l.id, rota: l.rota });
     }
+
+    const loggedRoutes = new Set(Array.from(latestLog.values()).map((v) => v.rota).filter(Boolean));
+    const extras = Math.max(0, latestLog.size - loggedRoutes.size);
 
     const sacaIds = allIds.slice().sort((a, b) => Number(a) - Number(b));
     setSacasInfo({
       totalSacas,
+      extras,
       impressas: latestLog.size,
       eta,
       sacaIds,
@@ -223,6 +227,13 @@ export default function AgenciaHomeScreen() {
                       {sacasInfo.impressas}
                     </Text>
                     <Text style={styles.sacasNumLabel}>Impressas</Text>
+                  </View>
+                  <View style={{ width: 1, backgroundColor: theme.border }} />
+                  <View>
+                    <Text style={[styles.sacasNum, { color: sacasInfo.extras > 0 ? COLORS.orange : theme.textSec }]}>
+                      {sacasInfo.extras}
+                    </Text>
+                    <Text style={styles.sacasNumLabel}>Extras</Text>
                   </View>
                 </View>
                 <View style={styles.sacasChipsRow}>
