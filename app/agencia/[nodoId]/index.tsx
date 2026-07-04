@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { supabase } from '../../../src/lib/supabase';
+import { supabaseAuditoria } from '../../../src/lib/supabase-auditoria';
 import { COLORS, MenuCard, Card } from '../../../src/components/ui';
 import { useTheme } from '../../../src/lib/theme';
 import { useNodoAuth } from '../../../src/lib/auth';
@@ -16,6 +17,13 @@ interface Nodo {
   endereco: string;
   cidade: string;
   estado: string;
+}
+
+function todayBR(): string {
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  const d = String(now.getDate()).padStart(2, '0');
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  return `${d}/${m}/${now.getFullYear()}`;
 }
 
 function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
@@ -48,6 +56,23 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
       marginTop: 8,
       marginBottom: 8,
     },
+    sacasCard: {
+      backgroundColor: theme.surface,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 8,
+      borderLeftWidth: 4,
+      borderLeftColor: COLORS.yellow,
+    },
+    sacasHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    sacasTitle: { fontSize: 12, fontWeight: '700', color: theme.textSec, textTransform: 'uppercase', letterSpacing: 1 },
+    sacasNums: { flexDirection: 'row', gap: 16, marginBottom: 8 },
+    sacasNum: { fontSize: 26, fontWeight: '900', color: theme.text },
+    sacasNumLabel: { fontSize: 11, color: theme.textSec },
+    sacasChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
+    sacasChip: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 16, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', gap: 3 },
+    sacasChipText: { fontSize: 12, fontWeight: '700' },
+    sacasEta: { fontSize: 12, color: theme.textSec, marginTop: 6 },
   });
 }
 
@@ -62,6 +87,10 @@ export default function AgenciaHomeScreen() {
   const [nodo, setNodo] = useState<Nodo | null>(null);
   const [loading, setLoading] = useState(true);
   const [logoutModal, setLogoutModal] = useState(false);
+  const [sacasInfo, setSacasInfo] = useState<{
+    totalSacas: number; impressas: number; eta: string | null;
+    sacaIds: string[]; printedIds: Set<string>; loading: boolean;
+  }>({ totalSacas: 0, impressas: 0, eta: null, sacaIds: [], printedIds: new Set(), loading: true });
 
   useEffect(() => {
     loadNodo();
@@ -80,6 +109,7 @@ export default function AgenciaHomeScreen() {
           </TouchableOpacity>
         ) : null,
       });
+      loadSacasAuditoria(nodo.codigo);
     }
   }, [nodo, theme]);
 
@@ -91,6 +121,53 @@ export default function AgenciaHomeScreen() {
     const { data } = await supabase.from('nodos').select('*').eq('id', nodoId).single();
     setNodo(data);
     setLoading(false);
+  }
+
+  async function loadSacasAuditoria(nodoCode: string) {
+    const { data: rotaRaw } = await supabaseAuditoria
+      .from('rota')
+      .select('saca_id, rota, eta, id')
+      .eq('nodo', nodoCode)
+      .eq('svc', 'SMG3')
+      .order('id', { ascending: false });
+
+    if (!rotaRaw || rotaRaw.length === 0) {
+      setSacasInfo({ totalSacas: 0, impressas: 0, eta: null, sacaIds: [], printedIds: new Set(), loading: false });
+      return;
+    }
+
+    const latestRota = new Map<string, (typeof rotaRaw)[0]>();
+    for (const r of rotaRaw) {
+      if (!latestRota.has(r.saca_id)) latestRota.set(r.saca_id, r);
+    }
+    const entries = Array.from(latestRota.values());
+    const totalSacas = entries.length;
+    const etaRaw = entries.find((r) => r.eta && r.eta !== '00:00:00')?.eta ?? null;
+    const eta = etaRaw ? etaRaw.substring(0, 5) : null;
+    const allIds = entries.map((r) => r.saca_id);
+
+    const today = todayBR();
+    const { data: logRaw } = await supabaseAuditoria
+      .from('log')
+      .select('saca_id, id')
+      .in('saca_id', allIds)
+      .ilike('data', `${today}%`);
+
+    const latestLog = new Map<string, number>();
+    for (const l of logRaw || []) {
+      const cur = latestLog.get(l.saca_id);
+      if (!cur || l.id > cur) latestLog.set(l.saca_id, l.id);
+    }
+
+    const sacaIds = allIds.slice().sort((a, b) => Number(a) - Number(b));
+    setSacasInfo({
+      totalSacas,
+      impressas: latestLog.size,
+      eta,
+      sacaIds,
+      printedIds: new Set(latestLog.keys()),
+      loading: false,
+    });
   }
 
   if (loading) {
@@ -121,6 +198,56 @@ export default function AgenciaHomeScreen() {
             </View>
           </View>
         </Card>
+
+        {/* Sacas do dia */}
+        {(sacasInfo.loading || sacasInfo.totalSacas > 0) && (
+          <View style={styles.sacasCard}>
+            <View style={styles.sacasHeader}>
+              <Text style={styles.sacasTitle}>🎒 Sacas previstas hoje</Text>
+              {sacasInfo.eta ? (
+                <Text style={{ fontSize: 12, color: theme.textSec }}>ETA {sacasInfo.eta}</Text>
+              ) : null}
+            </View>
+            {sacasInfo.loading ? (
+              <ActivityIndicator color={COLORS.yellow} size="small" />
+            ) : (
+              <>
+                <View style={styles.sacasNums}>
+                  <View>
+                    <Text style={styles.sacasNum}>{sacasInfo.totalSacas}</Text>
+                    <Text style={styles.sacasNumLabel}>Total</Text>
+                  </View>
+                  <View style={{ width: 1, backgroundColor: theme.border }} />
+                  <View>
+                    <Text style={[styles.sacasNum, { color: sacasInfo.impressas > 0 ? COLORS.green : theme.textSec }]}>
+                      {sacasInfo.impressas}
+                    </Text>
+                    <Text style={styles.sacasNumLabel}>Impressas</Text>
+                  </View>
+                </View>
+                <View style={styles.sacasChipsRow}>
+                  {sacasInfo.sacaIds.map((id) => {
+                    const printed = sacasInfo.printedIds.has(id);
+                    return (
+                      <View
+                        key={id}
+                        style={[styles.sacasChip, {
+                          backgroundColor: printed ? `${COLORS.green}18` : theme.bg,
+                          borderColor: printed ? COLORS.green : theme.border,
+                        }]}
+                      >
+                        {printed && <Text style={{ fontSize: 10 }}>✓</Text>}
+                        <Text style={[styles.sacasChipText, { color: printed ? COLORS.green : theme.textSec }]}>
+                          {id}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </>
+            )}
+          </View>
+        )}
 
         {/* Menu */}
         <Text style={styles.sectionLabel}>O QUE DESEJA FAZER?</Text>
