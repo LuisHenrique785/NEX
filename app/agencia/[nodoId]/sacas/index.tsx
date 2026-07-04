@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../../../src/lib/supabase';
+import { supabaseAuditoria } from '../../../../src/lib/supabase-auditoria';
 import { COLORS, MenuCard, Card, Badge } from '../../../../src/components/ui';
 import { useTheme } from '../../../../src/lib/theme';
 import { formatTimeBRT, startOfTodayBRT } from '../../../../src/lib/utils';
@@ -18,10 +19,71 @@ interface Movimento {
   created_at: string;
 }
 
+interface AuditoriaInfo {
+  totalSacas: number;
+  extraSacas: number;
+  impressas: number;
+  eta: string | null;
+  loading: boolean;
+}
+
+function todayBR(): string {
+  return new Date().toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
 function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: theme.bg },
     container: { padding: 20, paddingBottom: 40 },
+    // Auditoria preview card
+    auditoriaCard: {
+      backgroundColor: theme.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderLeftWidth: 4,
+      borderLeftColor: COLORS.yellow,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: theme.isDark ? 0.2 : 0.06,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    auditoriaTitle: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: theme.textSec,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: 10,
+    },
+    auditoriaNumRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+    auditoriaNumBox: {
+      flex: 1,
+      backgroundColor: theme.bg,
+      borderRadius: 10,
+      padding: 12,
+      alignItems: 'center',
+    },
+    auditoriaNum: { fontSize: 30, fontWeight: '900', color: theme.text },
+    auditoriaNumLabel: { fontSize: 11, color: theme.textSec, marginTop: 2, textAlign: 'center' },
+    auditoriaProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    auditoriaProgressBar: {
+      flex: 1,
+      height: 6,
+      backgroundColor: theme.border,
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    auditoriaProgressFill: { height: 6, borderRadius: 3, backgroundColor: COLORS.green },
+    auditoriaProgressText: { fontSize: 12, fontWeight: '700', color: theme.textSec, minWidth: 48, textAlign: 'right' },
+    auditoriaEta: { fontSize: 12, color: theme.textSec, marginTop: 6 },
+    // existing styles
     summaryRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
     summaryCard: {
       flex: 1,
@@ -67,34 +129,142 @@ export default function SacasMainScreen() {
   const [movimentos, setMovimentos] = useState<Movimento[]>([]);
   const [loading, setLoading] = useState(true);
   const [totais, setTotais] = useState({ chegada: 0, expedicao: 0 });
+  const [auditoria, setAuditoria] = useState<AuditoriaInfo>({
+    totalSacas: 0, extraSacas: 0, impressas: 0, eta: null, loading: true,
+  });
 
   useEffect(() => {
-    loadMovimentos();
+    loadAll();
   }, [nodoId]);
 
-  async function loadMovimentos() {
-    const { data } = await supabase
-      .from('sacas_movimentos')
-      .select('*')
-      .eq('nodo_id', nodoId)
-      .gte('created_at', startOfTodayBRT().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(20);
+  async function loadAll() {
+    const [nodoResult, movResult] = await Promise.all([
+      supabase.from('nodos').select('codigo').eq('id', nodoId).single(),
+      supabase
+        .from('sacas_movimentos')
+        .select('*')
+        .eq('nodo_id', nodoId)
+        .gte('created_at', startOfTodayBRT().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(20),
+    ]);
 
-    const list = data || [];
+    const list = movResult.data || [];
     setMovimentos(list);
     setTotais({
       chegada: list.filter((m) => m.tipo === 'chegada').reduce((s, m) => s + m.quantidade, 0),
       expedicao: list.filter((m) => m.tipo === 'expedicao').reduce((s, m) => s + m.quantidade, 0),
     });
     setLoading(false);
+
+    if (nodoResult.data?.codigo) {
+      await loadAuditoriaSacas(nodoResult.data.codigo);
+    } else {
+      setAuditoria((prev) => ({ ...prev, loading: false }));
+    }
+  }
+
+  async function loadAuditoriaSacas(nodoCode: string) {
+    const { data: rotaRaw } = await supabaseAuditoria
+      .from('rota')
+      .select('saca_id, rota, eta, id')
+      .eq('nodo', nodoCode)
+      .eq('svc', 'SMG3')
+      .order('id', { ascending: false });
+
+    if (!rotaRaw || rotaRaw.length === 0) {
+      setAuditoria({ totalSacas: 0, extraSacas: 0, impressas: 0, eta: null, loading: false });
+      return;
+    }
+
+    // Deduplicate by saca_id keeping the latest upload (highest id)
+    const latestRota = new Map<string, (typeof rotaRaw)[0]>();
+    for (const r of rotaRaw) {
+      if (!latestRota.has(r.saca_id)) latestRota.set(r.saca_id, r);
+    }
+    const entries = Array.from(latestRota.values());
+    const totalSacas = entries.length;
+    const uniqueRoutes = new Set(entries.map((r) => r.rota)).size;
+    const extraSacas = Math.max(0, totalSacas - uniqueRoutes);
+    const etaRaw = entries.find((r) => r.eta && r.eta !== '00:00:00')?.eta ?? null;
+    const eta = etaRaw ? etaRaw.substring(0, 5) : null;
+
+    // Get today's printed sacas from log
+    const today = todayBR();
+    const sacaIds = entries.map((r) => r.saca_id);
+
+    const { data: logRaw } = await supabaseAuditoria
+      .from('log')
+      .select('saca_id, id')
+      .in('saca_id', sacaIds)
+      .ilike('data', `${today}%`);
+
+    // Deduplicate log by saca_id keeping latest
+    const latestLog = new Map<string, number>();
+    for (const l of logRaw || []) {
+      const cur = latestLog.get(l.saca_id);
+      if (!cur || l.id > cur) latestLog.set(l.saca_id, l.id);
+    }
+
+    setAuditoria({
+      totalSacas,
+      extraSacas,
+      impressas: latestLog.size,
+      eta,
+      loading: false,
+    });
   }
 
   function formatTime(dateStr: string) { return formatTimeBRT(dateStr); }
 
+  const progressRatio = auditoria.totalSacas > 0 ? auditoria.impressas / auditoria.totalSacas : 0;
+  const allPrinted = auditoria.totalSacas > 0 && auditoria.impressas >= auditoria.totalSacas;
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
+
+        {/* Previsão de Sacas - Auditoria */}
+        {(auditoria.loading || auditoria.totalSacas > 0) && (
+          <View style={styles.auditoriaCard}>
+            <Text style={styles.auditoriaTitle}>Sacas previstas para hoje</Text>
+            {auditoria.loading ? (
+              <ActivityIndicator color={COLORS.yellow} size="small" />
+            ) : (
+              <>
+                <View style={styles.auditoriaNumRow}>
+                  <View style={styles.auditoriaNumBox}>
+                    <Text style={styles.auditoriaNum}>{auditoria.totalSacas}</Text>
+                    <Text style={styles.auditoriaNumLabel}>Total de sacas</Text>
+                  </View>
+                  <View style={styles.auditoriaNumBox}>
+                    <Text style={[styles.auditoriaNum, { color: auditoria.extraSacas > 0 ? COLORS.orange : theme.textTer }]}>
+                      {auditoria.extraSacas}
+                    </Text>
+                    <Text style={styles.auditoriaNumLabel}>Sacas extras</Text>
+                  </View>
+                </View>
+                <View style={styles.auditoriaProgressRow}>
+                  <View style={styles.auditoriaProgressBar}>
+                    <View style={[styles.auditoriaProgressFill, { width: `${progressRatio * 100}%` as any }]} />
+                  </View>
+                  <Text style={styles.auditoriaProgressText}>
+                    {allPrinted ? '✅' : `${auditoria.impressas}/${auditoria.totalSacas}`}
+                  </Text>
+                </View>
+                {allPrinted && (
+                  <Text style={[styles.auditoriaEta, { color: COLORS.green, fontWeight: '700' }]}>
+                    Todas as sacas impressas
+                  </Text>
+                )}
+                {auditoria.eta && (
+                  <Text style={styles.auditoriaEta}>Previsão de chegada: {auditoria.eta}</Text>
+                )}
+              </>
+            )}
+          </View>
+        )}
+
         {/* Resumo do dia */}
         <View style={styles.summaryRow}>
           <View style={[styles.summaryCard, { borderLeftColor: COLORS.green }]}>
