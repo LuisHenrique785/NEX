@@ -149,18 +149,18 @@ export default function AgenciaHomeScreen() {
     const today = todayBR();
     const { data: logRaw } = await supabaseAuditoria
       .from('log')
-      .select('saca_id, id, rota')
+      .select('saca_id, id, qtd')
       .in('saca_id', allIds)
       .ilike('data', `${today}%`);
 
-    const latestLog = new Map<string, { id: number; rota: string | null }>();
+    const latestLog = new Map<string, { id: number; qtd: number }>();
     for (const l of logRaw || []) {
       const cur = latestLog.get(l.saca_id);
-      if (!cur || l.id > cur.id) latestLog.set(l.saca_id, { id: l.id, rota: l.rota });
+      if (!cur || l.id > cur.id) latestLog.set(l.saca_id, { id: l.id, qtd: l.qtd ?? 1 });
     }
 
-    const loggedRoutes = new Set(Array.from(latestLog.values()).map((v) => v.rota).filter(Boolean));
-    const extras = Math.max(0, latestLog.size - loggedRoutes.size);
+    const totalQtd = Array.from(latestLog.values()).reduce((s, v) => s + v.qtd, 0);
+    const extras = Math.max(0, totalQtd - latestLog.size);
 
     const sacaIds = allIds.slice().sort((a, b) => Number(a) - Number(b));
     setSacasInfo({
