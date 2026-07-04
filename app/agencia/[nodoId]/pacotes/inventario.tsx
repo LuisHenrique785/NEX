@@ -12,6 +12,7 @@ import { COLORS, Button, Card, Badge } from '../../../../src/components/ui';
 import { useTheme } from '../../../../src/lib/theme';
 import { useDemo } from '../../../../src/lib/demo';
 import { WebScanner } from '../../../../src/components/WebScanner';
+import { playBeep } from '../../../../src/lib/beep';
 import { formatTimeBRT, startOfTodayBRT, startOfYesterdayBRT } from '../../../../src/lib/utils';
 
 interface Pacote {
@@ -364,6 +365,7 @@ export default function InventarioFisicoScreen() {
       setPacotes((prev) => [fakeEntry, ...prev]);
       setPendencias((prev) => prev.filter((p) => p.codigo !== cleaned));
       if (tipo === 'scanner') {
+        playBeep();
         setLastScanned(`✅ ${cleaned}`);
         setTimeout(() => setLastScanned(''), 2000);
       }
@@ -395,6 +397,7 @@ export default function InventarioFisicoScreen() {
     setPendencias((prev) => prev.filter((p) => p.codigo !== cleaned));
 
     if (tipo === 'scanner') {
+      playBeep();
       setLastScanned(`✅ ${cleaned}`);
       setTimeout(() => setLastScanned(''), 2000);
     }
