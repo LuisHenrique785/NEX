@@ -21,7 +21,6 @@ interface Movimento {
 
 interface AuditoriaInfo {
   totalSacas: number;
-  extraSacas: number;
   impressas: number;
   eta: string | null;
   loading: boolean;
@@ -30,12 +29,12 @@ interface AuditoriaInfo {
 }
 
 function todayBR(): string {
-  return new Date().toLocaleDateString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  // Format: "DD/MM/YYYY" matching the log table's data column
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  const d = String(now.getDate()).padStart(2, '0');
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const y = now.getFullYear();
+  return `${d}/${m}/${y}`;
 }
 
 function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
@@ -139,7 +138,7 @@ export default function SacasMainScreen() {
   const [loading, setLoading] = useState(true);
   const [totais, setTotais] = useState({ chegada: 0, expedicao: 0 });
   const [auditoria, setAuditoria] = useState<AuditoriaInfo>({
-    totalSacas: 0, extraSacas: 0, impressas: 0, eta: null, loading: true,
+    totalSacas: 0, impressas: 0, eta: null, loading: true,
     sacaIds: [], printedIds: new Set(),
   });
 
@@ -183,7 +182,7 @@ export default function SacasMainScreen() {
       .order('id', { ascending: false });
 
     if (!rotaRaw || rotaRaw.length === 0) {
-      setAuditoria({ totalSacas: 0, extraSacas: 0, impressas: 0, eta: null, loading: false, sacaIds: [], printedIds: new Set() });
+      setAuditoria({ totalSacas: 0, impressas: 0, eta: null, loading: false, sacaIds: [], printedIds: new Set() });
       return;
     }
 
@@ -194,8 +193,6 @@ export default function SacasMainScreen() {
     }
     const entries = Array.from(latestRota.values());
     const totalSacas = entries.length;
-    const uniqueRoutes = new Set(entries.map((r) => r.rota)).size;
-    const extraSacas = Math.max(0, totalSacas - uniqueRoutes);
     const etaRaw = entries.find((r) => r.eta && r.eta !== '00:00:00')?.eta ?? null;
     const eta = etaRaw ? etaRaw.substring(0, 5) : null;
 
@@ -220,7 +217,6 @@ export default function SacasMainScreen() {
 
     setAuditoria({
       totalSacas,
-      extraSacas,
       impressas: latestLog.size,
       eta,
       loading: false,
@@ -231,7 +227,7 @@ export default function SacasMainScreen() {
 
   function formatTime(dateStr: string) { return formatTimeBRT(dateStr); }
 
-  const progressRatio = auditoria.totalSacas > 0 ? auditoria.impressas / auditoria.totalSacas : 0;
+  const progressRatio = auditoria.totalSacas > 0 ? Math.min(1, auditoria.impressas / auditoria.totalSacas) : 0;
   const allPrinted = auditoria.totalSacas > 0 && auditoria.impressas >= auditoria.totalSacas;
 
   return (
@@ -249,13 +245,13 @@ export default function SacasMainScreen() {
                 <View style={styles.auditoriaNumRow}>
                   <View style={styles.auditoriaNumBox}>
                     <Text style={styles.auditoriaNum}>{auditoria.totalSacas}</Text>
-                    <Text style={styles.auditoriaNumLabel}>Total de sacas</Text>
+                    <Text style={styles.auditoriaNumLabel}>Sacas do dia</Text>
                   </View>
                   <View style={styles.auditoriaNumBox}>
-                    <Text style={[styles.auditoriaNum, { color: auditoria.extraSacas > 0 ? COLORS.orange : theme.textTer }]}>
-                      {auditoria.extraSacas}
+                    <Text style={[styles.auditoriaNum, { color: auditoria.impressas > 0 ? COLORS.green : theme.textTer }]}>
+                      {auditoria.impressas}
                     </Text>
-                    <Text style={styles.auditoriaNumLabel}>Sacas extras</Text>
+                    <Text style={styles.auditoriaNumLabel}>Impressas hoje</Text>
                   </View>
                 </View>
                 <View style={styles.auditoriaProgressRow}>
