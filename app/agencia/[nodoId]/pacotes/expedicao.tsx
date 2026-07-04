@@ -13,6 +13,7 @@ import { useTheme } from '../../../../src/lib/theme';
 import type { Theme } from '../../../../src/lib/theme';
 import { useDemo } from '../../../../src/lib/demo';
 import { WebScanner } from '../../../../src/components/WebScanner';
+import { playBeep } from '../../../../src/lib/beep';
 
 interface Pacote {
   codigo: string;
@@ -113,6 +114,7 @@ export default function ExpedicaoPacotesScreen() {
     addedCodesRef.current.add(cleaned);
     setPacotes((prev) => [{ codigo: cleaned, tipo_entrada: tipo, foto_uri: fotoUri }, ...prev]);
     if (tipo === 'scanner') {
+      playBeep();
       setLastScanned(`✅ ${cleaned}`);
       setTimeout(() => setLastScanned(''), 2000);
     }
