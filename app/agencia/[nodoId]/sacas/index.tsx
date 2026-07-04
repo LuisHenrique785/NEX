@@ -25,6 +25,8 @@ interface AuditoriaInfo {
   impressas: number;
   eta: string | null;
   loading: boolean;
+  sacaIds: string[];
+  printedIds: Set<string>;
 }
 
 function todayBR(): string {
@@ -83,6 +85,13 @@ function makeStyles(theme: ReturnType<typeof useTheme>['theme']) {
     auditoriaProgressFill: { height: 6, borderRadius: 3, backgroundColor: COLORS.green },
     auditoriaProgressText: { fontSize: 12, fontWeight: '700', color: theme.textSec, minWidth: 48, textAlign: 'right' },
     auditoriaEta: { fontSize: 12, color: theme.textSec, marginTop: 6 },
+    sacaChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+    sacaChip: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: 10, paddingVertical: 5,
+      borderRadius: 20, borderWidth: 1.5,
+    },
+    sacaChipText: { fontSize: 13, fontWeight: '700' },
     // existing styles
     summaryRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
     summaryCard: {
@@ -131,6 +140,7 @@ export default function SacasMainScreen() {
   const [totais, setTotais] = useState({ chegada: 0, expedicao: 0 });
   const [auditoria, setAuditoria] = useState<AuditoriaInfo>({
     totalSacas: 0, extraSacas: 0, impressas: 0, eta: null, loading: true,
+    sacaIds: [], printedIds: new Set(),
   });
 
   useEffect(() => {
@@ -173,7 +183,7 @@ export default function SacasMainScreen() {
       .order('id', { ascending: false });
 
     if (!rotaRaw || rotaRaw.length === 0) {
-      setAuditoria({ totalSacas: 0, extraSacas: 0, impressas: 0, eta: null, loading: false });
+      setAuditoria({ totalSacas: 0, extraSacas: 0, impressas: 0, eta: null, loading: false, sacaIds: [], printedIds: new Set() });
       return;
     }
 
@@ -191,12 +201,12 @@ export default function SacasMainScreen() {
 
     // Get today's printed sacas from log
     const today = todayBR();
-    const sacaIds = entries.map((r) => r.saca_id);
+    const allIds = entries.map((r) => r.saca_id);
 
     const { data: logRaw } = await supabaseAuditoria
       .from('log')
       .select('saca_id, id')
-      .in('saca_id', sacaIds)
+      .in('saca_id', allIds)
       .ilike('data', `${today}%`);
 
     // Deduplicate log by saca_id keeping latest
@@ -206,12 +216,16 @@ export default function SacasMainScreen() {
       if (!cur || l.id > cur) latestLog.set(l.saca_id, l.id);
     }
 
+    const sacaIds = allIds.slice().sort((a, b) => Number(a) - Number(b));
+
     setAuditoria({
       totalSacas,
       extraSacas,
       impressas: latestLog.size,
       eta,
       loading: false,
+      sacaIds,
+      printedIds: new Set(latestLog.keys()),
     });
   }
 
@@ -252,6 +266,31 @@ export default function SacasMainScreen() {
                     {allPrinted ? '✅' : `${auditoria.impressas}/${auditoria.totalSacas}`}
                   </Text>
                 </View>
+                {/* Saca ID chips */}
+                {auditoria.sacaIds.length > 0 && (
+                  <View style={styles.sacaChipsRow}>
+                    {auditoria.sacaIds.map((id) => {
+                      const printed = auditoria.printedIds.has(id);
+                      return (
+                        <View
+                          key={id}
+                          style={[
+                            styles.sacaChip,
+                            {
+                              backgroundColor: printed ? `${COLORS.green}18` : theme.bg,
+                              borderColor: printed ? COLORS.green : theme.border,
+                            },
+                          ]}
+                        >
+                          {printed && <Text style={{ fontSize: 11 }}>✓</Text>}
+                          <Text style={[styles.sacaChipText, { color: printed ? COLORS.green : theme.textSec }]}>
+                            {id}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
                 {allPrinted && (
                   <Text style={[styles.auditoriaEta, { color: COLORS.green, fontWeight: '700' }]}>
                     Todas as sacas impressas
