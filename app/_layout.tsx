@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '../src/lib/theme';
 import { DemoProvider, useDemo } from '../src/lib/demo';
 import { NodoAuthProvider } from '../src/lib/auth';
+import { useKillSwitch } from '../src/lib/kill-switch';
+import LockScreen from '../src/components/LockScreen';
 
 function DemoBanner() {
   const { isDemo, exitDemo } = useDemo();
@@ -30,6 +32,20 @@ function DemoBanner() {
 
 function InnerLayout() {
   const { theme } = useTheme();
+  const { config, checked } = useKillSwitch();
+
+  if (!checked) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0F0F0F', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#FFD600" />
+      </View>
+    );
+  }
+
+  if (config.locked) {
+    return <LockScreen config={config} />;
+  }
+
   return (
     <>
       <StatusBar style={theme.statusBar} backgroundColor={theme.header} />
